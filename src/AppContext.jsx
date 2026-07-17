@@ -21,6 +21,25 @@ export function AppProvider({ children }) {
   const [signup, setSignup] = useState(emptySignup);
   const [authError, setAuthError] = useState('');
 
+  // Open-access mode: the login and signup pages have been removed. The app
+  // establishes a session automatically on boot using the built-in account
+  // (overridable via VITE_DEMO_USER / VITE_DEMO_PASS), so anyone landing on
+  // the URL is dropped straight into the dashboard with no sign-in step.
+  const DEMO_IDENTIFIER = import.meta.env.VITE_DEMO_USER || 'admin@9278.ai';
+  const DEMO_PASSWORD   = import.meta.env.VITE_DEMO_PASS || 'Admin1234';
+
+  const establishAutoSession = async () => {
+    const { token, user } = await api('/api/signin', {
+      method: 'POST',
+      body: { identifier: DEMO_IDENTIFIER, password: DEMO_PASSWORD },
+      auth: false,
+    });
+    setToken(token);
+    setCurrentUser(user);
+    setAuthError('');
+    return user;
+  };
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -40,19 +59,28 @@ export function AppProvider({ children }) {
         }
       } catch { /* non-browser env — ignore */ }
 
-      const t = getToken();
-      if (!t) { setBootstrapping(false); return; }
       try {
-        const { user } = await api('/api/me');
-        if (cancelled) return;
-        setCurrentUser(user);
+        const t = getToken();
+        if (t) {
+          // Reuse a still-valid session if one is already stored.
+          const { user } = await api('/api/me');
+          if (!cancelled) setCurrentUser(user);
+        } else {
+          throw new Error('no token');
+        }
       } catch {
-        setToken('');
+        // No token, or the stored one expired → auto-establish the open session.
+        try {
+          if (!cancelled) await establishAutoSession();
+        } catch (e) {
+          if (!cancelled) setAuthError(e.message || 'Could not start session');
+        }
       } finally {
         if (!cancelled) setBootstrapping(false);
       }
     })();
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const updateSignup = (patch) => setSignup((s) => ({ ...s, ...patch }));
@@ -86,61 +114,16 @@ export function AppProvider({ children }) {
     }
   };
 
-  const signoutUser = async () => {
-    try { await api('/api/signout', { method: 'POST' }); } catch {}
-    setToken('');
-    setCurrentUser(null);
+  // Open-access mode: there is no real session to end and no login page to
+  // return to, so "Sign out" simply navigates back to the dashboard home.
+  // The auto-established session stays intact.
+  const signoutUser = () => {
     navigate('/', { replace: true });
   };
 
-  // === Idle auto-logout ====================================================
-  // Sign the user out after IDLE_MS of no activity. `lastActivity` lives in
-  // localStorage so the timer survives reloads and is shared across tabs.
-  // The server enforces the same window (sliding session expiry), so a token
-  // can't be reused after idling even if this timer never runs.
-  const IDLE_MS = 30 * 60 * 1000;          // 30 minutes
-  const IDLE_KEY = '9278.lastActivity';
-
-  const idleLogout = async () => {
-    try { await api('/api/signout', { method: 'POST' }); } catch {}
-    try { localStorage.removeItem(IDLE_KEY); } catch {}
-    setToken('');
-    setCurrentUser(null);
-    navigate('/signin?timeout=1', { replace: true });
-  };
-
-  useEffect(() => {
-    if (!currentUser) return;
-    const stamp = () => { try { localStorage.setItem(IDLE_KEY, String(Date.now())); } catch {} };
-    stamp();   // seed on login / mount
-
-    let lastStamp = Date.now();
-    let lastPing  = Date.now();
-    const onActivity = () => {
-      const now = Date.now();
-      if (now - lastStamp > 5000) { lastStamp = now; stamp(); }   // throttle LS writes to 5s
-      // Keepalive: slide the server session while the user is active even if
-      // they're only reading (no other API calls). At most once / 5 min.
-      if (now - lastPing > 5 * 60 * 1000) {
-        lastPing = now;
-        api('/api/session/ping', { method: 'POST' }).catch(() => {});
-      }
-    };
-    const events = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
-    events.forEach((e) => window.addEventListener(e, onActivity, { passive: true }));
-
-    const tick = setInterval(() => {
-      let last = 0;
-      try { last = Number(localStorage.getItem(IDLE_KEY)) || 0; } catch {}
-      if (last && Date.now() - last >= IDLE_MS) idleLogout();
-    }, 30 * 1000);   // check every 30s
-
-    return () => {
-      events.forEach((e) => window.removeEventListener(e, onActivity));
-      clearInterval(tick);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser]);
+  // Idle auto-logout removed — with open access there is no sign-in screen to
+  // fall back to, so expiring the session would just strand the user on a
+  // blank page. The server-side sliding-session expiry is likewise moot here.
 
   const updateCurrentUser = async (patch) => {
     try {
