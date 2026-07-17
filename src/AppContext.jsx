@@ -43,7 +43,7 @@ export function AppProvider({ children }) {
       const t = getToken();
       if (!t) { setBootstrapping(false); return; }
       try {
-        const { user } = await api('/api/me');
+        const { user } = await api('/api/auth/me');
         if (cancelled) return;
         setCurrentUser(user);
       } catch {
@@ -65,11 +65,13 @@ export function AppProvider({ children }) {
     setAuthError('');
   };
 
-  const homeFor = (user) => (user?.role === 'admin' ? '/admin' : '/dashboard');
+  const homeFor = (user) => (
+    user?.userType === 'superadmin' || user?.userType === 'admin' ? '/admin' : '/dashboard'
+  );
 
   const signinUser = async ({ identifier, password }) => {
     try {
-      const { token, user } = await api('/api/signin', {
+      const { token, user } = await api('/api/auth/signin', {
         method: 'POST', body: { identifier, password }, auth: false,
       });
       setToken(token);
@@ -87,7 +89,7 @@ export function AppProvider({ children }) {
   };
 
   const signoutUser = async () => {
-    try { await api('/api/signout', { method: 'POST' }); } catch {}
+    try { await api('/api/auth/signout', { method: 'POST' }); } catch {}
     setToken('');
     setCurrentUser(null);
     navigate('/', { replace: true });
@@ -102,7 +104,7 @@ export function AppProvider({ children }) {
   const IDLE_KEY = '9278.lastActivity';
 
   const idleLogout = async () => {
-    try { await api('/api/signout', { method: 'POST' }); } catch {}
+    try { await api('/api/auth/signout', { method: 'POST' }); } catch {}
     try { localStorage.removeItem(IDLE_KEY); } catch {}
     setToken('');
     setCurrentUser(null);
@@ -123,7 +125,7 @@ export function AppProvider({ children }) {
       // they're only reading (no other API calls). At most once / 5 min.
       if (now - lastPing > 5 * 60 * 1000) {
         lastPing = now;
-        api('/api/session/ping', { method: 'POST' }).catch(() => {});
+        api('/api/auth/session/ping', { method: 'POST' }).catch(() => {});
       }
     };
     const events = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'];

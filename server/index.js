@@ -53,6 +53,7 @@ import { createReadStream } from 'fs';
 import { stat } from 'fs/promises';
 import twilioPkg from 'twilio';
 const { twiml: TwilioTwiml } = twilioPkg;
+import { sqliteAuthRouter } from './sqliteAuth.js';
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
@@ -85,6 +86,10 @@ app.use(express.json({
   verify: (req, _res, buf) => { req.rawBody = buf; },
 }));
 app.use(express.urlencoded({ extended: false }));
+
+// Zero-setup SQLite-backed demo login (superadmin/admin/user), independent
+// of the Postgres `users`/`sessions` tables used below. See server/sqliteAuth.js.
+app.use('/api/auth', sqliteAuthRouter);
 
 const SESSION_DAYS = 30;
 // Idle timeout — a session with no authenticated activity for this many
@@ -184,13 +189,18 @@ const auth = async (req, res, next) => {
   // users.password_changed_at) AND direct SQL UPDATEs on password_hash.
   // The COALESCE keeps very-old rows that lack the column-default from
   // failing closed.
-  const r = await q(
-    `SELECT u.* FROM sessions s JOIN users u ON u.id = s.user_id
-     WHERE s.token = $1
-       AND s.expires_at > NOW()
-       AND s.created_at >= COALESCE(u.password_changed_at, 'epoch'::timestamptz)`,
-    [token],
-  );
+  let r;
+  try {
+    r = await q(
+      `SELECT u.* FROM sessions s JOIN users u ON u.id = s.user_id
+       WHERE s.token = $1
+         AND s.expires_at > NOW()
+         AND s.created_at >= COALESCE(u.password_changed_at, 'epoch'::timestamptz)`,
+      [token],
+    );
+  } catch (e) {
+    return res.status(503).json({ error: 'Database unavailable' });
+  }
   if (!r.rowCount) return res.status(401).json({ error: 'Session expired' });
   req.user = r.rows[0];
   req.token = token;

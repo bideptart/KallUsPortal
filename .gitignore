@@ -22,3 +22,7 @@ log/
 
 # Runtime caches
 server/tts-cache/
+
+# Local SQLite demo-login DB — regenerated (and reseeded) automatically on
+# first server start, see server/sqliteAuth.js.
+server/data/

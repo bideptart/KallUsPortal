@@ -2,11 +2,16 @@ import { useState } from 'react';
 import { useApp } from '../AppContext.jsx';
 import Logo from '../components/Logo.jsx';
 
+const DEMO_ACCOUNTS = [
+  { label: 'Superadmin', identifier: 'superadmin@9278.ai', password: 'SuperAdmin1234' },
+  { label: 'Admin',      identifier: 'admin@9278.ai',       password: 'Admin1234' },
+  { label: 'User',       identifier: 'user@9278.ai',        password: 'User1234' },
+];
+
 export default function Signin() {
   const { signinUser, authError, setAuthError } = useApp();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
-  const [remember, setRemember] = useState(true);
   const [busy, setBusy] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
   const timedOut = typeof window !== 'undefined'
@@ -20,9 +25,14 @@ export default function Signin() {
     setBusy(false);
   };
 
+  const fillDemo = (acc) => {
+    setIdentifier(acc.identifier);
+    setPassword(acc.password);
+    if (authError) setAuthError('');
+  };
+
   return (
     <div className="nixxy-dark auth-dark min-h-screen flex items-center justify-center px-5 animate-fade-up">
-      {/* === CENTERED LOGIN FORM (nixxy.com dark theme) ================== */}
       <section className="w-full">
         <div className="mx-auto w-full max-w-md">
           <div className="mb-8 flex justify-center">
@@ -44,6 +54,22 @@ export default function Signin() {
             </div>
           )}
 
+          <div className="mb-6 rounded-lg border border-neutral-700 bg-neutral-900/60 px-3 py-2.5">
+            <p className="text-xs font-semibold text-neutral-300 mb-2">Demo accounts</p>
+            <div className="flex flex-col gap-1">
+              {DEMO_ACCOUNTS.map((acc) => (
+                <button
+                  key={acc.identifier}
+                  type="button"
+                  onClick={() => fillDemo(acc)}
+                  className="text-left text-xs text-neutral-400 hover:text-teal-300 hover:underline"
+                >
+                  {acc.label}: <span className="font-mono">{acc.identifier}</span> / <span className="font-mono">{acc.password}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <form onSubmit={submit} className="space-y-5">
             <div>
               <label className="field-label">Email or username</label>
@@ -60,13 +86,6 @@ export default function Signin() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="field-label !mb-0">Password</label>
-                <a
-                  href="#"
-                  className="text-xs font-medium text-teal-400 hover:text-teal-300 hover:underline"
-                  onClick={(e) => e.preventDefault()}
-                >
-                  Forgot password?
-                </a>
               </div>
               <div className="relative">
                 <input
@@ -94,23 +113,13 @@ export default function Signin() {
               </div>
             )}
 
-            <label className="flex items-center gap-2 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                className="accent-teal-500 w-4 h-4"
-                checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
-              />
-              <span className="text-sm text-neutral-300">Keep me signed in</span>
-            </label>
-
             <button type="submit" className="btn-teal w-full py-3.5 text-[15px]" disabled={busy}>
               {busy ? 'Signing in…' : 'Sign in →'}
             </button>
           </form>
 
           <p className="text-center text-xs text-mute mt-8">
-            🔒 End-to-end encrypted · sessions expire after 30 minutes of inactivity
+            🔒 Local demo login · sessions expire after 30 minutes of inactivity
           </p>
         </div>
       </section>

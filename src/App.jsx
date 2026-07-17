@@ -16,7 +16,7 @@ function Loading() {
 // RequireAuth, and any other "go home" jump.
 const homeFor = (user) => {
   if (!user) return '/signin';
-  if (user.userType === 'superadmin' || user.role === 'admin') return '/admin';
+  if (user.userType === 'superadmin' || user.userType === 'admin' || user.role === 'admin') return '/admin';
   // Sub-resellers share the same surface as resellers — they see their own
   // customers / purchases / plans, and can on-board further sub-resellers.
   if (user.userType === 'reseller' || user.userType === 'sub-reseller') return '/reseller';
@@ -89,13 +89,13 @@ function AppRoutes() {
         }
       />
 
-      {/* Admin: /admin/<tab> — tier 'superadmin'. The legacy role='admin'
-          field on admin@9278.ai is still honoured. */}
+      {/* Admin: /admin/<tab> — tiers 'superadmin' and 'admin'. The legacy
+          role='admin' field on admin@9278.ai is still honoured. */}
       <Route path="/admin" element={<Navigate to="/admin/signups" replace />} />
       <Route
         path="/admin/:tab"
         element={
-          <RequireAuth allow={new Set(['superadmin'])}>
+          <RequireAuth allow={new Set(['superadmin', 'admin'])}>
             <Admin />
           </RequireAuth>
         }
