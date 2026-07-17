@@ -1,0 +1,149 @@
+import { useMemo } from 'react';
+
+// =============================================================================
+// DateRangePicker — shared filter for /dashboard/{reports,recordings,calls}.
+// Two date inputs (From / To) + a row of quick-range chips:
+//   Today · Yesterday · This month · Last month · Last 7 days · All time
+//
+// The parent owns the `from` and `to` strings (YYYY-MM-DD) so persistence /
+// URL sync / filtering stays in the page. This is a pure controlled
+// component — emits new (from, to) values via onChange({from, to}).
+// =============================================================================
+
+// Format a Date as YYYY-MM-DD in the user's local TZ (NOT UTC, otherwise
+// "today" rolls over at midnight UTC instead of midnight India time).
+const ymd = (d) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+const startOfDay = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+
+// Each preset returns { from, to } strings. Computed at click time so
+// presets stay correct across midnight without a re-mount.
+const PRESETS = [
+  {
+    id: 'today',
+    label: 'Today',
+    range: () => {
+      const t = startOfDay(new Date());
+      return { from: ymd(t), to: ymd(t) };
+    },
+  },
+  {
+    id: 'yesterday',
+    label: 'Yesterday',
+    range: () => {
+      const t = startOfDay(new Date());
+      t.setDate(t.getDate() - 1);
+      return { from: ymd(t), to: ymd(t) };
+    },
+  },
+  {
+    id: 'last7',
+    label: 'Last 7 days',
+    range: () => {
+      const to = startOfDay(new Date());
+      const from = new Date(to);
+      from.setDate(to.getDate() - 6);
+      return { from: ymd(from), to: ymd(to) };
+    },
+  },
+  {
+    id: 'thismonth',
+    label: 'This month',
+    range: () => {
+      const now = new Date();
+      const from = new Date(now.getFullYear(), now.getMonth(), 1);
+      return { from: ymd(from), to: ymd(now) };
+    },
+  },
+  {
+    id: 'lastmonth',
+    label: 'Last month',
+    range: () => {
+      const now = new Date();
+      const from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const to   = new Date(now.getFullYear(), now.getMonth(), 0); // 0 = last day of prev month
+      return { from: ymd(from), to: ymd(to) };
+    },
+  },
+  {
+    id: 'alltime',
+    label: 'All time',
+    range: () => ({ from: '', to: '' }),
+  },
+];
+
+export default function DateRangePicker({ from, to, onChange, className = '' }) {
+  // Highlight whichever preset's range matches the current (from, to). This
+  // lets the picker show "Today" as active when first mounted, and stay in
+  // sync when the user manually types matching dates.
+  const activePresetId = useMemo(() => {
+    for (const p of PRESETS) {
+      const r = p.range();
+      if (r.from === (from || '') && r.to === (to || '')) return p.id;
+    }
+    return null;
+  }, [from, to]);
+
+  const apply = (preset) => {
+    const r = preset.range();
+    onChange?.({ from: r.from, to: r.to });
+  };
+
+  return (
+    <div className={className}>
+      <div className="flex flex-wrap gap-1.5">
+        {PRESETS.map((p) => {
+          const active = activePresetId === p.id;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => apply(p)}
+              className={`px-3 py-1 rounded-full text-xs font-semibold border transition ${
+                active
+                  ? 'bg-sky-100 border-sky-300 text-sky-800'
+                  : 'bg-white border-slate-200 text-slate-600 hover:border-sky-300 hover:text-sky-700'
+              }`}
+            >
+              {p.label}
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-3 grid sm:grid-cols-2 gap-3">
+        <div>
+          <label className="field-label">From date</label>
+          <input
+            type="date"
+            className="input text-sm py-1.5"
+            value={from || ''}
+            max={to || undefined}
+            onChange={(e) => onChange?.({ from: e.target.value, to: to || '' })}
+          />
+        </div>
+        <div>
+          <label className="field-label">To date</label>
+          <input
+            type="date"
+            className="input text-sm py-1.5"
+            value={to || ''}
+            min={from || undefined}
+            onChange={(e) => onChange?.({ from: from || '', to: e.target.value })}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Helper for parents — compute today's YYYY-MM-DD pair. Used to seed the
+// default state so the page lands showing "today" without a re-render.
+export const todayRange = () => {
+  const t = startOfDay(new Date());
+  return { from: ymd(t), to: ymd(t) };
+};
