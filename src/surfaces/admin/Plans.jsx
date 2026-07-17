@@ -100,8 +100,7 @@ export default function Plans() {
       </div>
 
       <p className="text-xs text-mute mt-3">
-        To edit, update <code>PLANS</code> in <code>server/plans.js</code> AND{' '}
-        <code>src/surfaces/signup/PlanPage.jsx</code> (both kept in sync), then{' '}
+        To edit, update <code>PLANS</code> in <code>server/plans.js</code>, then{' '}
         <code>npm run build &amp;&amp; systemctl restart voice-agent-portal</code>.
       </p>
 
