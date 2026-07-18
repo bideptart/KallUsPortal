@@ -293,7 +293,7 @@ export default function Reports() {
                 from={dateFrom}
                 to={dateTo}
                 onChange={({ from, to }) => setRange({ from, to })}
-                accent="teal"
+                accent="green"
               />
             </div>
 
@@ -337,7 +337,7 @@ export default function Reports() {
                 <div className="inline-flex rounded-full border border-slate-200 overflow-hidden">
                   <button
                     className={`px-5 py-2 text-sm font-semibold transition ${
-                      viewTab === 'recording' ? 'bg-blue-500 text-white' : 'bg-white text-slate-700 hover:bg-slate-50'
+                      viewTab === 'recording' ? 'bg-[#3a5a0c] text-white' : 'bg-white text-slate-700 hover:bg-slate-50'
                     }`}
                     onClick={() => setViewTab('recording')}
                   >
@@ -345,7 +345,7 @@ export default function Reports() {
                   </button>
                   <button
                     className={`px-5 py-2 text-sm font-semibold transition ${
-                      viewTab === 'transcript' ? 'bg-blue-500 text-white' : 'bg-white text-slate-700 hover:bg-slate-50'
+                      viewTab === 'transcript' ? 'bg-[#3a5a0c] text-white' : 'bg-white text-slate-700 hover:bg-slate-50'
                     }`}
                     onClick={() => setViewTab('transcript')}
                   >
@@ -448,7 +448,7 @@ export default function Reports() {
                           className="btn-ghost text-xs py-1.5 px-3"
                           onClick={() => toggleSummary(r.callId)}
                         >
-                          {s?.loading ? 'Loading…' : summaryOpen ? 'Hide summary ▲' : '✨ Summary'}
+                          {s?.loading ? 'Loading…' : summaryOpen ? 'Hide summary ▲' : 'Summary'}
                         </button>
                       </div>
                     )}
@@ -603,7 +603,7 @@ export default function Reports() {
           <div className="form-card !p-3 space-y-1">
             <button
               className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm transition ${
-                logsTab === 'call' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 font-medium hover:bg-slate-50'
+                logsTab === 'call' ? 'bg-[rgba(77,124,15,0.08)] text-[#3a5a0c] font-bold' : 'text-slate-600 font-medium hover:bg-slate-50'
               }`}
               onClick={() => setLogsTab('call')}
             >
@@ -612,7 +612,7 @@ export default function Reports() {
             </button>
             <button
               className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm transition ${
-                logsTab === 'chat' ? 'bg-purple-50 text-purple-700 font-bold' : 'text-slate-600 font-medium hover:bg-slate-50'
+                logsTab === 'chat' ? 'bg-[rgba(77,124,15,0.08)] text-[#3a5a0c] font-bold' : 'text-slate-600 font-medium hover:bg-slate-50'
               }`}
               onClick={() => setLogsTab('chat')}
             >

@@ -78,11 +78,14 @@ const PRESETS = [
 ];
 
 // Active-chip accent — defaults to the brand's lime everywhere this component
-// is already used (Recordings, Calls); Reports passes accent="teal" to match
-// its "transcript available" teal badges instead.
+// is already used (Recordings, Calls); Reports passes accent="green" to match
+// its brand-green (#3a5a0c) accent instead.
 const ACCENTS = {
   lime: { active: 'bg-lime-100 border-lime-300 text-lime-800', hover: 'hover:border-lime-300 hover:text-lime-700' },
-  teal: { active: 'bg-teal-100 border-teal-300 text-teal-800', hover: 'hover:border-teal-300 hover:text-teal-700' },
+  green: {
+    active: 'bg-[rgba(77,124,15,0.08)] border-[rgba(77,124,15,0.35)] text-[#3a5a0c]',
+    hover: 'hover:border-[rgba(77,124,15,0.35)] hover:text-[#3a5a0c]',
+  },
 };
 
 export default function DateRangePicker({ from, to, onChange, className = '', accent = 'lime' }) {
