@@ -1,11 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api, getToken } from '../../api.js';
-import { useApp } from '../../AppContext.jsx';
 import DateRangePicker from '../../components/DateRangePicker.jsx';
 import ChatLogRow from '../../components/ChatLogRow.jsx';
 import { buildMockChatSessions } from '../../utils/mockChatLogs.js';
 import { buildMockCallRecordings } from '../../utils/mockCallLogs.js';
-import { AddNumberModal } from './Numbers.jsx';
+
+// =============================================================================
+// Admin Reports — same Call Logs UI as the customer dashboard's Reports page,
+// pointed at the same /api/recordings + /api/recordings/:id/{transcript,summary}
+// endpoints. The backend already special-cases req.user.role === 'admin' on
+// those routes to do an unfiltered sweep across every customer's calls instead
+// of scoping to one owner's DIDs, so no server changes are needed here.
+// =============================================================================
 
 const digitsOnly = (s) => String(s || '').replace(/\D+/g, '');
 
@@ -35,9 +41,6 @@ const fmtTime = (t) => {
   return isNaN(d.getTime()) ? String(t) : d.toLocaleString();
 };
 
-// Default range for this page — "Last 7 days" rather than the shared
-// "today" default, so the log lands showing a week of activity like the
-// reference report view.
 const last7Range = () => {
   const to = new Date(); to.setHours(0, 0, 0, 0);
   const from = new Date(to); from.setDate(to.getDate() - 6);
@@ -45,8 +48,6 @@ const last7Range = () => {
   return { from: ymd(from), to: ymd(to) };
 };
 
-// Builds a CSV blob from the filtered rows and triggers a browser download —
-// no server endpoint needed since everything shown is already client-side.
 const downloadCsv = (rows) => {
   const header = ['Start time', 'Direction', 'From', 'To', 'Duration (s)', 'Agent', 'Has transcript', 'Has recording'];
   const lines = [header.join(',')];
@@ -75,23 +76,18 @@ const downloadCsv = (rows) => {
 };
 
 export default function Reports() {
-  const { currentUser } = useApp();
   const [recordings, setRecordings] = useState(null);
-  const [numbers, setNumbers] = useState([]);
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(true);
-  const [showAddPlan, setShowAddPlan] = useState(false);
 
-  const [filterNumber, setFilterNumber] = useState('all');
   const [{ from: dateFrom, to: dateTo }, setRange] = useState(() => last7Range());
   const [inboundSearch, setInboundSearch] = useState('');
 
   // "Call Logs" vs "Chat Logs" — chat sessions aren't wired up on this
-  // portal yet, so that tab is present (matching the reference layout) but
-  // inert until a chat-log API exists.
+  // portal yet, so that tab is present but shows a placeholder.
   const [logsTab, setLogsTab] = useState('call');
-  // Within Call Logs: "recording" shows the audio player per row, like the
-  // Recordings page; "transcript" shows the Transcript/Summary buttons.
+  // Within Call Logs: "recording" shows the audio player per row; "transcript"
+  // shows the Transcript/Summary buttons.
   const [viewTab, setViewTab] = useState('transcript');
 
   // Per-call lazy-loaded state.
@@ -115,12 +111,8 @@ export default function Reports() {
   const load = async ({ force = false } = {}) => {
     setLoading(true); setErr('');
     try {
-      const [recsRes, numbersRes] = await Promise.all([
-        api(`/api/recordings?limit=500${force ? '&refresh=1' : ''}`),
-        api('/api/numbers').catch(() => ({ numbers: [] })),
-      ]);
+      const recsRes = await api(`/api/recordings?limit=500${force ? '&refresh=1' : ''}`);
       setRecordings(recsRes.recordings || []);
-      setNumbers(numbersRes.numbers || []);
     } catch (e) {
       setErr(e.message || 'Could not load calls');
       setRecordings([]);
@@ -139,18 +131,16 @@ export default function Reports() {
     const toTs   = dateTo   ? new Date(dateTo   + 'T23:59:59.999').getTime() : Infinity;
     const search = inboundSearch.replace(/\D+/g, '');
     return effectiveRecordings.filter((r) => {
-      const to = digitsOnly(fmtNumber(r.to));
-      const from = digitsOnly(fmtNumber(r.from));
-      if (filterNumber !== 'all') {
-        const wanted = digitsOnly(filterNumber);
-        if (to !== wanted && from !== wanted) return false;
-      }
       const ts = r.startTime ? new Date(r.startTime).getTime() : 0;
       if (ts < fromTs || ts > toTs) return false;
-      if (search && !from.includes(search) && !to.includes(search)) return false;
+      if (search) {
+        const to = digitsOnly(fmtNumber(r.to));
+        const from = digitsOnly(fmtNumber(r.from));
+        if (!from.includes(search) && !to.includes(search)) return false;
+      }
       return true;
     });
-  }, [effectiveRecordings, filterNumber, dateFrom, dateTo, inboundSearch]);
+  }, [effectiveRecordings, dateFrom, dateTo, inboundSearch]);
 
   const filteredChats = useMemo(() => {
     const fromTs = dateFrom ? new Date(dateFrom + 'T00:00:00').getTime() : -Infinity;
@@ -164,9 +154,9 @@ export default function Reports() {
     });
   }, [chatSessions, dateFrom, dateTo, inboundSearch]);
 
-  const filtersActive = filterNumber !== 'all' || dateFrom || dateTo || inboundSearch;
+  const filtersActive = dateFrom || dateTo || inboundSearch;
   const clearFilters = () => {
-    setFilterNumber('all'); setRange({ from: '', to: '' }); setInboundSearch('');
+    setRange({ from: '', to: '' }); setInboundSearch('');
   };
   const toggleChat = (id) => setOpenChats((m) => ({ ...m, [id]: !m[id] }));
 
@@ -223,23 +213,15 @@ export default function Reports() {
     }
   };
 
-  if (!currentUser) return null;
-
   return (
     <div>
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">📑 Reports</h1>
           <p className="text-mute">
-            Call and chat history — recordings, transcripts, and AI summaries per record.
+            Call and chat history across every customer — recordings, transcripts, and AI summaries per record.
           </p>
         </div>
-        <button
-          onClick={() => setShowAddPlan(true)}
-          className="btn-teal text-sm"
-        >
-          + Add plan / number
-        </button>
       </div>
 
       {err && (
@@ -290,24 +272,6 @@ export default function Reports() {
                 onChange={({ from, to }) => setRange({ from, to })}
               />
             </div>
-
-            {logsTab === 'call' && numbers.length > 1 && (
-              <div className="mt-3 max-w-xs">
-                <label className="field-label">Your number</label>
-                <select
-                  className="input text-sm py-1.5"
-                  value={filterNumber}
-                  onChange={(e) => setFilterNumber(e.target.value)}
-                >
-                  <option value="all">All numbers ({recordings?.length || 0})</option>
-                  {numbers.map((n) => (
-                    <option key={n.id} value={n.value}>
-                      {n.value} {n.label ? `(${n.label})` : n.isPrimary ? '(primary)' : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
 
             <div className="mt-3 flex items-center gap-3 text-xs text-mute">
               <span>
@@ -618,9 +582,9 @@ export default function Reports() {
               ⓘ Logs overview
             </div>
             <p className="mt-2 text-xs text-mute leading-relaxed">
-              A complete record of every conversation your agents handled — voice calls and
-              website chats alike. Each entry keeps the full <strong>transcript</strong>, the AI{' '}
-              <strong>summary</strong>, the call <strong>recording</strong>, exact timestamps,
+              A complete record of every conversation across all customers' agents — voice calls
+              and website chats alike. Each entry keeps the full <strong>transcript</strong>, the
+              AI <strong>summary</strong>, the call <strong>recording</strong>, exact timestamps,
               duration, and the reason the session ended. Use the filters and search to find a
               specific call or chat, expand any row to read what was said, and export the results
               to CSV.
@@ -628,14 +592,6 @@ export default function Reports() {
           </div>
         </div>
       </div>
-
-      {showAddPlan && (
-        <AddNumberModal
-          currentUser={currentUser}
-          onClose={() => setShowAddPlan(false)}
-          onAdded={() => setShowAddPlan(false)}
-        />
-      )}
     </div>
   );
 }

@@ -11,6 +11,7 @@ import Bulk from './Bulk.jsx';
 import Logs from './Logs.jsx';
 import Plans from './Plans.jsx';
 import Settings from './Settings.jsx';
+import Reports from './Reports.jsx';
 import Logo from '../../components/Logo.jsx';
 import TopBar from '../../components/TopBar.jsx';
 
@@ -126,7 +127,8 @@ export default function Admin() {
         {(tab === 'kb' || tab === 'bulk')               && <Bulk />}
         {(tab === 'analytics' || tab === 'usage')       && <Usage />}
         {(tab === 'calls' || tab === 'logs')            && <Logs />}
-        {(tab === 'reports' || tab === 'health')        && <Health />}
+        {tab === 'reports'                               && <Reports />}
+        {tab === 'health'                                && <Health />}
         {(tab === 'billing' || tab === 'transactions' || tab === 'payments') && <Payments />}
         {(tab === 'account' || tab === 'settings')      && <Settings />}
         {tab === 'resellers' && <Resellers />}
