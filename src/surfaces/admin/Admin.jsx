@@ -11,8 +11,10 @@ import Bulk from './Bulk.jsx';
 import Logs from './Logs.jsx';
 import Plans from './Plans.jsx';
 import Settings from './Settings.jsx';
+import Overview from '../customer/Overview.jsx';
 import Logo from '../../components/Logo.jsx';
 import TopBar from '../../components/TopBar.jsx';
+import Footer from '../../components/Footer.jsx';
 
 // Sidebar nav — unified across Admin/Customer to a common shape. Each entry
 // maps onto the closest existing admin page; several concepts here (e.g.
@@ -111,16 +113,25 @@ export default function Admin() {
           <div className="lg:hidden text-xs text-mute font-semibold uppercase tracking-wider truncate">
             {activeLabel}
           </div>
-          <div className="ml-auto">
-            <TopBar />
+          <div className="ml-auto flex items-center gap-3">
+            {tab === 'overview' && (
+              <Link to="/admin/numbers" className="btn-teal text-sm whitespace-nowrap">+ Add plan / number</Link>
+            )}
+            {tab !== 'overview' && <TopBar />}
           </div>
         </div>
 
         {/* New nav ids map onto the closest existing page; legacy ids (kept
             valid so old links still work) render the same pages they always
             did. Resellers / Numbers inventory / Plans & pricing have no home
-            in the new 10-item nav — still reachable at their legacy URLs. */}
-        {(tab === 'overview' || tab === 'signups')      && <Signups />}
+            in the new 10-item nav — still reachable at their legacy URLs.
+            'overview' reuses the same Overview component as the Customer
+            dashboard (per explicit request — same page for every tier); it
+            renders mostly empty states for admin accounts since they don't
+            carry their own number/plan/agent. 'signups' keeps the original
+            admin landing page reachable at its legacy URL. */}
+        {tab === 'overview'                             && <Overview />}
+        {tab === 'signups'                              && <Signups />}
         {(tab === 'agents' || tab === 'customers')      && <Customers />}
         {(tab === 'playground' || tab === 'mcp')        && <McpBrowser />}
         {(tab === 'kb' || tab === 'bulk')               && <Bulk />}
@@ -133,11 +144,17 @@ export default function Admin() {
         {tab === 'numbers'   && <Numbers />}
         {tab === 'plans'     && <Plans />}
 
-        {/* Invisible sink for `.dashboard-main > :last-child { margin-top: auto }`
-            — without a trailing element here, the rule would push the active
-            tab content to the bottom of the viewport. An empty div absorbs
-            the auto-margin without rendering anything (no footer in admin). */}
-        <div aria-hidden="true" />
+        {/* Overview shares the Customer page, which is designed to end in a
+            Footer — the other admin tabs (tables/tools) weren't, so they keep
+            the invisible sink that absorbs `.dashboard-main > :last-child`'s
+            auto margin without rendering anything. */}
+        {tab === 'overview' ? (
+          <div className="pt-10 -mx-4 sm:-mx-6 lg:-mx-8">
+            <Footer />
+          </div>
+        ) : (
+          <div aria-hidden="true" />
+        )}
 
       </div>
     </div>

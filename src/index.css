@@ -81,24 +81,24 @@ h1, h2, h3, h4, h5, h6 {
   /* === BUTTONS ==================================================== */
   .btn-teal {
     position: relative;
-    background: var(--ink);
+    background: var(--primary);
     color: #ffffff;
     padding: 11px 22px;
     border-radius: 9999px;
     font-weight: 600;
-    border: 1px solid rgba(15,23,42,0.14);
+    border: 1px solid rgba(77,124,15,0.28);
     cursor: pointer;
     font-size: 14px;
     letter-spacing: 0.01em;
     box-shadow:
       0 1px 0 rgba(255,255,255,0.10) inset,
-      0 12px 28px -18px rgba(15,23,42,0.45);
+      0 12px 28px -18px rgba(77,124,15,0.55);
     transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease;
   }
-  .btn-teal:hover { background: #111827; transform: translateY(-1px);
+  .btn-teal:hover { background: #3a5a0c; transform: translateY(-1px);
     box-shadow:
       0 1px 0 rgba(255,255,255,0.12) inset,
-      0 16px 36px -18px rgba(15,23,42,0.55);
+      0 16px 36px -18px rgba(77,124,15,0.65);
   }
   .btn-teal:active { transform: translateY(0); }
   .btn-teal:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }

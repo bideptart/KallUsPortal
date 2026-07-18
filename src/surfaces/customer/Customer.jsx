@@ -115,8 +115,11 @@ export default function Customer() {
           <div className="lg:hidden text-xs text-mute font-semibold uppercase tracking-wider">
             {active.label}
           </div>
-          <div className="ml-auto">
-            <TopBar />
+          <div className="ml-auto flex items-center gap-3">
+            {tab === 'overview' && (
+              <Link to="/dashboard/numbers" className="btn-teal text-sm whitespace-nowrap">+ Add plan / number</Link>
+            )}
+            {tab !== 'overview' && <TopBar />}
           </div>
         </div>
 
