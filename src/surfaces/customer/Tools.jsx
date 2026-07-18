@@ -7,16 +7,28 @@ import { api } from '../../api.js';
 // dials this number. Backed by the dashboard MCP set_/get_transfer_number
 // tools via /api/numbers/:id/transfer.
 //
+// Numbers/agents are picked from a card grid (one per plan/number) rather
+// than a dropdown — tapping "Configure →" on a card reveals its tools below.
+//
 // Saving uses the same two-step flow as the Knowledge & Agent page: a
 // confirmation modal explaining the ~2-minute propagation window, then a
 // countdown that locks the form until the change has gone live.
 // =============================================================================
 const PROPAGATION_SECONDS = 120;
 
+// Shown only when the account has no real plans/numbers yet, so the page
+// still demonstrates its card-grid layout instead of sitting empty. Fake
+// name/phone/slug — not a real customer. "Configure" on this card works
+// locally (no backend call) since there's no real number id to save against.
+const DEMO_NUMBERS = [
+  { id: 'demo-1', value: '+10000000099', label: '', agentName: 'Sample Agent', agentSlug: 'sample-agent', plan: { label: 'Starter' } },
+];
+
 export default function Tools() {
   const [numbers, setNumbers] = useState([]);
   const [selectedId, setSelectedId] = useState('');
-  const [loadErr, setLoadErr] = useState('');
+  const [loadingNumbers, setLoadingNumbers] = useState(true);
+  const [isDemo, setIsDemo] = useState(false);
 
   // Per-selection transfer state.
   const [current, setCurrent] = useState(null);   // { number, source } | null
@@ -39,21 +51,38 @@ export default function Tools() {
     return () => clearTimeout(t);
   }, [propagating]);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const r = await api('/api/numbers');
-        setNumbers(r.numbers || []);
-        if ((r.numbers || []).length) setSelectedId(r.numbers[0].id);
-      } catch (e) { setLoadErr(e.message); }
-    })();
-  }, []);
+  const loadNumbers = async () => {
+    setLoadingNumbers(true);
+    try {
+      const r = await api('/api/numbers');
+      const real = r.numbers || [];
+      if (real.length === 0) {
+        setNumbers(DEMO_NUMBERS);
+        setIsDemo(true);
+      } else {
+        setNumbers(real);
+        setIsDemo(false);
+      }
+    } catch (e) {
+      setNumbers(DEMO_NUMBERS);
+      setIsDemo(true);
+    }
+    finally { setLoadingNumbers(false); }
+  };
+  useEffect(() => { loadNumbers(); }, []);
 
   const selected = useMemo(() => numbers.find((n) => n.id === selectedId) || null, [numbers, selectedId]);
 
   const loadCurrent = async (id) => {
     if (!id) return;
-    setCurLoading(true); setErr(''); setMsg('');
+    setErr(''); setMsg('');
+    // Demo card — no real number id to look up. Start blank, entirely local.
+    if (id.startsWith('demo-')) {
+      setCurrent(null);
+      setInput('');
+      return;
+    }
+    setCurLoading(true);
     try {
       const r = await api(`/api/numbers/${id}/transfer`);
       setCurrent(r);
@@ -79,7 +108,14 @@ export default function Tools() {
   const confirmSave = async () => {
     const number = pendingSave;
     setPendingSave(null);
-    setBusy(true); setErr(''); setMsg('');
+    setErr(''); setMsg('');
+    // Demo card — nothing to save server-side; just reflect it locally.
+    if (selectedId.startsWith('demo-')) {
+      setCurrent({ number, source: 'sample' });
+      setMsg('✓ Saved locally — connect a real plan/number to apply this to a live agent.');
+      return;
+    }
+    setBusy(true);
     try {
       await api(`/api/numbers/${selectedId}/transfer`, { method: 'POST', body: { number } });
       setMsg('✓ Saved — applying the forwarding number to your agent.');
@@ -97,11 +133,18 @@ export default function Tools() {
   return (
     <div>
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">🛠 Tools</h1>
-        <p className="text-mute">Configure what your agent can do. Set the number it forwards callers to when they ask for a human.</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Tools</h1>
+        <p className="text-mute mt-1">
+          Pick a plan / number below, then configure its tools — call transfer, booking notifications, more soon.
+          Changes take effect on the next call (no restart needed).
+        </p>
       </div>
 
-      {loadErr && <div className="mt-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">⚠ {loadErr}</div>}
+      <div className="mt-4">
+        <button onClick={loadNumbers} disabled={loadingNumbers} className="btn-ghost text-sm">
+          {loadingNumbers ? 'Loading…' : '↻ Refresh'}
+        </button>
+      </div>
 
       {/* Propagation banner — shown after a save while the change goes live. */}
       {propagating && (
@@ -142,71 +185,100 @@ export default function Tools() {
           No numbers yet. Add one from Plan &amp; Numbers to configure tools.
         </div>
       ) : (
-        <div className="mt-6 grid lg:grid-cols-[320px_1fr] gap-6">
-          {/* Agent picker */}
-          <div className="form-card">
-            <div className="field-label">Agent</div>
-            <select
-              className="input mt-1"
-              value={selectedId}
-              onChange={(e) => setSelectedId(e.target.value)}
-              disabled={propagationLocked}
-            >
-              {numbers.map((n) => (
-                <option key={n.id} value={n.id}>
-                  {n.value}{n.label ? ` — ${n.label}` : ''}
-                </option>
-              ))}
-            </select>
-            <div className="field-help mt-2">Each agent can forward to its own number.</div>
+        <>
+          <div className="flex items-center gap-2 mt-6 mb-2">
+            <span className="text-[10px] uppercase tracking-wider text-mute font-semibold">Your plans &amp; numbers</span>
+            {isDemo && (
+              <span className="pill bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300 text-[10px] uppercase tracking-wider">
+                Sample data
+              </span>
+            )}
           </div>
-
-          {/* Call forwarding card */}
-          <div className="form-card">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">📞</span>
-              <div className="text-base font-bold text-slate-900 dark:text-slate-100">Call forwarding (transfer to human)</div>
-            </div>
-            <p className="text-sm text-mute mt-1">
-              When a caller asks to speak to a person, {selected ? <span className="font-mono">{selected.value}</span> : 'this agent'}’s
-              agent will blind-transfer the call to this number.
+          {isDemo && (
+            <p className="text-xs text-mute -mt-1 mb-3">
+              No plans/numbers connected yet — showing a sample card so you can preview the layout.
             </p>
-
-            <div className="mt-4">
-              <label className="field-label">Forwarding number (E.164)</label>
-              <input
-                className="input"
-                value={input}
-                onChange={(e) => { setInput(e.target.value); setMsg(''); setErr(''); }}
-                placeholder="+14018677668"
-                disabled={curLoading || busy || propagationLocked}
-              />
-              <div className="text-[11px] text-mute mt-1">
-                Include the country code, e.g. <span className="font-mono">+1</span> for US.
-                You can’t forward to one of your own inbound numbers.
+          )}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {numbers.map((n) => (
+              <div
+                key={n.id}
+                className={`form-card transition ${selectedId === n.id ? 'border-lime-400 ring-2 ring-lime-500/30' : ''}`}
+              >
+                <div className="font-bold text-slate-900 dark:text-slate-100 truncate">
+                  {n.agentName || n.label || 'Unnamed agent'}
+                </div>
+                <a href={`tel:${n.value}`} className="mt-0.5 block text-sm text-lime-600 dark:text-lime-400 hover:underline font-mono">
+                  {n.value}
+                </a>
+                {n.agentSlug && (
+                  <div className="mt-0.5 text-xs text-mute font-mono truncate">{n.agentSlug}</div>
+                )}
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <span className="pill bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 text-[10px] uppercase tracking-wider font-semibold">
+                    {n.plan?.label || 'Starter'}
+                  </span>
+                  <button
+                    onClick={() => setSelectedId(n.id)}
+                    disabled={propagationLocked}
+                    className="btn-teal text-xs py-1.5 px-3"
+                  >
+                    Configure →
+                  </button>
+                </div>
               </div>
-            </div>
-
-            <div className="mt-3 flex items-center gap-3 flex-wrap">
-              <button className="btn-teal" onClick={requestSave} disabled={busy || curLoading || propagationLocked || !input.trim()}>
-                {propagationLocked ? `⏳ Locked · ${propagating.secondsLeft}s` : (busy ? 'Saving…' : '💾 Save forwarding number')}
-              </button>
-              {curLoading ? (
-                <span className="text-xs text-mute">Loading current…</span>
-              ) : current?.number ? (
-                <span className="text-xs text-mute">
-                  Current: <span className="font-mono text-slate-900 dark:text-slate-100">{current.number}</span>
-                  {current.source && /no override/i.test(current.source) && <span> · using account default</span>}
-                </span>
-              ) : (
-                <span className="text-xs text-mute">No forwarding number set yet.</span>
-              )}
-            </div>
-
-            {msg && <div className="mt-3 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">{msg}</div>}
-            {err && <div className="mt-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">⚠ {err}</div>}
+            ))}
           </div>
-        </div>
+
+          {!selected ? (
+            <p className="mt-4 text-sm text-mute italic">↑ Tap a card above to configure its tools.</p>
+          ) : (
+            <div className="mt-6 form-card">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📞</span>
+                <div className="text-base font-bold text-slate-900 dark:text-slate-100">Call forwarding (transfer to human)</div>
+              </div>
+              <p className="text-sm text-mute mt-1">
+                When a caller asks to speak to a person, <span className="font-mono">{selected.value}</span>’s
+                agent will blind-transfer the call to this number.
+              </p>
+
+              <div className="mt-4">
+                <label className="field-label">Forwarding number (E.164)</label>
+                <input
+                  className="input"
+                  value={input}
+                  onChange={(e) => { setInput(e.target.value); setMsg(''); setErr(''); }}
+                  placeholder="+14018677668"
+                  disabled={curLoading || busy || propagationLocked}
+                />
+                <div className="text-[11px] text-mute mt-1">
+                  Include the country code, e.g. <span className="font-mono">+1</span> for US.
+                  You can’t forward to one of your own inbound numbers.
+                </div>
+              </div>
+
+              <div className="mt-3 flex items-center gap-3 flex-wrap">
+                <button className="btn-teal" onClick={requestSave} disabled={busy || curLoading || propagationLocked || !input.trim()}>
+                  {propagationLocked ? `⏳ Locked · ${propagating.secondsLeft}s` : (busy ? 'Saving…' : '💾 Save forwarding number')}
+                </button>
+                {curLoading ? (
+                  <span className="text-xs text-mute">Loading current…</span>
+                ) : current?.number ? (
+                  <span className="text-xs text-mute">
+                    Current: <span className="font-mono text-slate-900 dark:text-slate-100">{current.number}</span>
+                    {current.source && /no override/i.test(current.source) && <span> · using account default</span>}
+                  </span>
+                ) : (
+                  <span className="text-xs text-mute">No forwarding number set yet.</span>
+                )}
+              </div>
+
+              {msg && <div className="mt-3 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">{msg}</div>}
+              {err && <div className="mt-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">⚠ {err}</div>}
+            </div>
+          )}
+        </>
       )}
 
       {/* Save-confirmation modal — explains the 2-minute propagation window
