@@ -13,6 +13,7 @@ import Plans from './Plans.jsx';
 import Settings from './Settings.jsx';
 import Reports from './Reports.jsx';
 import Overview from '../customer/Overview.jsx';
+import Analytics from '../customer/Analytics.jsx';
 import Transactions from '../customer/Transactions.jsx';
 import Logo from '../../components/Logo.jsx';
 import TopBar from '../../components/TopBar.jsx';
@@ -193,7 +194,8 @@ export default function Admin() {
         {tab === 'tools' && <Tools />}
         {(tab === 'playground' || tab === 'mcp') && <McpBrowser />}
         {(tab === 'kb' || tab === 'bulk')               && <Bulk />}
-        {(tab === 'analytics' || tab === 'usage')       && <Usage />}
+        {tab === 'analytics'                             && <Analytics />}
+        {tab === 'usage'                                 && <Usage />}
         {(tab === 'calls' || tab === 'logs')            && <Logs />}
         {tab === 'reports'                               && <Reports />}
         {tab === 'health'                                && <Health />}

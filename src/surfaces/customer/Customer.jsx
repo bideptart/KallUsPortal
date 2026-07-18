@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { useApp } from '../../AppContext.jsx';
 import Overview from './Overview.jsx';
+import Analytics from './Analytics.jsx';
 import Calls from './Calls.jsx';
 import Recordings from './Recordings.jsx';
 import Reports from './Reports.jsx';
@@ -21,8 +22,7 @@ import BookingIcon from '../../components/BookingIcon.jsx';
 
 // Sidebar nav — unified across Admin/Customer to a common shape. "Agents"
 // and "Knowledge Base" both land on KbAgent (it already holds both the
-// agent config and the knowledge-base fields); "Analytics" reuses Overview
-// (it already shows the usage stat tiles).
+// agent config and the knowledge-base fields).
 // Split around "Call Activity" so the collapsible group renders inline,
 // right where the flat "⚡ Call Activity" entry used to sit (between
 // Analytics and Reports) instead of at the end of the list.
@@ -30,7 +30,7 @@ const NAV_TABS_BEFORE_CALLS = [
   { id: 'overview',  label: '📊 Overview',       Component: Overview },
   { id: 'agents',    label: '🤖 Agents',         Component: KbAgent },
   { id: 'kb',        label: '📖 Knowledge Base', Component: KbAgent },
-  { id: 'analytics', label: '📈 Analytics',      Component: Overview },
+  { id: 'analytics', label: '📈 Analytics',      Component: Analytics },
 ];
 const NAV_TABS_AFTER_CALLS = [
   { id: 'reports',      label: '📄 Reports',           Component: Reports },
