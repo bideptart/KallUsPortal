@@ -53,7 +53,7 @@ import { createReadStream } from 'fs';
 import { stat } from 'fs/promises';
 import twilioPkg from 'twilio';
 const { twiml: TwilioTwiml } = twilioPkg;
-import { sqliteAuthRouter } from './sqliteAuth.js';
+import { sqliteAuthRouter } from './demoAuth.js';
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
@@ -88,7 +88,7 @@ app.use(express.json({
 app.use(express.urlencoded({ extended: false }));
 
 // Zero-setup SQLite-backed demo login (superadmin/admin/user), independent
-// of the Postgres `users`/`sessions` tables used below. See server/sqliteAuth.js.
+// of the Postgres `users`/`sessions` tables used below. See server/demoAuth.js.
 app.use('/api/auth', sqliteAuthRouter);
 
 const SESSION_DAYS = 30;
@@ -5479,36 +5479,49 @@ app.use((err, _req, res, _next) => {
 
 const PORT = Number(process.env.PORT) || 4000;
 
-(async () => {
-  try {
-    await runMigrations();
-  } catch (e) {
-    console.error('[migrations] failed:', e.message);
-  }
-  try {
-    await seedAdminUser();
-  } catch (e) {
-    console.error('[seed] failed:', e.message);
-  }
-  app.listen(PORT, () => console.log(`[api] listening on http://localhost:${PORT}`));
+// On Vercel this module is imported by api/index.js as a serverless request
+// handler — there's no persistent process to `.listen()` on, and background
+// timers/signal handlers don't survive between invocations, so all of that
+// is skipped there. Migrations/seeding still run (idempotent, best-effort)
+// so a cold start against a real Postgres DB stays in sync.
+if (!process.env.VERCEL) {
+  (async () => {
+    try {
+      await runMigrations();
+    } catch (e) {
+      console.error('[migrations] failed:', e.message);
+    }
+    try {
+      await seedAdminUser();
+    } catch (e) {
+      console.error('[seed] failed:', e.message);
+    }
+    app.listen(PORT, () => console.log(`[api] listening on http://localhost:${PORT}`));
 
-  // Fire the live-agent sweep ~10s after boot — enough time for MCP to wake
-  // up. Fire-and-forget; failures are logged but don't crash the process.
-  // Repeats every 30 minutes so long-running corruption gets healed within
-  // half an hour even if nobody saves anything in the UI.
-  const SWEEP_INTERVAL_MS = 30 * 60 * 1000;
-  setTimeout(() => {
-    startupAgentSweep({ q }).catch((e) => console.warn('[startupSweep] errored:', e.message));
-    setInterval(() => {
+    // Fire the live-agent sweep ~10s after boot — enough time for MCP to wake
+    // up. Fire-and-forget; failures are logged but don't crash the process.
+    // Repeats every 30 minutes so long-running corruption gets healed within
+    // half an hour even if nobody saves anything in the UI.
+    const SWEEP_INTERVAL_MS = 30 * 60 * 1000;
+    setTimeout(() => {
       startupAgentSweep({ q }).catch((e) => console.warn('[startupSweep] errored:', e.message));
-    }, SWEEP_INTERVAL_MS);
-  }, 10_000);
-})();
+      setInterval(() => {
+        startupAgentSweep({ q }).catch((e) => console.warn('[startupSweep] errored:', e.message));
+      }, SWEEP_INTERVAL_MS);
+    }, 10_000);
+  })();
 
-const shutdown = async () => {
-  console.log('[api] shutting down');
-  await pool.end().catch(() => {});
-  process.exit(0);
-};
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
+  const shutdown = async () => {
+    console.log('[api] shutting down');
+    await pool.end().catch(() => {});
+    process.exit(0);
+  };
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
+} else {
+  // Best-effort migrations/seed on cold start; never blocks the handler.
+  runMigrations().catch((e) => console.error('[migrations] failed:', e.message));
+  seedAdminUser().catch((e) => console.error('[seed] failed:', e.message));
+}
+
+export default app;
