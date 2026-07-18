@@ -271,7 +271,7 @@ export default function Overview({ rechargeOn }) {
                 <td colSpan={2} className="font-semibold uppercase text-xs tracking-wide text-mute">
                   Across all numbers
                   {displayStats?.allTimeSpendInr != null && (
-                    <span className="normal-case font-normal ml-2 text-mute">· ≈ R{Number(displayStats.allTimeSpendInr).toLocaleString('en-ZA')} used</span>
+                    <span className="normal-case font-normal ml-2 text-mute">· ≈ ${Number(displayStats.allTimeSpendInr).toLocaleString('en-US')} used</span>
                   )}
                 </td>
                 <td colSpan={2} />

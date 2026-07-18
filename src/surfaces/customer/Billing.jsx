@@ -7,7 +7,7 @@ import AddMinutesModal from '../../components/AddMinutesModal.jsx';
 // behave identically here (single source of truth for the catalog UI).
 import { ChangePlanModal, AddNumberModal } from './Numbers.jsx';
 
-const inr = (n) => `$${Number(n || 0).toLocaleString('en-US')}`;
+const rand = (n) => `$${Number(n || 0).toLocaleString('en-US')}`;
 
 const fmtDate = (iso) => {
   if (!iso) return '—';
@@ -47,9 +47,9 @@ const planTagClass = (id) => {
   return 'bg-slate-200 text-slate-700';
 };
 
-// Brand gradient — black to rose so billing matches the rest of the updated
-// application theme instead of the old blue-purple palette.
-const BRAND_GRADIENT = 'bg-[linear-gradient(135deg,#0b0b0c_0%,#171717_45%,#0d9488_100%)]';
+// Brand gradient — KallUS lime, matching --grad-start/--grad-mid/--grad-end
+// in index.css so Billing uses the same primary color as the rest of the app.
+const BRAND_GRADIENT = 'bg-[linear-gradient(135deg,#6fa524_0%,#5c8a1e_50%,#4d7c0f_100%)]';
 
 const TABS = [
   { id: 'my-plans',     label: 'My Plans' },
@@ -167,16 +167,15 @@ export default function Billing() {
       {/* ===== HEADER ====================================================== */}
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Billing &amp; Plans</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Billing &amp; minutes</h1>
           <p className="text-sm text-mute mt-1">
-            9278.ai Voice AI · operated by <strong>Acepeak</strong> · Signapore <span className="text-mute">IN</span>{' '}
-            — plans per number, instant upgrades, shared wallet.
+            <strong>KallUS</strong> Voice AI — plans per number, instant upgrades, shared wallet.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="btn-ghost text-sm" onClick={() => setTab('wallet')}>
-            ⬇ Invoices
-          </button>
+          <Link to="/dashboard/transactions" className="btn-ghost text-sm">
+            Transaction history
+          </Link>
           <button
             onClick={() => setShowAddPlan(true)}
             className={`px-4 py-2 rounded-lg text-white text-sm font-semibold ${BRAND_GRADIENT}`}
@@ -196,7 +195,7 @@ export default function Billing() {
               onClick={() => setTab(t.id)}
               className={`px-3 sm:px-4 py-2 text-sm font-semibold whitespace-nowrap border-b-2 transition ${
                 active
-                  ? 'border-rose-500 text-rose-600'
+                  ? 'border-lime-600 text-lime-700'
                   : 'border-transparent text-mute hover:text-slate-900'
               }`}
             >
@@ -338,7 +337,7 @@ function MyPlansTab({
             <span>👛</span>SHARED WALLET BALANCE
           </div>
           <div className="mt-2 text-4xl font-extrabold tracking-tight">
-            {inr(walletBalance)}
+            {rand(walletBalance)}
           </div>
           <div className="mt-3 flex items-center gap-2">
             <button
@@ -427,7 +426,7 @@ function ActivePlanCard({ number: n, walletBalance, usedMinutes, onChangePlan, o
         <div className="text-white">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-base sm:text-lg font-bold">⭐ {n.plan?.label || 'Starter'} plan</span>
-            <span className="text-sm opacity-90">· {inr(n.plan?.amount || 0)}/mo</span>
+            <span className="text-sm opacity-90">· {rand(n.plan?.amount || 0)}/mo</span>
           </div>
           <div className="text-xs sm:text-sm font-mono mt-0.5 opacity-95">{n.value}</div>
         </div>
@@ -476,7 +475,7 @@ function ActivePlanCard({ number: n, walletBalance, usedMinutes, onChangePlan, o
         {/* Overflow warning */}
         {overflow > 0 && (
           <div className="mt-3 text-xs text-amber-700">
-            Plan minutes used up — extra {overflow.toFixed(0)} min billed from wallet ({inr(overflowCost)}).
+            Plan minutes used up — extra {overflow.toFixed(0)} min billed from wallet ({rand(overflowCost)}).
             <strong className="text-amber-800"> Restart plan to reset</strong>, or it resets on renewal.
           </div>
         )}
@@ -570,7 +569,7 @@ function PlansTab({ plans, numbers, onPickPlan }) {
               <div className="text-lg font-extrabold text-slate-900">{p.label}</div>
               {p.sub && <div className="text-xs text-mute mt-0.5">{p.sub}</div>}
               <div className="mt-3 flex items-end gap-1">
-                <span className="text-3xl font-extrabold text-slate-900">{inr(p.amount)}</span>
+                <span className="text-3xl font-extrabold text-slate-900">{rand(p.amount)}</span>
                 <span className="text-xs text-mute pb-1">/mo</span>
               </div>
               <div className="text-[11px] text-mute mt-1">
@@ -683,7 +682,7 @@ function WalletTab({ wallet, transactions, packs, currentUser, onSaved }) {
           <div className="text-xs font-semibold uppercase tracking-wider opacity-90 flex items-center gap-1.5">
             <span>👛</span>CURRENT BALANCE
           </div>
-          <div className="mt-2 text-4xl font-extrabold">{inr(balance)}</div>
+          <div className="mt-2 text-4xl font-extrabold">{rand(balance)}</div>
           <div className="text-xs opacity-90 mt-1">
             Used as backup when a number's plan minutes run out.
           </div>
@@ -712,7 +711,7 @@ function WalletTab({ wallet, transactions, packs, currentUser, onSaved }) {
                       : 'border-slate-200 bg-white hover:border-rose-300'
                   } disabled:opacity-60 disabled:cursor-not-allowed`}
                 >
-                  <div className="text-lg font-extrabold text-slate-900">{inr(p.amount)}</div>
+                  <div className="text-lg font-extrabold text-slate-900">{rand(p.amount)}</div>
                 </button>
               );
             })}
@@ -738,7 +737,7 @@ function WalletTab({ wallet, transactions, packs, currentUser, onSaved }) {
             disabled={topUpBusy || !finalAmount}
             className={`mt-4 w-full px-4 py-2.5 rounded-lg text-white text-sm font-semibold ${BRAND_GRADIENT} disabled:opacity-60`}
           >
-            {topUpBusy ? 'Opening Stripe…' : `Add ${inr(finalAmount)} to wallet`}
+            {topUpBusy ? 'Opening Stripe…' : `Add ${rand(finalAmount)} to wallet`}
           </button>
 
           {topUpErr && <div className="mt-2 text-xs text-red-600">⚠ {topUpErr}</div>}
@@ -820,7 +819,7 @@ function WalletTab({ wallet, transactions, packs, currentUser, onSaved }) {
                         Number(t.amountUsd) > 0 ? 'text-emerald-600' : 'text-slate-700'
                       }`}>
                         {t.amountUsd
-                          ? (Number(t.amountUsd) > 0 ? `+${inr(Math.abs(t.amountUsd))}` : `−${inr(Math.abs(t.amountUsd))}`)
+                          ? (Number(t.amountUsd) > 0 ? `+${rand(Math.abs(t.amountUsd))}` : `−${rand(Math.abs(t.amountUsd))}`)
                           : '—'
                         }
                       </td>
@@ -1030,7 +1029,7 @@ function AutoRechargeTab({ numbers, cards = [], onSaved, resumePlanId, onResumed
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-bold text-slate-900">⭐ {planLabel} plan</span>
-                      <span className="text-xs text-mute">· {inr(planAmount)}/mo</span>
+                      <span className="text-xs text-mute">· {rand(planAmount)}/mo</span>
                     </div>
                     <div className="mt-0.5 text-sm font-mono text-rose-600">{n.value}</div>
                     {n.label && <div className="mt-0.5 text-xs text-mute">🏷 {n.label}</div>}
@@ -1151,7 +1150,7 @@ function RestartPlanModal({ number: n, currentUser, onClose, onApplied }) {
           <div>
             <div className="text-xs font-semibold text-mute uppercase tracking-wider">Restart plan</div>
             <div className="mt-1 text-base font-bold text-slate-900">{n.value}</div>
-            <div className="text-xs text-mute">{n.plan?.label} plan · {inr(n.plan?.amount)}</div>
+            <div className="text-xs text-mute">{n.plan?.label} plan · {rand(n.plan?.amount)}</div>
           </div>
           <button onClick={onClose} className="text-2xl text-mute hover:text-slate-900">×</button>
         </div>
@@ -1172,7 +1171,7 @@ function RestartPlanModal({ number: n, currentUser, onClose, onApplied }) {
             disabled={busy}
             className={`px-5 py-2 rounded-lg text-white text-sm font-semibold ${BRAND_GRADIENT}`}
           >
-            {busy ? 'Opening Stripe…' : `Pay ${inr(n.plan?.amount)} →`}
+            {busy ? 'Opening Stripe…' : `Pay ${rand(n.plan?.amount)} →`}
           </button>
         </div>
       </div>

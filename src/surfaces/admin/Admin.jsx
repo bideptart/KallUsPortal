@@ -13,6 +13,7 @@ import Plans from './Plans.jsx';
 import Settings from './Settings.jsx';
 import Reports from './Reports.jsx';
 import Overview from '../customer/Overview.jsx';
+import Transactions from '../customer/Transactions.jsx';
 import Logo from '../../components/Logo.jsx';
 import TopBar from '../../components/TopBar.jsx';
 import Footer from '../../components/Footer.jsx';
@@ -196,7 +197,8 @@ export default function Admin() {
         {(tab === 'calls' || tab === 'logs')            && <Logs />}
         {tab === 'reports'                               && <Reports />}
         {tab === 'health'                                && <Health />}
-        {(tab === 'billing' || tab === 'transactions' || tab === 'payments') && <Payments />}
+        {(tab === 'billing' || tab === 'payments') && <Payments />}
+        {tab === 'transactions' && <Transactions />}
         {(tab === 'account' || tab === 'settings')      && <Settings />}
         {tab === 'resellers' && <Resellers />}
         {tab === 'numbers'   && <Numbers />}
@@ -204,11 +206,13 @@ export default function Admin() {
         {tab === 'booking-history' && <BookingHistory />}
         {tab === 'tickets'   && <Tickets />}
 
-        {/* Overview shares the Customer page, which is designed to end in a
-            Footer — the other admin tabs (tables/tools) weren't, so they keep
-            the invisible sink that absorbs `.dashboard-main > :last-child`'s
-            auto margin without rendering anything. */}
-        {tab === 'overview' ? (
+        {/* Overview shares the Customer page, and Billing/Transactions share
+            the customer Payments/Transactions views — all three are designed
+            to end in a Footer. The other admin tabs (tables/tools) weren't,
+            so they keep the invisible sink that absorbs
+            `.dashboard-main > :last-child`'s auto margin without rendering
+            anything. */}
+        {(tab === 'overview' || tab === 'billing' || tab === 'transactions') ? (
           <div className="pt-10 -mx-4 sm:-mx-6 lg:-mx-8">
             <Footer />
           </div>
