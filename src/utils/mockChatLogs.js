@@ -4,7 +4,10 @@
 // end reason). Swap buildMockChatSessions() for a real API call once that
 // endpoint exists; the row UI (ChatLogRow.jsx) already expects this shape.
 
-const AGENT_NAMES = ['My Agent', 'Support Agent', 'Sales Agent'];
+// Every chat session on this portal is handled by the customer's single
+// configured voice/chat agent, so every row shows the same "My Agent" label
+// (matching the reference site — no per-row agent rotation).
+const AGENT_NAME = 'My Agent';
 const END_REASONS = ['hangup', 'timeout', 'completed'];
 
 const MOCK_TRANSCRIPTS = [
@@ -42,7 +45,7 @@ export const buildMockChatSessions = (count = 24) => Array.from({ length: count 
     id: `chat-${i}`,
     sessionId: uuidish(i),
     startTime: start.toISOString(),
-    agentName: AGENT_NAMES[i % AGENT_NAMES.length],
+    agentName: AGENT_NAME,
     hasTranscript,
     duration: 5 + Math.floor(rand(i * 11) * 300),
     endReason: END_REASONS[i % END_REASONS.length],

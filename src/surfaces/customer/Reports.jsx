@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Phone, MessageSquare } from 'lucide-react';
 import { api, getToken } from '../../api.js';
 import { useApp } from '../../AppContext.jsx';
 import DateRangePicker from '../../components/DateRangePicker.jsx';
 import ChatLogRow from '../../components/ChatLogRow.jsx';
+import SearchIcon from '../../components/SearchIcon.jsx';
 import { buildMockChatSessions } from '../../utils/mockChatLogs.js';
 import { buildMockCallRecordings } from '../../utils/mockCallLogs.js';
 import { AddNumberModal } from './Numbers.jsx';
@@ -263,14 +265,17 @@ export default function Reports() {
                 </span>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <input
-                  type="text"
-                  inputMode={logsTab === 'call' ? 'tel' : 'text'}
-                  placeholder={logsTab === 'call' ? 'Search by number' : 'Search by session or agent'}
-                  className="input text-sm py-1.5 w-44"
-                  value={inboundSearch}
-                  onChange={(e) => setInboundSearch(e.target.value)}
-                />
+                <div className="relative">
+                  <SearchIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    inputMode={logsTab === 'call' ? 'tel' : 'text'}
+                    placeholder={logsTab === 'call' ? 'Search by number' : 'Search by session or agent'}
+                    className="input text-sm py-1.5 pl-9 w-44"
+                    value={inboundSearch}
+                    onChange={(e) => setInboundSearch(e.target.value)}
+                  />
+                </div>
                 <button
                   className="btn-ghost text-xs py-1.5 px-3"
                   onClick={() => downloadCsv(logsTab === 'call' ? filteredRecordings : filteredChats)}
@@ -288,6 +293,7 @@ export default function Reports() {
                 from={dateFrom}
                 to={dateTo}
                 onChange={({ from, to }) => setRange({ from, to })}
+                accent="teal"
               />
             </div>
 
@@ -327,23 +333,28 @@ export default function Reports() {
             {/* Recording / Transcript sub-tabs — call logs only; chat
                 sessions are text-only so there's no recording view. */}
             {logsTab === 'call' && (
-              <div className="mt-4 inline-flex rounded-lg border border-slate-200 overflow-hidden">
-                <button
-                  className={`px-4 py-1.5 text-sm font-medium transition ${
-                    viewTab === 'recording' ? 'bg-lime-500 text-white' : 'bg-white text-slate-700 hover:bg-slate-50'
-                  }`}
-                  onClick={() => setViewTab('recording')}
-                >
-                  🎙 Recording
-                </button>
-                <button
-                  className={`px-4 py-1.5 text-sm font-medium transition border-l border-slate-200 ${
-                    viewTab === 'transcript' ? 'bg-lime-500 text-white' : 'bg-white text-slate-700 hover:bg-slate-50'
-                  }`}
-                  onClick={() => setViewTab('transcript')}
-                >
-                  📝 Transcript
-                </button>
+              <div className="mt-4 flex items-center justify-between flex-wrap gap-2">
+                <div className="inline-flex rounded-full border border-slate-200 overflow-hidden">
+                  <button
+                    className={`px-5 py-2 text-sm font-semibold transition ${
+                      viewTab === 'recording' ? 'bg-blue-500 text-white' : 'bg-white text-slate-700 hover:bg-slate-50'
+                    }`}
+                    onClick={() => setViewTab('recording')}
+                  >
+                    Recording
+                  </button>
+                  <button
+                    className={`px-5 py-2 text-sm font-semibold transition ${
+                      viewTab === 'transcript' ? 'bg-blue-500 text-white' : 'bg-white text-slate-700 hover:bg-slate-50'
+                    }`}
+                    onClick={() => setViewTab('transcript')}
+                  >
+                    Transcript
+                  </button>
+                </div>
+                <span className="text-xs text-mute">
+                  {viewTab === 'recording' ? 'Listen back to any recorded call.' : "Open any call's transcript and AI summary."}
+                </span>
               </div>
             )}
           </div>
@@ -394,24 +405,23 @@ export default function Reports() {
               const transcriptOpen = t?.open;
               const summaryOpen = s?.open;
               return (
-                <div key={r.callId} className="form-card">
+                <div key={r.callId} className="form-card !p-4">
                   {/* Row header */}
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2 text-xs">
                         <span className="text-mute">{fmtTime(r.startTime)}</span>
                         <span className="pill bg-slate-100 text-slate-700 text-xs">{fmtDirection(r.direction)}</span>
-                        {viewTab === 'transcript' ? (
-                          r.hasTranscript ? (
-                            <span className="pill bg-lime-100 text-lime-700 text-xs">📝 transcript available</span>
-                          ) : (
-                            <span className="pill bg-slate-100 text-slate-500 text-xs">no transcript</span>
-                          )
+                        {r.hasTranscript ? (
+                          <span className="pill bg-teal-100 text-teal-700 text-xs">transcript available</span>
                         ) : (
+                          <span className="pill bg-slate-100 text-slate-500 text-xs">no transcript</span>
+                        )}
+                        {viewTab === 'recording' && (
                           r.audioUrl ? (
-                            <span className="pill bg-lime-100 text-lime-700 text-xs">🎙 recording</span>
+                            <span className="pill bg-teal-100 text-teal-700 text-xs ml-auto">recording</span>
                           ) : (
-                            <span className="pill bg-slate-100 text-slate-500 text-xs">no recording</span>
+                            <span className="pill bg-slate-100 text-slate-500 text-xs ml-auto">no recording</span>
                           )
                         )}
                       </div>
@@ -424,7 +434,7 @@ export default function Reports() {
                       </div>
                     </div>
 
-                    {viewTab === 'transcript' ? (
+                    {viewTab === 'transcript' && (
                       <div className="flex flex-col items-end gap-2">
                         <button
                           className="btn-ghost text-xs py-1.5 px-3"
@@ -432,7 +442,7 @@ export default function Reports() {
                           disabled={!r.hasTranscript}
                           title={r.hasTranscript ? '' : 'No transcript for this call'}
                         >
-                          {t?.loading ? 'Loading…' : transcriptOpen ? 'Hide transcript ▲' : '📝 Transcript'}
+                          {t?.loading ? 'Loading…' : transcriptOpen ? 'Hide transcript ▲' : 'Transcript'}
                         </button>
                         <button
                           className="btn-ghost text-xs py-1.5 px-3"
@@ -441,10 +451,6 @@ export default function Reports() {
                           {s?.loading ? 'Loading…' : summaryOpen ? 'Hide summary ▲' : '✨ Summary'}
                         </button>
                       </div>
-                    ) : (
-                      <span className="text-xs text-mute">
-                        {r.audioUrl ? 'recording' : 'no recording'}
-                      </span>
                     )}
                   </div>
 
@@ -594,26 +600,28 @@ export default function Reports() {
 
         {/* ============ SIDEBAR ============ */}
         <div className="space-y-4">
-          <div className="form-card !p-3 flex flex-col gap-1">
+          <div className="form-card !p-3 space-y-1">
             <button
-              className={`text-left px-3 py-2 rounded-lg text-sm font-semibold transition ${
-                logsTab === 'call' ? 'bg-lime-100 text-lime-800' : 'text-slate-600 hover:bg-slate-50'
+              className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm transition ${
+                logsTab === 'call' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 font-medium hover:bg-slate-50'
               }`}
               onClick={() => setLogsTab('call')}
             >
-              📞 Call Logs
+              <Phone className="w-4 h-4 shrink-0" />
+              Call Logs
             </button>
             <button
-              className={`text-left px-3 py-2 rounded-lg text-sm font-semibold transition ${
-                logsTab === 'chat' ? 'bg-lime-100 text-lime-800' : 'text-slate-600 hover:bg-slate-50'
+              className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm transition ${
+                logsTab === 'chat' ? 'bg-purple-50 text-purple-700 font-bold' : 'text-slate-600 font-medium hover:bg-slate-50'
               }`}
               onClick={() => setLogsTab('chat')}
             >
-              💬 Chat Logs
+              <MessageSquare className="w-4 h-4 shrink-0" />
+              Chat Logs
             </button>
           </div>
 
-          <div className="form-card">
+          <div className="form-card !p-4">
             <div className="font-semibold text-slate-900 flex items-center gap-1.5 text-sm">
               ⓘ Logs overview
             </div>
