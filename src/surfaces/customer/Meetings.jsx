@@ -51,8 +51,8 @@ const fmtRelative = (d) => {
 };
 
 const STATUS_PILL = {
-  scheduled: 'bg-teal-100 text-teal-700 dark:bg-teal-500/20 dark:text-teal-300',
-  confirmed: 'bg-teal-100 text-teal-700 dark:bg-teal-500/20 dark:text-teal-300',
+  scheduled: 'bg-lime-100 text-lime-700 dark:bg-lime-500/20 dark:text-lime-300',
+  confirmed: 'bg-lime-100 text-lime-700 dark:bg-lime-500/20 dark:text-lime-300',
   pending:   'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300',
   cancelled: 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300',
   canceled:  'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300',
@@ -111,8 +111,8 @@ function MonthCalendar({ month, onPrev, onNext, onToday, meetingsByDay, selected
               className={[
                 'aspect-square rounded-lg border text-left p-1.5 flex flex-col transition',
                 muted ? 'text-slate-300 dark:text-slate-600 border-transparent' : 'text-slate-700 dark:text-slate-300 border-slate-100 dark:border-slate-800',
-                isToday ? 'ring-2 ring-teal-500/60' : '',
-                isSelected ? 'bg-sky-500 text-white border-sky-500 dark:bg-sky-600 dark:border-sky-600' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50',
+                isToday ? 'ring-2 ring-lime-500/60' : '',
+                isSelected ? 'bg-lime-500 text-white border-lime-500 dark:bg-lime-600 dark:border-lime-600' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50',
               ].join(' ')}
             >
               <span className={`text-xs font-semibold ${isSelected ? 'text-white' : ''}`}>{d.getDate()}</span>
@@ -121,11 +121,11 @@ function MonthCalendar({ month, onPrev, onNext, onToday, meetingsByDay, selected
                   {events.slice(0, 3).map((_, i) => (
                     <span
                       key={i}
-                      className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-teal-500'}`}
+                      className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-lime-500'}`}
                     />
                   ))}
                   {events.length > 3 && (
-                    <span className={`text-[9px] font-semibold ml-0.5 ${isSelected ? 'text-white' : 'text-teal-600 dark:text-teal-400'}`}>
+                    <span className={`text-[9px] font-semibold ml-0.5 ${isSelected ? 'text-white' : 'text-lime-600 dark:text-lime-400'}`}>
                       +{events.length - 3}
                     </span>
                   )}
@@ -147,14 +147,14 @@ function MeetingRow({ m }) {
   const pillCls = STATUS_PILL[statusKey] || STATUS_PILL.scheduled;
   const synced = !!m.calendar_link || !!m.calendar_event_id;
   return (
-    <div className="form-card hover:border-sky-500/40 transition">
+    <div className="form-card hover:border-lime-500/40 transition">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap text-xs">
             <span className={`pill text-xs ${pillCls}`}>{m.status || 'scheduled'}</span>
             <span className="text-mute">{fmtRelative(m.start)}</span>
             {synced ? (
-              <span className="pill bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300 text-xs">📅 calendar synced</span>
+              <span className="pill bg-lime-100 text-lime-700 dark:bg-lime-500/20 dark:text-lime-300 text-xs">📅 calendar synced</span>
             ) : (
               <span className="pill bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300 text-xs">⏳ awaiting sync</span>
             )}
@@ -163,8 +163,8 @@ function MeetingRow({ m }) {
             {m.name || 'Unnamed booking'}
           </div>
           <div className="mt-1 text-sm text-mute flex flex-wrap gap-x-3 gap-y-0.5">
-            {m.email && <span>✉ <a href={`mailto:${m.email}`} className="text-sky-600 dark:text-sky-400 hover:underline">{m.email}</a></span>}
-            {m.phone && <span>📞 <a href={`tel:${m.phone}`} className="text-sky-600 dark:text-sky-400 hover:underline font-mono">{m.phone}</a></span>}
+            {m.email && <span>✉ <a href={`mailto:${m.email}`} className="text-lime-600 dark:text-lime-400 hover:underline">{m.email}</a></span>}
+            {m.phone && <span>📞 <a href={`tel:${m.phone}`} className="text-lime-600 dark:text-lime-400 hover:underline font-mono">{m.phone}</a></span>}
           </div>
         </div>
         <div className="text-right">
@@ -188,7 +188,7 @@ function MeetingRow({ m }) {
       {(synced || m.call_id) && (
         <div className="mt-3 flex items-center gap-3 text-xs">
           {m.calendar_link && (
-            <a href={m.calendar_link} target="_blank" rel="noreferrer" className="text-sky-600 dark:text-sky-400 hover:underline">
+            <a href={m.calendar_link} target="_blank" rel="noreferrer" className="text-lime-600 dark:text-lime-400 hover:underline">
               Open in Google Calendar ↗
             </a>
           )}
@@ -260,7 +260,7 @@ export default function Meetings() {
           <p className="text-mute">
             Every meeting your AI agent booked through Google Calendar.
             {total > 0 && (
-              <> · <span className="text-teal-600 dark:text-teal-400 font-semibold">{upcomingCount} upcoming</span></>
+              <> · <span className="text-lime-600 dark:text-lime-400 font-semibold">{upcomingCount} upcoming</span></>
             )}
           </p>
         </div>

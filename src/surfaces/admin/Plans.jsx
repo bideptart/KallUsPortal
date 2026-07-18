@@ -84,7 +84,7 @@ export default function Plans() {
                 </td>
                 <td className="font-mono text-slate-900">{inr(p.amount)}<span className="text-xs text-mute">/mo</span></td>
                 <td className="font-mono text-slate-900">{inr(p.yearlyAmount)}<span className="text-xs text-mute">/yr</span></td>
-                <td className="font-mono text-teal-600 text-sm">{inr(p.yearlySavingsInr)}</td>
+                <td className="font-mono text-lime-600 text-sm">{inr(p.yearlySavingsInr)}</td>
                 <td className="font-mono">{Number(p.min).toLocaleString('en-US')}</td>
                 <td className="font-mono">{inr(p.rate)}/min</td>
                 <td className="font-mono text-amber-700">{inr(p.overage)}/min</td>
@@ -119,7 +119,7 @@ export default function Plans() {
         )}
         {(packs || []).map((p) => (
           <div key={p.id} className="form-card">
-            <div className="text-xs text-sky-600 uppercase font-semibold">{p.id}</div>
+            <div className="text-xs text-lime-600 uppercase font-semibold">{p.id}</div>
             <div className="mt-2 text-3xl font-bold text-slate-900">{inr(p.amount)}</div>
             <div className="text-sm text-mute">{Number(p.mins).toLocaleString('en-US')} minutes</div>
             <div className="text-xs text-mute mt-1">{inr(p.rate)} / min</div>

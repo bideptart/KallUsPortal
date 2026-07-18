@@ -22,8 +22,8 @@ const fmtMoney = (n, cur) => {
 // Human label for each wallet-transaction kind. The DB stores compact
 // machine-readable kinds; this maps them to UI badges.
 const KIND_META = {
-  'new-number-plan':   { label: 'New plan + DID',   pill: 'bg-teal-100 text-teal-700' },
-  'plan-change':       { label: 'Plan change',      pill: 'bg-sky-100 text-sky-700' },
+  'new-number-plan':   { label: 'New plan + DID',   pill: 'bg-lime-100 text-lime-700' },
+  'plan-change':       { label: 'Plan change',      pill: 'bg-lime-100 text-lime-700' },
   'plan-restart':      { label: 'Plan restart',     pill: 'bg-amber-100 text-amber-700' },
   'topup':             { label: 'Wallet top-up',    pill: 'bg-emerald-100 text-emerald-700' },
   'save-card':         { label: 'Card saved',       pill: 'bg-purple-100 text-purple-700' },
@@ -112,7 +112,7 @@ export default function Purchases() {
         </div>
         <div className="form-card">
           <div className="text-xs text-mute uppercase tracking-wider font-semibold">New plans bought</div>
-          <div className="mt-1 text-2xl font-bold text-teal-700">{newPlanRow?.count || 0}</div>
+          <div className="mt-1 text-2xl font-bold text-lime-700">{newPlanRow?.count || 0}</div>
           <div className="text-xs text-mute mt-0.5">{fmtMoney(newPlanRow?.sum || 0, currency)}</div>
         </div>
         <div className="form-card">

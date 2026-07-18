@@ -5,8 +5,8 @@ import CallDetailModal from '../../components/CallDetailModal.jsx';
 import DateRangePicker, { todayRange } from '../../components/DateRangePicker.jsx';
 
 const STATUS_PILL = {
-  completed: 'pill bg-teal-500/20 text-teal-400',
-  answered:  'pill bg-teal-500/20 text-teal-400',
+  completed: 'pill bg-lime-500/20 text-lime-400',
+  answered:  'pill bg-lime-500/20 text-lime-400',
   busy:      'pill bg-amber-500/20 text-amber-400',
   'no-answer': 'pill bg-amber-500/20 text-amber-400',
   failed:    'pill bg-red-500/20 text-red-400',
@@ -53,8 +53,8 @@ const fmtTime = (t) => {
 
 // Distinct colours per number so calls are scannable by DID at a glance.
 const NUMBER_TINTS = [
-  'bg-sky-100 text-sky-700',
-  'bg-teal-100 text-teal-700',
+  'bg-lime-100 text-lime-700',
+  'bg-lime-100 text-lime-700',
   'bg-purple-100 text-purple-700',
   'bg-amber-100 text-amber-700',
   'bg-pink-100 text-pink-700',
@@ -150,9 +150,9 @@ export default function Calls() {
           <p className="text-mute">
             Live inbound calls
             {numbers.length > 1
-              ? <> · across <span className="font-semibold text-sky-600">{numbers.length} numbers</span></>
+              ? <> · across <span className="font-semibold text-lime-600">{numbers.length} numbers</span></>
               : currentUser?.number?.value
-                ? <> · for <span className="font-mono text-sky-600">{currentUser.number.value}</span></>
+                ? <> · for <span className="font-mono text-lime-600">{currentUser.number.value}</span></>
                 : null}
           </p>
         </div>
@@ -199,7 +199,7 @@ export default function Calls() {
 
       <div className="mt-6 grid sm:grid-cols-3 gap-4">
         <div className="form-card"><div className="text-sm text-mute">Total calls</div><div className="mt-1 text-2xl font-semibold">{total}</div></div>
-        <div className="form-card"><div className="text-sm text-mute">Answered</div><div className="mt-1 text-2xl font-semibold text-teal-400">{answered}{total ? <span className="text-sm font-normal text-mute"> ({Math.round((answered / total) * 100)}%)</span> : null}</div></div>
+        <div className="form-card"><div className="text-sm text-mute">Answered</div><div className="mt-1 text-2xl font-semibold text-lime-400">{answered}{total ? <span className="text-sm font-normal text-mute"> ({Math.round((answered / total) * 100)}%)</span> : null}</div></div>
         <div className="form-card"><div className="text-sm text-mute">Missed / failed</div><div className="mt-1 text-2xl font-semibold text-amber-400">{missed}</div></div>
       </div>
 
@@ -247,7 +247,7 @@ export default function Calls() {
                     audioSize:     rec?.audioSize    || null,
                     hasTranscript: rec?.hasTranscript || false,
                   })}
-                  className="cursor-pointer hover:bg-sky-50 dark:hover:bg-slate-800 transition"
+                  className="cursor-pointer hover:bg-lime-50 dark:hover:bg-slate-800 transition"
                   title="View recording, summary, and transcript"
                 >
                   <td>{fmtTime(c.startTime)}</td>

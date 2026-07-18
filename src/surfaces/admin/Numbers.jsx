@@ -149,7 +149,7 @@ export default function Numbers() {
 
       {/* === KPI cards ============================================== */}
       <div className="mt-6 grid sm:grid-cols-3 gap-3">
-        <div className={`form-card cursor-pointer ${filter === 'all' ? 'ring-2 ring-sky-200' : ''}`} onClick={() => setFilter('all')}>
+        <div className={`form-card cursor-pointer ${filter === 'all' ? 'ring-2 ring-lime-200' : ''}`} onClick={() => setFilter('all')}>
           <div className="text-xs text-mute uppercase tracking-wider font-semibold">Total DIDs</div>
           <div className="mt-1 text-2xl font-bold text-slate-900">{totals.total}</div>
         </div>
@@ -216,7 +216,7 @@ export default function Numbers() {
                 </td>
                 <td>
                   <span className={`pill text-[10px] uppercase tracking-wider ${
-                    n.source === 'env' ? 'bg-slate-200 text-slate-700' : 'bg-sky-100 text-sky-700'
+                    n.source === 'env' ? 'bg-slate-200 text-slate-700' : 'bg-lime-100 text-lime-700'
                   }`}>
                     {n.source === 'env' ? 'ENV' : 'DB'}
                   </span>

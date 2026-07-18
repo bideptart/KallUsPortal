@@ -59,7 +59,7 @@ export default function TopBar() {
       {/* Live pill — global indicator that the agent is taking calls. */}
       {showLive && (
         <span
-          className="hidden sm:inline-flex pill bg-teal-100 text-teal-700 whitespace-nowrap text-xs font-semibold"
+          className="hidden sm:inline-flex pill bg-lime-100 text-lime-700 whitespace-nowrap text-xs font-semibold"
           title={`Live on ${currentUser.number.value}`}
         >
           ● Live · taking calls
@@ -73,7 +73,7 @@ export default function TopBar() {
         <Link
           to="/dashboard/billing"
           title="Go to Billing"
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-50 hover:bg-teal-100 text-teal-700 text-sm font-semibold border border-teal-200 transition"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-lime-50 hover:bg-lime-100 text-lime-700 text-sm font-semibold border border-lime-200 transition"
         >
           <span className="hidden sm:inline">💳 Check Balance</span>
           <span className="sm:hidden">{totalLeft.toFixed(0)}m</span>
@@ -86,7 +86,7 @@ export default function TopBar() {
           onClick={() => setMenuOpen((v) => !v)}
           className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50"
         >
-          <span className="w-8 h-8 rounded-full bg-teal-500 text-white text-xs font-bold flex items-center justify-center">
+          <span className="w-8 h-8 rounded-full bg-lime-500 text-white text-xs font-bold flex items-center justify-center">
             {initials}
           </span>
           <div className="text-left hidden sm:block">
@@ -99,12 +99,12 @@ export default function TopBar() {
         {menuOpen && (
           <div className="absolute right-0 top-full mt-2 w-72 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-50">
             {/* Profile header */}
-            <div className="bg-teal-50 px-6 py-5 text-center">
-              <div className="w-16 h-16 rounded-full bg-teal-500 text-white text-lg font-bold flex items-center justify-center mx-auto">
+            <div className="bg-lime-50 px-6 py-5 text-center">
+              <div className="w-16 h-16 rounded-full bg-lime-500 text-white text-lg font-bold flex items-center justify-center mx-auto">
                 {initials}
               </div>
-              <div className="mt-2 text-xs text-teal-700 font-semibold flex items-center justify-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-teal-500"></span> Online
+              <div className="mt-2 text-xs text-lime-700 font-semibold flex items-center justify-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-lime-500"></span> Online
               </div>
             </div>
 

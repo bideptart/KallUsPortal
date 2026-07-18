@@ -74,7 +74,7 @@ export default function AddMinutesModal({ number, packs, currentUser, onClose, o
     const tone =
         days < 0  ? 'border-red-500/60 bg-red-500/10 text-red-700 dark:text-red-300'
       : days <= 7 ? 'border-amber-500/60 bg-amber-500/10 text-amber-800 dark:text-amber-300'
-      :             'border-sky-500/30 bg-sky-500/5 text-sky-800 dark:text-sky-300';
+      :             'border-lime-500/30 bg-lime-500/5 text-lime-800 dark:text-lime-300';
     expiryBanner = (
       <div className={`rounded-lg border ${tone} px-3 py-2 text-xs flex items-start gap-2 mb-3`}>
         <span className="shrink-0">📅</span>
@@ -104,7 +104,7 @@ export default function AddMinutesModal({ number, packs, currentUser, onClose, o
             <div className="text-xs font-semibold text-mute uppercase tracking-wider">➕ Add wallet funds</div>
             <div className="mt-1 font-mono text-sm text-slate-900 dark:text-slate-100">
               {number?.value || '—'}
-              {number?.isPrimary && <span className="ml-2 pill bg-sky-100 text-sky-700 text-xs">Primary</span>}
+              {number?.isPrimary && <span className="ml-2 pill bg-lime-100 text-lime-700 text-xs">Primary</span>}
               {number?.label && <span className="ml-2 text-xs text-mute">· {number.label}</span>}
             </div>
             <div className="mt-0.5 text-xs text-mute">
@@ -143,7 +143,7 @@ export default function AddMinutesModal({ number, packs, currentUser, onClose, o
                 <div
                   key={p.id}
                   className={`form-card text-center transition ${
-                    isFeatured ? 'border-sky-400 ring-2 ring-sky-200 dark:ring-sky-900/40' : ''
+                    isFeatured ? 'border-lime-400 ring-2 ring-lime-200 dark:ring-lime-900/40' : ''
                   }`}
                 >
                   <div className="text-xs uppercase font-semibold tracking-wider text-mute">

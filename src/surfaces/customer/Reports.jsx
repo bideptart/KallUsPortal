@@ -198,7 +198,7 @@ export default function Reports() {
               <strong className="text-slate-900">{filteredRecordings.length}</strong>{' '}
               of {recordings?.length || 0} calls
             </span>
-            <button onClick={clearFilters} className="text-sky-600 hover:underline">
+            <button onClick={clearFilters} className="text-lime-600 hover:underline">
               Clear filters
             </button>
           </div>
@@ -245,7 +245,7 @@ export default function Reports() {
                     <span className="text-mute">{fmtTime(r.startTime)}</span>
                     <span className="pill bg-slate-100 text-slate-700 text-xs">{fmtDirection(r.direction)}</span>
                     {r.hasTranscript && (
-                      <span className="pill bg-teal-100 text-teal-700 text-xs">📝 transcript available</span>
+                      <span className="pill bg-lime-100 text-lime-700 text-xs">📝 transcript available</span>
                     )}
                   </div>
                   <div className="mt-2 font-mono text-sm text-slate-900">
@@ -298,7 +298,7 @@ export default function Reports() {
                         return (
                           <li key={i} className="flex gap-3">
                             <span className={`shrink-0 text-[10px] uppercase tracking-wider font-semibold mt-1 ${
-                              isAgent ? 'text-teal-600' : 'text-sky-600'
+                              isAgent ? 'text-lime-600' : 'text-lime-600'
                             }`}>
                               {isAgent ? 'Agent' : 'Caller'}
                             </span>
@@ -318,7 +318,7 @@ export default function Reports() {
                     <div className="text-xs font-semibold text-mute uppercase tracking-wider">AI summary</div>
                     {s.data?.aiSummary?.sentiment && (
                       <span className={`pill text-xs ${
-                        s.data.aiSummary.sentiment === 'positive' ? 'bg-teal-100 text-teal-700'
+                        s.data.aiSummary.sentiment === 'positive' ? 'bg-lime-100 text-lime-700'
                         : s.data.aiSummary.sentiment === 'negative' ? 'bg-red-100 text-red-700'
                         : 'bg-slate-100 text-slate-700'
                       }`}>
@@ -354,7 +354,7 @@ export default function Reports() {
                       {Array.isArray(s.data.aiSummary.topics) && s.data.aiSummary.topics.length > 0 && (
                         <div className="flex flex-wrap gap-1.5">
                           {s.data.aiSummary.topics.map((tp, i) => (
-                            <span key={i} className="pill bg-sky-100 text-sky-700 text-xs">{tp}</span>
+                            <span key={i} className="pill bg-lime-100 text-lime-700 text-xs">{tp}</span>
                           ))}
                         </div>
                       )}

@@ -61,7 +61,7 @@ export default function Account() {
 
       <div className="mt-6 grid md:grid-cols-2 gap-4">
         <div className="form-card">
-          <div className="text-xs text-teal-400 uppercase font-semibold mb-3">Profile</div>
+          <div className="text-xs text-lime-400 uppercase font-semibold mb-3">Profile</div>
           <label className="field-label">Full name</label>
           <input className="input" value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} />
           <label className="field-label mt-3">Company name</label>
@@ -75,11 +75,11 @@ export default function Account() {
           <button className="btn-teal mt-4" onClick={saveProfile} disabled={profileBusy}>
             {profileBusy ? 'Saving…' : 'Save profile'}
           </button>
-          {profileMsg && <div className="mt-2 text-xs text-teal-400">{profileMsg}</div>}
+          {profileMsg && <div className="mt-2 text-xs text-lime-400">{profileMsg}</div>}
         </div>
 
         <div className="form-card">
-          <div className="text-xs text-teal-400 uppercase font-semibold mb-3">Password</div>
+          <div className="text-xs text-lime-400 uppercase font-semibold mb-3">Password</div>
           <form onSubmit={submitPassword}>
             <label className="field-label">Current password</label>
             <input className="input" type="password" value={pw.current} onChange={(e) => setPw({ ...pw, current: e.target.value })} autoComplete="current-password" />
@@ -90,7 +90,7 @@ export default function Account() {
             <button type="submit" className="btn-teal mt-4" disabled={pwBusy}>
               {pwBusy ? 'Updating…' : 'Change password'}
             </button>
-            {pwMsg && <div className="mt-2 text-xs text-teal-400">{pwMsg}</div>}
+            {pwMsg && <div className="mt-2 text-xs text-lime-400">{pwMsg}</div>}
           </form>
 
           {authError && (

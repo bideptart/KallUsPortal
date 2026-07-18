@@ -59,7 +59,7 @@ export default function Logs() {
 
       {err && <div className="mt-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">{err}</div>}
 
-      <pre className="mt-6 form-card text-xs text-teal-400 overflow-x-auto whitespace-pre-wrap">
+      <pre className="mt-6 form-card text-xs text-lime-400 overflow-x-auto whitespace-pre-wrap">
         {events.length === 0
           ? (calls === null ? 'Loading…' : 'No events yet.')
           : events.map((e) => `[${fmtTs(e.ts)}] ${e.line}`).join('\n')}

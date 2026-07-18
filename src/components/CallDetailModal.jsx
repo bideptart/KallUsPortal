@@ -131,7 +131,7 @@ export default function CallDetailModal({ call, onClose }) {
                   {fmtDirection(call.direction)}
                 </span>
                 {call.hasTranscript && (
-                  <span className="pill bg-teal-100 text-teal-700 text-xs">📝 transcript</span>
+                  <span className="pill bg-lime-100 text-lime-700 text-xs">📝 transcript</span>
                 )}
                 <span className="text-mute">{fmtTime(call.startTime)}</span>
               </div>
@@ -177,7 +177,7 @@ export default function CallDetailModal({ call, onClose }) {
                 <a
                   href={`${call.audioUrl}?token=${encodeURIComponent(getToken())}&download=1`}
                   download={call.audioFilename || `recording-${call.callId}.mp4`}
-                  className="text-sky-600 hover:underline"
+                  className="text-lime-600 hover:underline"
                 >
                   ⬇ Download
                 </a>
@@ -196,7 +196,7 @@ export default function CallDetailModal({ call, onClose }) {
             <div className="text-xs font-semibold text-mute uppercase tracking-wider">✨ AI summary</div>
             {ai?.sentiment && (
               <span className={`pill text-xs ${
-                ai.sentiment === 'positive' ? 'bg-teal-100 text-teal-700'
+                ai.sentiment === 'positive' ? 'bg-lime-100 text-lime-700'
                 : ai.sentiment === 'negative' ? 'bg-red-100 text-red-700'
                 : 'bg-slate-100 text-slate-700'
               }`}>
@@ -242,7 +242,7 @@ export default function CallDetailModal({ call, onClose }) {
               {Array.isArray(ai.topics) && ai.topics.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {ai.topics.map((t, i) => (
-                    <span key={i} className="pill bg-sky-100 text-sky-700 text-xs">{t}</span>
+                    <span key={i} className="pill bg-lime-100 text-lime-700 text-xs">{t}</span>
                   ))}
                 </div>
               )}
@@ -275,7 +275,7 @@ export default function CallDetailModal({ call, onClose }) {
                 <div className="text-xs font-semibold text-mute uppercase tracking-wider">📅 Meeting</div>
                 <span className={`pill text-xs ${
                   isBooking
-                    ? 'bg-teal-100 text-teal-700 dark:bg-teal-500/20 dark:text-teal-300'
+                    ? 'bg-lime-100 text-lime-700 dark:bg-lime-500/20 dark:text-lime-300'
                     : 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300'
                 }`}>
                   {isBooking ? '✓ Booked' : '~ Mentioned'}
@@ -287,8 +287,8 @@ export default function CallDetailModal({ call, onClose }) {
                   <div className="font-medium text-slate-900 dark:text-slate-100">{m.name}</div>
                 )}
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-mute">
-                  {m.email && <span>✉ <a href={`mailto:${m.email}`} className="text-sky-600 dark:text-sky-400 hover:underline">{m.email}</a></span>}
-                  {m.phone && <span>📞 <a href={`tel:${m.phone}`} className="text-sky-600 dark:text-sky-400 hover:underline font-mono">{m.phone}</a></span>}
+                  {m.email && <span>✉ <a href={`mailto:${m.email}`} className="text-lime-600 dark:text-lime-400 hover:underline">{m.email}</a></span>}
+                  {m.phone && <span>📞 <a href={`tel:${m.phone}`} className="text-lime-600 dark:text-lime-400 hover:underline font-mono">{m.phone}</a></span>}
                 </div>
 
                 {/* Booking-specific (ISO time, calendar link, status) */}
@@ -303,7 +303,7 @@ export default function CallDetailModal({ call, onClose }) {
                       </div>
                     )}
                     {m.calendar_link && (
-                      <a href={m.calendar_link} target="_blank" rel="noreferrer" className="inline-block text-xs text-sky-600 dark:text-sky-400 hover:underline">
+                      <a href={m.calendar_link} target="_blank" rel="noreferrer" className="inline-block text-xs text-lime-600 dark:text-lime-400 hover:underline">
                         Open in Google Calendar ↗
                       </a>
                     )}
@@ -353,7 +353,7 @@ export default function CallDetailModal({ call, onClose }) {
                 return (
                   <li key={i} className="flex gap-3">
                     <span className={`shrink-0 text-[10px] uppercase tracking-wider font-semibold mt-1 w-12 ${
-                      isAgent ? 'text-teal-600' : 'text-sky-600'
+                      isAgent ? 'text-lime-600' : 'text-lime-600'
                     }`}>
                       {isAgent ? 'Agent' : 'Caller'}
                     </span>

@@ -14,30 +14,42 @@ import Settings from './Settings.jsx';
 import Logo from '../../components/Logo.jsx';
 import TopBar from '../../components/TopBar.jsx';
 
-const TABS_OPS = [
-  { id: 'signups', label: '🆕 Signups' },
-  { id: 'customers', label: '👥 Customers' },
-  { id: 'resellers', label: '🏷 Resellers' },
-  { id: 'numbers', label: '☎ Numbers inventory' },
-  { id: 'payments', label: '💳 Payments & revenue' },
-  { id: 'bulk', label: '📦 Bulk import' },
-  { id: 'logs', label: '📋 Activity logs' },
-];
-const TABS_REPORTS = [
-  { id: 'usage', label: '📊 Usage analytics' },
-  { id: 'health', label: '🩺 System health' },
-  { id: 'mcp', label: '🔌 MCP browser' },
-];
-const TABS_SETUP = [
-  { id: 'plans', label: '💎 Plans & pricing' },
-  { id: 'settings', label: '🔌 Settings (credentials)' },
+// Sidebar nav — unified across Admin/Customer to a common shape. Each entry
+// maps onto the closest existing admin page; several concepts here (e.g.
+// "Knowledge Base") don't have a dedicated admin screen, so they share a
+// page with a nearby entry rather than inventing a new one.
+const NAV_TABS = [
+  { id: 'overview',     label: '📊 Overview' },
+  { id: 'agents',       label: '🤖 Agents' },
+  { id: 'playground',   label: '🧪 Playground' },
+  { id: 'kb',           label: '📖 Knowledge Base' },
+  { id: 'analytics',    label: '📈 Analytics' },
+  { id: 'calls',        label: '⚡ Call Activity' },
+  { id: 'reports',      label: '📄 Reports' },
+  { id: 'billing',      label: '💳 Billing & minutes' },
+  { id: 'transactions', label: '🧾 Transactions' },
+  { id: 'account',      label: '👤 Account' },
 ];
 
-const VALID_TABS = new Set([
-  ...TABS_OPS.map((t) => t.id),
-  ...TABS_REPORTS.map((t) => t.id),
-  ...TABS_SETUP.map((t) => t.id),
-]);
+// Legacy tab ids from the previous Operations/Reports/Setup layout — kept
+// valid (but not shown in the sidebar) so any existing bookmark or deep link
+// still resolves to the right page instead of 404ing.
+const LEGACY_TABS = [
+  { id: 'signups',   label: '🆕 Signups' },
+  { id: 'customers', label: '👥 Customers' },
+  { id: 'resellers', label: '🏷 Resellers' },
+  { id: 'numbers',   label: '☎ Numbers inventory' },
+  { id: 'payments',  label: '💳 Payments & revenue' },
+  { id: 'bulk',      label: '📦 Bulk import' },
+  { id: 'logs',      label: '📋 Activity logs' },
+  { id: 'usage',     label: '📊 Usage analytics' },
+  { id: 'health',    label: '🩺 System health' },
+  { id: 'mcp',       label: '🔌 MCP browser' },
+  { id: 'plans',     label: '💎 Plans & pricing' },
+  { id: 'settings',  label: '🔌 Settings (credentials)' },
+];
+
+const VALID_TABS = new Set([...NAV_TABS, ...LEGACY_TABS].map((t) => t.id));
 
 export default function Admin() {
   const { currentUser } = useApp();
@@ -46,7 +58,7 @@ export default function Admin() {
 
   useEffect(() => { setNavOpen(false); }, [tab]);
 
-  if (!VALID_TABS.has(tab)) return <Navigate to="/admin/signups" replace />;
+  if (!VALID_TABS.has(tab)) return <Navigate to="/admin/overview" replace />;
 
   const Side = ({ list }) => list.map((t) => (
     <Link
@@ -58,7 +70,7 @@ export default function Admin() {
     </Link>
   ));
 
-  const activeLabel = [...TABS_OPS, ...TABS_REPORTS, ...TABS_SETUP].find((t) => t.id === tab)?.label || '';
+  const activeLabel = [...NAV_TABS, ...LEGACY_TABS].find((t) => t.id === tab)?.label || '';
 
   return (
     <div className="dashboard-shell">
@@ -66,23 +78,20 @@ export default function Admin() {
 
       <aside className={`sidenav ${navOpen ? 'is-open' : ''}`}>
         <Link
-          to="/admin/signups"
-          className="h-16 flex items-center px-4 bg-white sticky top-0 z-30"
-          aria-label="9278.ai home"
+          to="/admin/overview"
+          className="h-16 flex items-center gap-2 px-4 bg-white sticky top-0 z-30"
+          aria-label="kallus.io home"
         >
-          <Logo size={50} showWordmark={false} />
+          <Logo size={44} showWordmark={false} />
+          <span className="font-mono text-sm lowercase text-mute tracking-tight">kallus.io</span>
         </Link>
         <div className="px-4 pb-3 border-t border-slate-100 pt-3">
           <div className="text-xs text-mute font-semibold uppercase tracking-wider">Admin</div>
           <div className="text-sm font-semibold text-slate-900 mt-1 break-all">{currentUser?.email || ''}</div>
           <span className="pill pill-teal mt-2 inline-block">{currentUser?.role || 'Admin'}</span>
         </div>
-        <div className="sidenav-section">Operations</div>
-        <Side list={TABS_OPS} />
-        <div className="sidenav-section">Reports</div>
-        <Side list={TABS_REPORTS} />
-        <div className="sidenav-section">Setup</div>
-        <Side list={TABS_SETUP} />
+        <div className="sidenav-section">Manage</div>
+        <Side list={NAV_TABS} />
       </aside>
 
       <div className="dashboard-main">
@@ -107,18 +116,22 @@ export default function Admin() {
           </div>
         </div>
 
-        {tab === 'signups'   && <Signups />}
-        {tab === 'customers' && <Customers />}
+        {/* New nav ids map onto the closest existing page; legacy ids (kept
+            valid so old links still work) render the same pages they always
+            did. Resellers / Numbers inventory / Plans & pricing have no home
+            in the new 10-item nav — still reachable at their legacy URLs. */}
+        {(tab === 'overview' || tab === 'signups')      && <Signups />}
+        {(tab === 'agents' || tab === 'customers')      && <Customers />}
+        {(tab === 'playground' || tab === 'mcp')        && <McpBrowser />}
+        {(tab === 'kb' || tab === 'bulk')               && <Bulk />}
+        {(tab === 'analytics' || tab === 'usage')       && <Usage />}
+        {(tab === 'calls' || tab === 'logs')            && <Logs />}
+        {(tab === 'reports' || tab === 'health')        && <Health />}
+        {(tab === 'billing' || tab === 'transactions' || tab === 'payments') && <Payments />}
+        {(tab === 'account' || tab === 'settings')      && <Settings />}
         {tab === 'resellers' && <Resellers />}
         {tab === 'numbers'   && <Numbers />}
-        {tab === 'payments'  && <Payments />}
-        {tab === 'bulk'      && <Bulk />}
-        {tab === 'logs'      && <Logs />}
-        {tab === 'usage'     && <Usage />}
-        {tab === 'health'    && <Health />}
-        {tab === 'mcp'       && <McpBrowser />}
         {tab === 'plans'     && <Plans />}
-        {tab === 'settings'  && <Settings />}
 
         {/* Invisible sink for `.dashboard-main > :last-child { margin-top: auto }`
             — without a trailing element here, the rule would push the active
@@ -234,7 +247,7 @@ function Usage() {
                 <td>{a.total_calls ?? a.call_count ?? 0}</td>
                 <td className="text-mute">{a.answered_calls ?? '—'}</td>
                 <td>{fmtSec(a.avg_duration_seconds || a.avg_duration || 0)}</td>
-                <td className={a.success_rate >= 90 ? 'text-teal-400' : a.success_rate >= 50 ? 'text-amber-400' : 'text-mute'}>
+                <td className={a.success_rate >= 90 ? 'text-lime-400' : a.success_rate >= 50 ? 'text-amber-400' : 'text-mute'}>
                   {a.success_rate != null ? `${a.success_rate}%` : '—'}
                 </td>
               </tr>
@@ -283,7 +296,7 @@ function Health() {
 
   const mcpOk = !!(health || mcpStatus?.configured);
   const mcpLabel = health ? '● Healthy' : mcpStatus?.configured ? '● Connected' : '○ Down';
-  const mcpColor = mcpOk ? 'text-teal-400' : 'text-red-400';
+  const mcpColor = mcpOk ? 'text-lime-400' : 'text-red-400';
 
   return (
     <div>
@@ -310,14 +323,14 @@ function Health() {
         </div>
         <div className="form-card">
           <div className="text-sm text-mute">Twilio API</div>
-          <div className={`mt-1 text-xl font-semibold ${twilio?.configured ? 'text-teal-400' : 'text-red-400'}`}>
+          <div className={`mt-1 text-xl font-semibold ${twilio?.configured ? 'text-lime-400' : 'text-red-400'}`}>
             {twilio?.configured ? '● Healthy' : '○ Down'}
           </div>
           <div className="text-xs text-mute mt-2">{twilio?.defaultNumber || '—'}</div>
         </div>
         <div className="form-card">
           <div className="text-sm text-mute">Postgres</div>
-          <div className={`mt-1 text-xl font-semibold ${db?.ok ? 'text-teal-400' : 'text-red-400'}`}>
+          <div className={`mt-1 text-xl font-semibold ${db?.ok ? 'text-lime-400' : 'text-red-400'}`}>
             {db?.ok ? '● Healthy' : '○ Down'}
           </div>
           {db?.now && <div className="text-xs text-mute mt-2">{new Date(db.now).toLocaleTimeString()}</div>}
@@ -457,7 +470,7 @@ function McpBrowser() {
           <div className="text-xs uppercase tracking-wider text-mute font-semibold">MCP server</div>
           <button
             onClick={() => setEditing({ resellerPortal: '', url: '', token: '' })}
-            className="text-xs text-sky-600 hover:underline font-semibold"
+            className="text-xs text-lime-600 hover:underline font-semibold"
           >
             + Add / update MCP for a reseller portal
           </button>
@@ -477,8 +490,8 @@ function McpBrowser() {
                   key={ep.key}
                   className={`px-3 py-2 rounded-lg text-left text-xs border transition relative ${
                     isActive
-                      ? 'bg-sky-50 border-sky-400 text-sky-800 shadow-sm'
-                      : 'bg-white border-slate-200 hover:border-sky-300 text-slate-700'
+                      ? 'bg-lime-50 border-lime-400 text-lime-800 shadow-sm'
+                      : 'bg-white border-slate-200 hover:border-lime-300 text-slate-700'
                   }`}
                 >
                   <button onClick={() => setEndpoint(ep.key)} className="block text-left w-full">
@@ -501,7 +514,7 @@ function McpBrowser() {
                         url:   ep.url || '',
                         token: '',
                       })}
-                      className="absolute top-1 right-1 text-[10px] text-sky-600 hover:underline px-1"
+                      className="absolute top-1 right-1 text-[10px] text-lime-600 hover:underline px-1"
                       title="Edit MCP URL / token for this reseller"
                     >
                       ✎ edit
@@ -533,7 +546,7 @@ function McpBrowser() {
               <div
                 key={t.name}
                 onClick={() => { setPicked(t.name); setArgs('{}'); setResult(null); }}
-                className={`p-2 text-xs cursor-pointer border-b border-line ${picked === t.name ? 'bg-sky-50 text-sky-700' : 'hover:bg-slate-50'}`}
+                className={`p-2 text-xs cursor-pointer border-b border-line ${picked === t.name ? 'bg-lime-50 text-lime-700' : 'hover:bg-slate-50'}`}
               >
                 <div className="font-mono">{t.name}</div>
                 <div className="text-mute mt-0.5 line-clamp-2">{(t.description || '').split('\n')[0].slice(0, 100)}</div>

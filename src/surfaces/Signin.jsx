@@ -32,18 +32,18 @@ export default function Signin() {
   };
 
   return (
-    <div className="nixxy-dark auth-dark min-h-screen flex items-center justify-center px-5 animate-fade-up">
+    <div className="auth-lime min-h-screen flex items-center justify-center px-5 animate-fade-up">
       <section className="w-full">
         <div className="mx-auto w-full max-w-md">
           <div className="mb-8 flex justify-center">
-            <Logo white size={38} showWordmark={false} />
+            <Logo size={38} showWordmark={false} />
           </div>
-          <div className="mb-7">
-            <h1 className="text-3xl md:text-4xl font-display tracking-tight text-white">
+          <div className="mb-7 text-center">
+            <h1 className="text-3xl md:text-4xl font-display font-semibold tracking-tight text-[var(--ink)]">
               Sign in to your{' '}
-              <span className="italic text-teal-400">portal.</span>
+              <span className="italic text-lime-700">portal.</span>
             </h1>
-            <p className="text-neutral-400 mt-2 text-[15px]">
+            <p className="text-mute mt-2 text-[15px]">
               Sign in to your dashboard.
             </p>
           </div>
@@ -54,15 +54,15 @@ export default function Signin() {
             </div>
           )}
 
-          <div className="mb-6 rounded-lg border border-neutral-700 bg-neutral-900/60 px-3 py-2.5">
-            <p className="text-xs font-semibold text-neutral-300 mb-2">Demo accounts</p>
+          <div className="mb-6 rounded-lg border border-lime-200 bg-lime-100/60 px-3 py-2.5">
+            <p className="text-xs font-mono font-semibold uppercase tracking-wide text-lime-800 mb-2">Demo accounts</p>
             <div className="flex flex-col gap-1">
               {DEMO_ACCOUNTS.map((acc) => (
                 <button
                   key={acc.identifier}
                   type="button"
                   onClick={() => fillDemo(acc)}
-                  className="text-left text-xs text-neutral-400 hover:text-teal-300 hover:underline"
+                  className="text-left text-xs text-[var(--ink-2)] hover:text-lime-700 hover:underline"
                 >
                   {acc.label}: <span className="font-mono">{acc.identifier}</span> / <span className="font-mono">{acc.password}</span>
                 </button>
@@ -99,7 +99,7 @@ export default function Signin() {
                 <button
                   type="button"
                   onClick={() => setShowPwd((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-neutral-400 hover:text-white px-2 py-1 rounded"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-mute hover:text-[var(--ink)] px-2 py-1 rounded"
                 >
                   {showPwd ? 'Hide' : 'Show'}
                 </button>

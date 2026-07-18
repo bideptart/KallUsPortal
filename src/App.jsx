@@ -91,7 +91,7 @@ function AppRoutes() {
 
       {/* Admin: /admin/<tab> — tiers 'superadmin' and 'admin'. The legacy
           role='admin' field on admin@9278.ai is still honoured. */}
-      <Route path="/admin" element={<Navigate to="/admin/signups" replace />} />
+      <Route path="/admin" element={<Navigate to="/admin/overview" replace />} />
       <Route
         path="/admin/:tab"
         element={

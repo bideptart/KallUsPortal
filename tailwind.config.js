@@ -10,41 +10,33 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: { 950: '#0b0b0c', 900: '#171717', 800: '#262626', 700: '#404040' },
-        line: '#e5e7eb',
-        teal: {
-          50: '#f0fdfa',
-          100: '#ccfbf1',
-          200: '#99f6e4',
-          300: '#5eead4',
-          400: '#2dd4bf',
-          500: '#14b8a6',
-          600: '#0d9488',
-          700: '#0f766e',
-          800: '#115e59',
-          900: '#134e4a',
-          950: '#042f2e',
+        ink: { 950: '#0b1220', 900: '#0b1220', 800: '#28324a', 700: '#28324a' },
+        line: '#d9d9db',
+        // KallUS brand accent — signature lime/green. Named `lime` so every
+        // `teal-*` / `sky-*` utility across the app maps onto this one ramp;
+        // the five canonical brand stops are 100/200/300/500/700/800, the
+        // rest are interpolated to fill out the full Tailwind shade range.
+        lime: {
+          50:  '#f6f8f1',
+          100: '#eef8d4',
+          200: '#d1f792',
+          300: '#c2ee6f',
+          400: '#a3d94f',
+          500: '#6fa524',
+          600: '#5c8a1e',
+          700: '#4d7c0f',
+          800: '#3a5a0c',
+          900: '#2c4509',
+          950: '#1d2e06',
         },
-        sky: {
-          50: '#ecfeff',
-          100: '#cffafe',
-          200: '#a5f3fc',
-          300: '#67e8f9',
-          400: '#22d3ee',
-          500: '#06b6d4',
-          600: '#0891b2',
-          700: '#0e7490',
-          800: '#155e75',
-          900: '#164e63',
-          950: '#083344',
-        },
-        mute: '#6b7280',
+        mute: '#586379',
       },
       // Resolve Tailwind's font-sans (the default applied via Preflight) so
       // utility-styled components match the global CSS.
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
-        display: ['DM Serif Display', 'ui-serif', 'Georgia', 'serif'],
+        sans: ['Inter', 'Geist', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['Outfit', 'Manrope', 'system-ui', 'sans-serif'],
+        mono: ['Fragment Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
     },
   },

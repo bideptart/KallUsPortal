@@ -39,8 +39,8 @@ const fmtTime = (t) => {
 };
 
 const NUMBER_TINTS = [
-  'bg-sky-100 text-sky-700',
-  'bg-teal-100 text-teal-700',
+  'bg-lime-100 text-lime-700',
+  'bg-lime-100 text-lime-700',
   'bg-purple-100 text-purple-700',
   'bg-amber-100 text-amber-700',
   'bg-pink-100 text-pink-700',
@@ -254,7 +254,7 @@ export default function Recordings() {
               Showing <strong className="text-slate-900">{filteredRecordings.length}</strong>{' '}
               of {recordings?.length || 0} recordings
             </span>
-            <button onClick={clearFilters} className="text-sky-600 hover:underline">
+            <button onClick={clearFilters} className="text-lime-600 hover:underline">
               Clear filters
             </button>
           </div>
@@ -286,7 +286,7 @@ export default function Recordings() {
             <div key={r.callId} className="form-card">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div
-                  className="flex-1 min-w-0 cursor-pointer rounded-lg -mx-2 -my-1 px-2 py-1 hover:bg-sky-50 dark:hover:bg-slate-800 transition"
+                  className="flex-1 min-w-0 cursor-pointer rounded-lg -mx-2 -my-1 px-2 py-1 hover:bg-lime-50 dark:hover:bg-slate-800 transition"
                   onClick={() => setOpenRec(r)}
                   title="View recording, summary, and transcript"
                 >
@@ -295,7 +295,7 @@ export default function Recordings() {
                     <span className="pill bg-slate-100 text-slate-600 text-xs">{fmtDirection(r.direction)}</span>
                     {meta && <span className={`pill ${meta.tint} text-xs`}>{meta.value}</span>}
                     {r.hasTranscript && (
-                      <span className="pill bg-teal-100 text-teal-700 text-xs">📝 transcript</span>
+                      <span className="pill bg-lime-100 text-lime-700 text-xs">📝 transcript</span>
                     )}
                   </div>
                   <div className="mt-2 font-mono text-sm text-slate-900 dark:text-slate-100">
@@ -305,7 +305,7 @@ export default function Recordings() {
                     {fmtDuration(r.duration)}
                     {r.price ? ` · $${Number(r.price).toFixed(2)}` : ''}
                     {r.agentName ? ` · ${r.agentName}` : ''}
-                    <span className="ml-2 text-sky-600 font-semibold">› details</span>
+                    <span className="ml-2 text-lime-600 font-semibold">› details</span>
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-2">
@@ -345,7 +345,7 @@ export default function Recordings() {
                     <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-2 max-w-xl">
                       ⚠ Playback failed. The recording may still be processing —{' '}
                       <button
-                        className="text-sky-700 underline"
+                        className="text-lime-700 underline"
                         onClick={() => {
                           setAudioErrors((m) => { const c = { ...m }; delete c[r.callId]; return c; });
                           load();
@@ -377,7 +377,7 @@ export default function Recordings() {
                     <a
                       href={`${r.audioUrl}?token=${encodeURIComponent(getToken())}&download=1`}
                       download={r.audioFilename || `recording-${r.callId}.mp4`}
-                      className="text-sky-600 hover:underline"
+                      className="text-lime-600 hover:underline"
                     >
                       ⬇ Download
                     </a>
@@ -404,7 +404,7 @@ export default function Recordings() {
                         return (
                           <li key={i} className="flex gap-3">
                             <span className={`shrink-0 text-[10px] uppercase tracking-wider font-semibold mt-1 ${
-                              isAgent ? 'text-teal-600' : 'text-sky-600'
+                              isAgent ? 'text-lime-600' : 'text-lime-600'
                             }`}>
                               {isAgent ? 'Agent' : 'Caller'}
                             </span>
@@ -503,7 +503,7 @@ export function ReportsSection({ recordings }) {
           <button
             className={`px-4 py-1.5 text-sm font-medium transition ${
               tab === 'transcripts'
-                ? 'bg-sky-500 text-white'
+                ? 'bg-lime-500 text-white'
                 : 'bg-white text-slate-700 hover:bg-slate-50'
             }`}
             onClick={() => pickTab('transcripts')}
@@ -513,7 +513,7 @@ export function ReportsSection({ recordings }) {
           <button
             className={`px-4 py-1.5 text-sm font-medium transition border-l border-slate-200 ${
               tab === 'summaries'
-                ? 'bg-sky-500 text-white'
+                ? 'bg-lime-500 text-white'
                 : 'bg-white text-slate-700 hover:bg-slate-50'
             }`}
             onClick={() => pickTab('summaries')}
@@ -562,7 +562,7 @@ export function ReportsSection({ recordings }) {
                       return (
                         <li key={i} className="flex gap-3">
                           <span className={`shrink-0 text-[10px] uppercase tracking-wider font-semibold mt-1 ${
-                            isAgent ? 'text-teal-600' : 'text-sky-600'
+                            isAgent ? 'text-lime-600' : 'text-lime-600'
                           }`}>
                             {isAgent ? 'Agent' : 'Caller'}
                           </span>
@@ -615,7 +615,7 @@ export function ReportsSection({ recordings }) {
                     {Array.isArray(ai.topics) && ai.topics.length > 0 && (
                       <div className="flex flex-wrap gap-1.5">
                         {ai.topics.map((t, i) => (
-                          <span key={i} className="pill bg-sky-100 text-sky-700 text-xs">{t}</span>
+                          <span key={i} className="pill bg-lime-100 text-lime-700 text-xs">{t}</span>
                         ))}
                       </div>
                     )}
@@ -656,7 +656,7 @@ function ReportHeader({ r, sentiment }) {
       )}
       {sentiment && (
         <span className={`pill text-xs ml-auto ${
-          sentiment === 'positive' ? 'bg-teal-100 text-teal-700'
+          sentiment === 'positive' ? 'bg-lime-100 text-lime-700'
           : sentiment === 'negative' ? 'bg-red-100 text-red-700'
           : 'bg-slate-100 text-slate-700'
         }`}>
@@ -693,14 +693,14 @@ function SummaryPanel({ state }) {
     <div className="mt-3 border-t border-slate-100 pt-4 space-y-5">
       {/* AI summary card — top of the panel */}
       {d.aiSummary && !d.aiSummary.error && (
-        <div className="rounded-xl border border-sky-200 bg-gradient-to-br from-sky-50 to-purple-50/40 p-4">
+        <div className="rounded-xl border border-lime-200 bg-gradient-to-br from-lime-50 to-purple-50/40 p-4">
           <div className="flex items-center justify-between gap-3 mb-2">
-            <div className="text-xs font-semibold uppercase tracking-wider text-sky-700 flex items-center gap-1.5">
+            <div className="text-xs font-semibold uppercase tracking-wider text-lime-700 flex items-center gap-1.5">
               ✨ AI summary
             </div>
             {d.aiSummary.sentiment && (
               <span className={`pill text-xs ${
-                d.aiSummary.sentiment === 'positive' ? 'bg-teal-100 text-teal-700'
+                d.aiSummary.sentiment === 'positive' ? 'bg-lime-100 text-lime-700'
                 : d.aiSummary.sentiment === 'negative' ? 'bg-red-100 text-red-700'
                 : 'bg-slate-100 text-slate-700'
               }`}>

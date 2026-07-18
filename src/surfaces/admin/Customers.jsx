@@ -75,7 +75,7 @@ export default function Customers() {
             {(users || []).map((c) => {
               const typeClass = c.userType === 'superadmin' ? 'bg-purple-500/15 text-purple-700'
                               : c.userType === 'reseller'   ? 'bg-amber-500/15 text-amber-700'
-                              : c.userType === 'admin'      ? 'bg-sky-500/15 text-sky-700'
+                              : c.userType === 'admin'      ? 'bg-lime-500/15 text-lime-700'
                               :                                'bg-slate-200 text-slate-700';
               return (
               <tr key={c.id}>
@@ -90,7 +90,7 @@ export default function Customers() {
                 </td>
                 <td className="font-mono text-xs">
                   {c.viaPortal
-                    ? <span className="text-sky-600">{c.viaPortal}</span>
+                    ? <span className="text-lime-600">{c.viaPortal}</span>
                     : <span className="text-mute">—</span>
                   }
                 </td>
@@ -100,7 +100,7 @@ export default function Customers() {
                 <td>{c.minutesUsed.toFixed(1)} / {c.plan?.min || 0}</td>
                 <td>
                   <span className={c.number
-                    ? 'pill bg-teal-500/20 text-teal-400'
+                    ? 'pill bg-lime-500/20 text-lime-400'
                     : 'pill bg-amber-500/20 text-amber-400'}>
                     {c.number ? 'Live' : 'No number'}
                   </span>

@@ -17,8 +17,8 @@ const fmtDate = (d) => {
 };
 
 const TYPE_PILL = {
-  plan:         'bg-teal-100 text-teal-700',
-  topup:        'bg-sky-100 text-sky-700',
+  plan:         'bg-lime-100 text-lime-700',
+  topup:        'bg-lime-100 text-lime-700',
   auto_recharge:'bg-indigo-100 text-indigo-700',
   adjustment:   'bg-amber-100 text-amber-700',
   refund:       'bg-rose-100 text-rose-700',

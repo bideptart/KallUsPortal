@@ -130,7 +130,7 @@ export default function Resellers() {
               <input type="text" className="input text-sm font-mono" required value={form.password} onChange={setField('password')} placeholder="Auto-generate or paste" />
               <button
                 type="button"
-                className="mt-1 text-xs text-sky-600 hover:underline"
+                className="mt-1 text-xs text-lime-600 hover:underline"
                 onClick={() => {
                   // Quick generator — same 16-char alphanumeric shape as the
                   // node script used to seed earlier accounts.
@@ -232,7 +232,7 @@ export default function Resellers() {
                     {r.parent ? (
                       <>
                         <div className="text-sm font-medium">{r.parent.company || r.parent.name}</div>
-                        <div className="text-xs text-mute font-mono text-sky-600">
+                        <div className="text-xs text-mute font-mono text-lime-600">
                           {r.parent.resellerPortal || r.parent.email}
                         </div>
                       </>
@@ -240,13 +240,13 @@ export default function Resellers() {
                       <span className="text-mute text-xs italic">— top level —</span>
                     )}
                   </td>
-                  <td className="font-mono text-sm text-sky-600">{r.resellerPortal || '—'}</td>
+                  <td className="font-mono text-sm text-lime-600">{r.resellerPortal || '—'}</td>
                   <td className="text-xs text-mute">{r.phone || '—'}</td>
                   <td>
                     {r.customerCount > 0 ? (
                       <button
                         onClick={() => setDrilledReseller(r)}
-                        className="pill bg-sky-500/10 text-sky-700 hover:bg-sky-500/20 hover:text-sky-800 transition cursor-pointer"
+                        className="pill bg-lime-500/10 text-lime-700 hover:bg-lime-500/20 hover:text-lime-800 transition cursor-pointer"
                         title="Click to see all customers under this reseller"
                       >
                         {r.customerCount} {r.customerCount === 1 ? 'customer' : 'customers'} →
@@ -322,7 +322,7 @@ function ResellerCustomersModal({ reseller, onClose }) {
             <div className="text-xs font-semibold text-mute uppercase tracking-wider">Reseller customers</div>
             <div className="mt-1 text-lg font-bold text-slate-900">{reseller.company || reseller.name}</div>
             <div className="text-xs text-mute flex items-center gap-2 flex-wrap">
-              <span>Portal: <span className="font-mono text-sky-600">{reseller.resellerPortal}</span></span>
+              <span>Portal: <span className="font-mono text-lime-600">{reseller.resellerPortal}</span></span>
               <span>· {reseller.email}</span>
             </div>
           </div>
@@ -342,7 +342,7 @@ function ResellerCustomersModal({ reseller, onClose }) {
           {data && data.customers.length === 0 && (
             <div className="text-mute text-center py-10">
               No customers under this reseller yet — they'll appear here as soon as someone signs up via{' '}
-              <span className="font-mono text-sky-600">{reseller.resellerPortal}</span>.
+              <span className="font-mono text-lime-600">{reseller.resellerPortal}</span>.
             </div>
           )}
           {data && data.customers.length > 0 && (
@@ -395,7 +395,7 @@ function ResellerCustomersModal({ reseller, onClose }) {
                             <div className="font-semibold text-slate-900">{c.company || c.name}</div>
                             <div className="text-xs text-mute">{c.email} · {c.phone || '—'}</div>
                             {dids.length > 1 && (
-                              <div className="mt-1 text-[10px] uppercase tracking-wider text-sky-600 font-semibold">
+                              <div className="mt-1 text-[10px] uppercase tracking-wider text-lime-600 font-semibold">
                                 {dids.length} plans
                               </div>
                             )}
@@ -404,7 +404,7 @@ function ResellerCustomersModal({ reseller, onClose }) {
                         <td className="py-3 font-mono text-xs">
                           {d.value}
                           {d.isPrimary && dids.length > 1 && (
-                            <span className="ml-2 pill bg-sky-500/15 text-sky-700 text-[9px] uppercase tracking-wider font-semibold">primary</span>
+                            <span className="ml-2 pill bg-lime-500/15 text-lime-700 text-[9px] uppercase tracking-wider font-semibold">primary</span>
                           )}
                         </td>
                         <td className="py-3">

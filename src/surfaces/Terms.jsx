@@ -9,7 +9,7 @@ export default function Terms() {
     <div className="min-h-screen bg-white text-slate-800">
       <header className="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
         <Link to="/" aria-label="Home"><Logo size={44} showWordmark={false} /></Link>
-        <Link to="/signin" className="text-sm font-medium text-sky-600 hover:underline">Sign in</Link>
+        <Link to="/signin" className="text-sm font-medium text-lime-600 hover:underline">Sign in</Link>
       </header>
 
       <main className="mx-auto max-w-3xl px-6 py-12 prose prose-slate prose-sm">

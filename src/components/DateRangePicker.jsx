@@ -106,8 +106,8 @@ export default function DateRangePicker({ from, to, onChange, className = '' }) 
               onClick={() => apply(p)}
               className={`px-3 py-1 rounded-full text-xs font-semibold border transition ${
                 active
-                  ? 'bg-sky-100 border-sky-300 text-sky-800'
-                  : 'bg-white border-slate-200 text-slate-600 hover:border-sky-300 hover:text-sky-700'
+                  ? 'bg-lime-100 border-lime-300 text-lime-800'
+                  : 'bg-white border-slate-200 text-slate-600 hover:border-lime-300 hover:text-lime-700'
               }`}
             >
               {p.label}

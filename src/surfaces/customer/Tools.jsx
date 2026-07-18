@@ -105,10 +105,10 @@ export default function Tools() {
 
       {/* Propagation banner — shown after a save while the change goes live. */}
       {propagating && (
-        <div className={`mt-4 rounded-xl border p-4 ${propagationLocked ? 'border-sky-300 bg-sky-50' : 'border-green-300 bg-green-50'}`}>
+        <div className={`mt-4 rounded-xl border p-4 ${propagationLocked ? 'border-lime-300 bg-lime-50' : 'border-green-300 bg-green-50'}`}>
           {propagationLocked ? (
             <>
-              <div className="flex items-center gap-2 text-sm font-semibold text-sky-700">
+              <div className="flex items-center gap-2 text-sm font-semibold text-lime-700">
                 <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="50" strokeDashoffset="20" />
                 </svg>
@@ -118,9 +118,9 @@ export default function Tools() {
                 Applying the new call-forwarding number and restarting your voice agent.{' '}
                 <strong>Please wait {fmtTime(propagating.secondsLeft)} before placing a test call.</strong>
               </p>
-              <div className="mt-3 h-1.5 w-full rounded-full bg-sky-100 overflow-hidden">
+              <div className="mt-3 h-1.5 w-full rounded-full bg-lime-100 overflow-hidden">
                 <div
-                  className="h-full bg-sky-500 transition-all"
+                  className="h-full bg-lime-500 transition-all"
                   style={{ width: `${((propagating.totalSeconds - propagating.secondsLeft) / propagating.totalSeconds) * 100}%` }}
                 />
               </div>

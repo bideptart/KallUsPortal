@@ -77,7 +77,7 @@ export default function Payments() {
       {err && <div className="mt-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">{err}</div>}
 
       <div className="mt-6 grid sm:grid-cols-4 gap-4">
-        <div className="form-card"><div className="text-sm text-mute">MRR (total)</div><div className="mt-1 text-2xl font-semibold text-teal-400">{localMrr ? fmtCurrency(localMrr.total) : '—'}</div></div>
+        <div className="form-card"><div className="text-sm text-mute">MRR (total)</div><div className="mt-1 text-2xl font-semibold text-lime-400">{localMrr ? fmtCurrency(localMrr.total) : '—'}</div></div>
         <div className="form-card"><div className="text-sm text-mute">From plans</div><div className="mt-1 text-2xl font-semibold">{localMrr ? fmtCurrency(localMrr.plans) : '—'}</div></div>
         <div className="form-card"><div className="text-sm text-mute">From number rentals</div><div className="mt-1 text-2xl font-semibold">{localMrr ? fmtCurrency(localMrr.numbers) : '—'}</div></div>
         <div className="form-card"><div className="text-sm text-mute">Active subscriptions</div><div className="mt-1 text-2xl font-semibold">{stats?.customers ?? '—'}</div></div>
@@ -127,7 +127,7 @@ export default function Payments() {
                   <td className="font-mono text-sm">
                     {d.value}
                     {d.isPrimary && (
-                      <span className="ml-2 pill bg-sky-500/15 text-sky-700 text-[10px] uppercase tracking-wider font-semibold">primary</span>
+                      <span className="ml-2 pill bg-lime-500/15 text-lime-700 text-[10px] uppercase tracking-wider font-semibold">primary</span>
                     )}
                   </td>
                   <td>{d.plan ? `${fmtCurrency(d.plan.amount)} · ${d.plan.label}` : '—'}</td>
@@ -138,14 +138,14 @@ export default function Payments() {
                       {d.planCycle === 'yearly' ? 'Yearly' : 'Monthly'}
                     </span>
                   </td>
-                  <td className="text-right text-teal-400">{fmtCurrency(monthlyFor(d))}</td>
+                  <td className="text-right text-lime-400">{fmtCurrency(monthlyFor(d))}</td>
                 </tr>
               )).concat([(
                 <tr key={`${u.id}-total`} className="bg-slate-500/5">
                   <td className="text-xs uppercase tracking-wider text-mute">Total</td>
                   <td />
                   <td />
-                  <td className="text-right font-semibold text-teal-400">{fmtCurrency(total)}</td>
+                  <td className="text-right font-semibold text-lime-400">{fmtCurrency(total)}</td>
                 </tr>
               )]);
             })}

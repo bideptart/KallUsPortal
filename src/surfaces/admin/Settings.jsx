@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../../api.js';
 
 function StatusPill({ source }) {
-  if (source === 'db') return <span className="pill bg-teal-500/20 text-teal-400">● Override</span>;
+  if (source === 'db') return <span className="pill bg-lime-500/20 text-lime-400">● Override</span>;
   if (source === 'env') return <span className="pill bg-blue-500/20 text-blue-400">● From .env</span>;
   return <span className="pill bg-amber-500/20 text-amber-400">○ Unset</span>;
 }
@@ -106,7 +106,7 @@ function SectionCard({ section, refresh }) {
   return (
     <div className="form-card mt-5">
       <div className="flex items-center justify-between mb-3">
-        <div className="text-sm font-semibold text-teal-400">{section.sectionLabel}</div>
+        <div className="text-sm font-semibold text-lime-400">{section.sectionLabel}</div>
         {!editing ? (
           <button className="btn-ghost text-xs" onClick={startEdit}>✎ Edit</button>
         ) : (
@@ -132,7 +132,7 @@ function SectionCard({ section, refresh }) {
         ))}
       </div>
 
-      {msg && <div className="mt-3 text-sm text-teal-400">{msg}</div>}
+      {msg && <div className="mt-3 text-sm text-lime-400">{msg}</div>}
       {err && <div className="mt-3 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">{err}</div>}
     </div>
   );

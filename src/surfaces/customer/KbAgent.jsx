@@ -50,7 +50,7 @@ const GenderChip = ({ gender }) => (
   <span className={`ml-2 inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold align-middle ${
     gender === 'female'
       ? 'bg-pink-100 text-pink-600 dark:bg-pink-500/20 dark:text-pink-300'
-      : 'bg-sky-100 text-sky-600 dark:bg-sky-500/20 dark:text-sky-300'
+      : 'bg-lime-100 text-lime-600 dark:bg-lime-500/20 dark:text-lime-300'
   }`}>
     {gender === 'female' ? '♀ Female' : '♂ Male'}
   </span>
@@ -237,7 +237,7 @@ export default function KbAgent() {
           <h1 className="text-2xl font-bold">Knowledge &amp; Agent</h1>
           <p className="text-mute">Each number has its own agent and knowledge base. Pick which one to edit.</p>
         </div>
-        <span className="pill bg-teal-500/20 text-teal-400">● Synced</span>
+        <span className="pill bg-lime-500/20 text-lime-400">● Synced</span>
       </div>
 
       <div className="mt-4 form-card">
@@ -255,7 +255,7 @@ export default function KbAgent() {
                 onClick={() => pickNumber(n.id)}
                 className={`w-full flex items-center gap-3 rounded-xl border-2 px-3 py-2.5 text-left transition ${
                   active
-                    ? 'border-teal-400 ring-2 ring-teal-100 dark:ring-teal-500/20 bg-teal-50/60 dark:bg-teal-500/10'
+                    ? 'border-lime-400 ring-2 ring-lime-100 dark:ring-lime-500/20 bg-lime-50/60 dark:bg-lime-500/10'
                     : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
                 }`}
               >
@@ -283,7 +283,7 @@ export default function KbAgent() {
                   </div>
                 </div>
 
-                {active && <span className="shrink-0 text-teal-500 text-lg font-bold">✓</span>}
+                {active && <span className="shrink-0 text-lime-500 text-lg font-bold">✓</span>}
               </button>
             );
           })}
@@ -310,10 +310,10 @@ export default function KbAgent() {
         const fmtTime = (s) => s >= 60 ? `${Math.floor(s / 60)}m ${s % 60}s` : `${s}s`;
         const total = propagating.totalSeconds || PROPAGATION_SECONDS;
         return (
-          <div className={`mt-4 rounded-xl border p-4 ${propagationLocked ? 'border-sky-300 bg-sky-50' : 'border-green-300 bg-green-50'}`}>
+          <div className={`mt-4 rounded-xl border p-4 ${propagationLocked ? 'border-lime-300 bg-lime-50' : 'border-green-300 bg-green-50'}`}>
             {propagationLocked ? (
               <>
-                <div className="flex items-center gap-2 text-sm font-semibold text-sky-700">
+                <div className="flex items-center gap-2 text-sm font-semibold text-lime-700">
                   <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
                     <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="50" strokeDashoffset="20" />
                   </svg>
@@ -329,9 +329,9 @@ export default function KbAgent() {
                   {' '}
                   <strong>Please wait {fmtTime(propagating.secondsLeft)} before placing a test call.</strong>
                 </p>
-                <div className="mt-3 h-1.5 w-full rounded-full bg-sky-100 overflow-hidden">
+                <div className="mt-3 h-1.5 w-full rounded-full bg-lime-100 overflow-hidden">
                   <div
-                    className="h-full bg-sky-500 transition-all"
+                    className="h-full bg-lime-500 transition-all"
                     style={{ width: `${((total - propagating.secondsLeft) / total) * 100}%` }}
                   />
                 </div>
@@ -355,7 +355,7 @@ export default function KbAgent() {
       <div className="mt-4">
           <div className="grid md:grid-cols-2 gap-4">
             <div className="form-card">
-              <div className="text-xs text-sky-600 uppercase font-semibold mb-3">Agent identity</div>
+              <div className="text-xs text-lime-600 uppercase font-semibold mb-3">Agent identity</div>
 
               {/* Label for the DID itself — moved here from the Numbers page
                   so all per-number settings (label, agent, voice, language,
@@ -382,7 +382,7 @@ export default function KbAgent() {
               <textarea className="input" rows={6} value={draft.prompt} onChange={(e) => set({ prompt: e.target.value })} placeholder="You are the AI receptionist for…" disabled={propagationLocked} />
             </div>
             <div className="form-card">
-              <div className="text-xs text-teal-400 uppercase font-semibold mb-3">Voice</div>
+              <div className="text-xs text-lime-400 uppercase font-semibold mb-3">Voice</div>
               <div className="space-y-1">
                 {VOICES.map((v) => {
                   const sel = draft.voice === v.value;
@@ -403,7 +403,7 @@ export default function KbAgent() {
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); play(v.value, 'en-US'); }}
-                        className="ml-2 w-7 h-7 rounded-full flex items-center justify-center text-xs hover:bg-teal-500/20"
+                        className="ml-2 w-7 h-7 rounded-full flex items-center justify-center text-xs hover:bg-lime-500/20"
                         style={{
                           color: playing ? '#06121a' : (sel ? '#5eead4' : '#94a3b8'),
                           background: playing ? 'linear-gradient(135deg, #2dd4bf, #22d3ee)' : 'transparent',
@@ -440,7 +440,7 @@ export default function KbAgent() {
                       <span className="text-base font-bold text-slate-900 dark:text-slate-100">{voicePrompt.label}</span>
                       <GenderChip gender={voicePrompt.gender} />
                       {draft.voice === voicePrompt.value && (
-                        <span className="ml-2 text-[10px] font-semibold text-teal-600">✓ current</span>
+                        <span className="ml-2 text-[10px] font-semibold text-lime-600">✓ current</span>
                       )}
                     </div>
                     <div className="text-xs text-mute mt-0.5">{voicePrompt.desc}</div>
@@ -483,7 +483,7 @@ export default function KbAgent() {
 
       <div className="mt-4">
           <div className="form-card">
-            <div className="text-xs text-sky-600 uppercase font-semibold mb-2">Company info</div>
+            <div className="text-xs text-lime-600 uppercase font-semibold mb-2">Company info</div>
             <p className="text-sm text-mute mb-3">Free-form info this number's agent should always know — services, hours, pricing, policies.</p>
             <textarea
               className="input"
@@ -500,7 +500,7 @@ export default function KbAgent() {
 
       <div className="mt-4">
           <div className="form-card">
-            <div className="text-xs text-sky-600 uppercase font-semibold mb-2">FAQ Q&amp;A</div>
+            <div className="text-xs text-lime-600 uppercase font-semibold mb-2">FAQ Q&amp;A</div>
             <p className="text-sm text-mute mb-3">Q&amp;A pairs for this number's agent. Format: <code>Q:</code> on one line, <code>A:</code> on the next, blank line between pairs.</p>
             <textarea
               className="input"
@@ -655,7 +655,7 @@ export default function KbAgent() {
                   </pre>
                 </div>
                 <div className="text-[11px] text-mute">
-                  Source: <span className="font-mono text-sky-600 break-all">{importPreview.url}</span>
+                  Source: <span className="font-mono text-lime-600 break-all">{importPreview.url}</span>
                 </div>
               </div>
             )}

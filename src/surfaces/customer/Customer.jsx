@@ -16,19 +16,34 @@ import TopBar from '../../components/TopBar.jsx';
 import Logo from '../../components/Logo.jsx';
 import Footer from '../../components/Footer.jsx';
 
-const TABS = [
-  { id: 'overview',   label: '📊 Overview',          Component: Overview },
-  { id: 'numbers',    label: '📱 Plan and Numbers',           Component: Numbers },
-  { id: 'calls',      label: '📞 Call history',      Component: Calls },
-  { id: 'recordings', label: '🎙 Recordings',        Component: Recordings },
-  { id: 'reports',    label: '📑 Transcript & Summary', Component: Reports },
-  { id: 'meetings',   label: '📅 Scheduled meetings',Component: Meetings },
-  { id: 'kb',         label: '🧠 Knowledge & Agent', Component: KbAgent },
-  { id: 'tools',      label: '🛠 Tools',             Component: Tools },
-  { id: 'billing',    label: '💳 Billing & minutes', Component: Billing },
-  { id: 'transactions', label: '🧾 Transactions',    Component: Transactions },
-  { id: 'account',    label: '👤 Account',           Component: Account },
+// Sidebar nav — unified across Admin/Customer to a common shape. "Agents"
+// and "Knowledge Base" both land on KbAgent (it already holds both the
+// agent config and the knowledge-base fields); "Analytics" reuses Overview
+// (it already shows the usage stat tiles).
+const NAV_TABS = [
+  { id: 'overview',     label: '📊 Overview',          Component: Overview },
+  { id: 'agents',       label: '🤖 Agents',            Component: KbAgent },
+  { id: 'playground',   label: '🧪 Playground',        Component: Tools },
+  { id: 'kb',           label: '📖 Knowledge Base',    Component: KbAgent },
+  { id: 'analytics',    label: '📈 Analytics',         Component: Overview },
+  { id: 'calls',        label: '⚡ Call Activity',     Component: Calls },
+  { id: 'reports',      label: '📄 Reports',           Component: Reports },
+  { id: 'billing',      label: '💳 Billing & minutes', Component: Billing },
+  { id: 'transactions', label: '🧾 Transactions',      Component: Transactions },
+  { id: 'account',      label: '👤 Account',           Component: Account },
 ];
+
+// Legacy tab ids from the previous 11-item layout — kept valid (but not
+// shown in the sidebar) so any existing bookmark or deep link still
+// resolves instead of bouncing to Overview.
+const LEGACY_TABS = [
+  { id: 'numbers',    label: '📱 Plan and Numbers',    Component: Numbers },
+  { id: 'recordings', label: '🎙 Recordings',          Component: Recordings },
+  { id: 'meetings',   label: '📅 Scheduled meetings',  Component: Meetings },
+  { id: 'tools',      label: '🛠 Tools',               Component: Tools },
+];
+
+const TABS = [...NAV_TABS, ...LEGACY_TABS];
 
 export default function Customer() {
   const { currentUser } = useApp();
@@ -54,10 +69,11 @@ export default function Customer() {
       <aside className={`sidenav ${navOpen ? 'is-open' : ''}`}>
         <Link
           to="/dashboard/overview"
-          className="h-16 flex items-center px-4 bg-white sticky top-0 z-30"
-          aria-label="9278.ai home"
+          className="h-16 flex items-center gap-2 px-4 bg-white sticky top-0 z-30"
+          aria-label="kallus.io home"
         >
-          <Logo size={50} showWordmark={false} />
+          <Logo size={44} showWordmark={false} />
+          <span className="font-mono text-sm lowercase text-mute tracking-tight">kallus.io</span>
         </Link>
 
         {/* Persistent "Welcome back" line — replaces the per-page Overview
@@ -72,7 +88,7 @@ export default function Customer() {
         </div>
 
         <div className="sidenav-section mt-3">Manage</div>
-        {TABS.map((t) => (
+        {NAV_TABS.map((t) => (
           <Link
             key={t.id}
             to={`/dashboard/${t.id}`}

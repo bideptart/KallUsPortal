@@ -48,10 +48,11 @@ export default function Reseller() {
       <aside className={`sidenav ${navOpen ? 'is-open' : ''}`}>
         <Link
           to="/reseller/customers"
-          className="h-16 flex items-center px-4 bg-white sticky top-0 z-30"
-          aria-label="Reseller home"
+          className="h-16 flex items-center gap-2 px-4 bg-white sticky top-0 z-30"
+          aria-label="kallus.io home"
         >
-          <Logo size={50} showWordmark={false} />
+          <Logo size={44} showWordmark={false} />
+          <span className="font-mono text-sm lowercase text-mute tracking-tight">kallus.io</span>
         </Link>
 
         <div className="px-4 pt-3 pb-2 border-b border-slate-100">
@@ -62,7 +63,7 @@ export default function Reseller() {
             {currentUser.company || currentUser.name}
           </div>
           {currentUser.resellerPortal && (
-            <div className="mt-0.5 text-[11px] font-mono text-sky-600 truncate">
+            <div className="mt-0.5 text-[11px] font-mono text-lime-600 truncate">
               {currentUser.resellerPortal}
             </div>
           )}

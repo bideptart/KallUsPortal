@@ -79,8 +79,8 @@ export default function Signups() {
         <div className="form-card"><div className="text-xs text-mute uppercase">Total customers</div><div className="mt-1 text-2xl font-semibold">{stats?.customers ?? '—'}</div></div>
         <div className="form-card"><div className="text-xs text-mute uppercase">Last 24 hr</div><div className="mt-1 text-2xl font-semibold">{stats?.signupsLast24h ?? '—'}</div></div>
         <div className="form-card"><div className="text-xs text-mute uppercase">Last 7 days</div><div className="mt-1 text-2xl font-semibold">{stats?.signupsLast7d ?? '—'}</div></div>
-        <div className="form-card"><div className="text-xs text-mute uppercase">Live (with #)</div><div className="mt-1 text-2xl font-semibold text-teal-400">{liveCount}</div></div>
-        <div className="form-card"><div className="text-xs text-mute uppercase">Plans sold</div><div className="mt-1 text-2xl font-semibold text-sky-400">{totalDids}</div></div>
+        <div className="form-card"><div className="text-xs text-mute uppercase">Live (with #)</div><div className="mt-1 text-2xl font-semibold text-lime-400">{liveCount}</div></div>
+        <div className="form-card"><div className="text-xs text-mute uppercase">Plans sold</div><div className="mt-1 text-2xl font-semibold text-lime-400">{totalDids}</div></div>
       </div>
 
       <div className="mt-6 form-card p-0 overflow-x-auto">
@@ -124,7 +124,7 @@ export default function Signups() {
                       <div className="font-medium">{u.company || u.name}</div>
                       <div className="text-xs text-mute">{u.email}</div>
                       {dids.length > 1 && (
-                        <div className="mt-1 text-[10px] uppercase tracking-wider text-sky-600 font-semibold">
+                        <div className="mt-1 text-[10px] uppercase tracking-wider text-lime-600 font-semibold">
                           {dids.length} plans
                         </div>
                       )}
@@ -133,7 +133,7 @@ export default function Signups() {
                   <td className="font-mono text-sm">
                     <span>{d.value}</span>
                     {d.isPrimary && dids.length > 1 && (
-                      <span className="ml-2 pill bg-sky-500/15 text-sky-700 text-[10px] uppercase tracking-wider font-semibold">
+                      <span className="ml-2 pill bg-lime-500/15 text-lime-700 text-[10px] uppercase tracking-wider font-semibold">
                         primary
                       </span>
                     )}
@@ -155,7 +155,7 @@ export default function Signups() {
                   </td>
                   {i === 0 ? (
                     <td rowSpan={dids.length} className="align-top">
-                      <span className="pill bg-teal-500/15 text-teal-700 text-[10px] uppercase tracking-wider font-semibold">
+                      <span className="pill bg-lime-500/15 text-lime-700 text-[10px] uppercase tracking-wider font-semibold">
                         Live
                       </span>
                     </td>

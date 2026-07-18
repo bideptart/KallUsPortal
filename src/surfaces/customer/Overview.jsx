@@ -121,7 +121,7 @@ export default function Overview({ rechargeOn }) {
             <p className="text-sm text-mute mt-1">
               You're at or below your low-balance threshold ({lowThreshold} min).
               {autoTopupOn
-                ? <> Auto-topup is <strong className="text-teal-400">ON</strong> — we'll charge your card for 100 more minutes shortly.</>
+                ? <> Auto-topup is <strong className="text-lime-400">ON</strong> — we'll charge your card for 100 more minutes shortly.</>
                 : <> Top up now to keep your agent answering calls without interruption.</>}
             </p>
             <div className="mt-3 flex gap-2 items-center">
@@ -159,11 +159,11 @@ export default function Overview({ rechargeOn }) {
       <div className="mt-6 grid sm:grid-cols-4 gap-4">
         <div className="form-card">
           <div className="text-sm text-mute">Minutes left</div>
-          <div className={`mt-1 text-3xl font-bold ${isLow ? 'text-amber-400' : 'text-teal-400'}`}>
+          <div className={`mt-1 text-3xl font-bold ${isLow ? 'text-amber-400' : 'text-lime-400'}`}>
             {minLeft.toFixed(1)} <span className="text-sm font-normal text-mute">/ {minTotal}</span>
           </div>
           <div className="mt-2 h-2 bg-ink-800 rounded">
-            <div className={`h-2 rounded ${isLow ? 'bg-amber-400' : 'bg-teal-400'}`} style={{ width: `${pct}%` }} />
+            <div className={`h-2 rounded ${isLow ? 'bg-amber-400' : 'bg-lime-400'}`} style={{ width: `${pct}%` }} />
           </div>
           <div className="text-xs text-mute mt-2">
             {planLeft.toFixed(1)} plan + {walletMin.toFixed(1)} wallet · {minUsedAllTime.toFixed(1)} used all-time ({minUsedMonth.toFixed(1)} this month)
@@ -187,7 +187,7 @@ export default function Overview({ rechargeOn }) {
           <div className="form-card">
             <div className="text-sm text-mute">Sentiment</div>
             <div className={`mt-1 text-3xl font-bold ${
-              (sentiment?.avg_sentiment_score ?? 0) >= 0.3 ? 'text-sky-600'
+              (sentiment?.avg_sentiment_score ?? 0) >= 0.3 ? 'text-lime-600'
               : (sentiment?.avg_sentiment_score ?? 0) <= -0.1 ? 'text-red-600'
               : 'text-amber-600'
             }`}>
@@ -200,7 +200,7 @@ export default function Overview({ rechargeOn }) {
         ) : (
           <div className="form-card">
             <div className="text-sm text-mute">Total minutes used</div>
-            <div className="mt-1 text-3xl font-bold text-sky-600">
+            <div className="mt-1 text-3xl font-bold text-lime-600">
               {statsLoading ? (
                 <span className="text-slate-300">…</span>
               ) : (
@@ -221,8 +221,8 @@ export default function Overview({ rechargeOn }) {
       </div>
 
       {mcpOverview && (
-        <div className="mt-4 rounded-lg border border-teal-500/20 bg-teal-500/5 p-4 text-sm flex items-center gap-6">
-          <span className="text-xs text-teal-400 uppercase font-semibold">9278 dashboard</span>
+        <div className="mt-4 rounded-lg border border-lime-500/20 bg-lime-500/5 p-4 text-sm flex items-center gap-6">
+          <span className="text-xs text-lime-400 uppercase font-semibold">9278 dashboard</span>
           <span><span className="text-mute">Calls today:</span> <strong>{mcpOverview.calls_today}</strong></span>
           <span><span className="text-mute">Answer rate:</span> <strong>{mcpOverview.answer_rate}%</strong></span>
           <span><span className="text-mute">Running agents:</span> <strong>{mcpOverview.running_agents} / {mcpOverview.total_agents}</strong></span>
