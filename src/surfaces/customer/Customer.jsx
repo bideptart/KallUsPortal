@@ -11,12 +11,12 @@ import Calls from './Calls.jsx';
 import Recordings from './Recordings.jsx';
 import Reports from './Reports.jsx';
 import Meetings from './Meetings.jsx';
-import KbAgent from './KbAgent.jsx';
 import AgentsList from './AgentsList.jsx';
 import AgentDetail from './AgentDetail.jsx';
 import ChatAgentDetail from './ChatAgentDetail.jsx';
 import Templates from './Templates.jsx';
 import Playground from './Playground.jsx';
+import KnowledgeBase from './KnowledgeBase.jsx';
 import Numbers, { AddNumberModal } from './Numbers.jsx';
 import Billing from './Billing.jsx';
 import Transactions from './Transactions.jsx';
@@ -30,8 +30,8 @@ import BookingIcon from '../../components/BookingIcon.jsx';
 
 // Sidebar nav — unified across Admin/Customer to a common shape. "Agents" is
 // the agents-list/table page; clicking a row goes to the per-agent editor.
-// "Knowledge Base" lands on KbAgent (it already holds both the legacy agent
-// config and the knowledge-base fields). "Analytics" gets its own page.
+// "Knowledge Base" is a library view — each agent's live knowledge plus
+// reusable saved templates. "Analytics" gets its own page.
 // Split around "Call Activity" so the collapsible group renders inline,
 // right where the flat "Call Activity" entry used to sit (between Analytics
 // and Reports) instead of at the end of the list.
@@ -39,7 +39,7 @@ const NAV_TABS_BEFORE_CALLS = [
   { id: 'overview',    label: 'Overview',       Icon: LayoutDashboard, Component: Overview },
   { id: 'agents',      label: 'Agents',         Icon: Bot,             Component: AgentsList },
   { id: 'playground',  label: 'Playground',     Icon: FlaskConical,    Component: Playground },
-  { id: 'kb',          label: 'Knowledge Base', Icon: BookOpen,        Component: KbAgent },
+  { id: 'kb',          label: 'Knowledge Base', Icon: BookOpen,        Component: KnowledgeBase },
   { id: 'analytics',   label: 'Analytics',      Icon: TrendingUp,      Component: Analytics },
 ];
 const NAV_TABS_AFTER_CALLS = [
@@ -134,20 +134,21 @@ export default function Customer() {
         ))}
 
         <div className="nav-group">
-          <Link
-            to={`/dashboard/${CALL_ACTIVITY.id}`}
+          <button
+            type="button"
+            onClick={() => setCallActivityOpen((v) => !v)}
             className={`nav-group-toggle ${tab === CALL_ACTIVITY.id ? 'active' : ''}`}
+            aria-expanded={callActivityOpen}
           >
             <CALL_ACTIVITY.Icon size={16} strokeWidth={2} />
             <span className="flex-1">{CALL_ACTIVITY.label}</span>
             <span
               className={`nav-group-chevron ${callActivityOpen ? 'is-open' : ''}`}
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCallActivityOpen((v) => !v); }}
               aria-label={callActivityOpen ? 'Collapse Call Activity' : 'Expand Call Activity'}
             >
               ⌄
             </span>
-          </Link>
+          </button>
           {callActivityOpen && (
             <div className="nav-group-children">
               {CALL_ACTIVITY_CHILDREN.map((t) => (

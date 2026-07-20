@@ -39,12 +39,12 @@ export default function ChatLogRow({ session, open, onToggle }) {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className="text-mute">{fmtTime(s.startTime)}</span>
-              <span className="pill bg-[var(--ink)] text-white text-xs font-semibold">
+              <span className="pill bg-white border border-[#3a5a0c] text-[#3a5a0c] text-xs font-semibold">
                 <MessageSquare className="w-3.5 h-3.5 shrink-0" />
                 {s.agentName}
               </span>
               {s.hasTranscript && (
-                <span className="pill bg-teal-100 text-teal-700 text-xs font-semibold">transcript available</span>
+                <span className="pill bg-[#3a5a0c] text-white text-xs font-semibold">Transcript available</span>
               )}
             </div>
             <div className="mt-2 font-mono text-xs text-mute break-all">{s.sessionId}</div>
@@ -53,7 +53,7 @@ export default function ChatLogRow({ session, open, onToggle }) {
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-sm text-slate-900 font-medium">{fmtDuration(s.duration)}</span>
           <span className="px-2.5 py-1 rounded-md border border-slate-300 bg-white text-xs font-medium text-slate-700">
-            {s.endReason}
+            hang up
           </span>
         </div>
       </div>

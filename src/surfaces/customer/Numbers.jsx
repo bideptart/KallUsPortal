@@ -160,7 +160,7 @@ export default function Numbers() {
               </div>
 
               <div className="flex flex-col items-end gap-2">
-                <Link to={`/dashboard/kb?n=${n.id}`} className="btn-ghost text-xs">
+                <Link to={`/dashboard/agent-detail?n=${n.id}`} className="btn-ghost text-xs">
                   🧠 Edit agent
                 </Link>
                 {!n.isPrimary && (

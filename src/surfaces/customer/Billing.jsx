@@ -18,6 +18,7 @@ const DEMO_NUMBER = {
   id: 'demo-plan',
   value: '+1 555 010 1234',
   label: '',
+  agentName: 'KallUS Agent',
   isPrimary: true,
   planCycle: 'monthly',
   activatedAt: new Date(Date.now() - 11 * 24 * 60 * 60 * 1000).toISOString(),
@@ -25,6 +26,15 @@ const DEMO_NUMBER = {
   plan: { label: 'Starter', amount: 31, min: 250, rate: 0.13 },
 };
 const DEMO_USED_MINUTES = 48;
+
+// Solid square-avatar background per plan tier — first-letter badges on the
+// Auto-recharge cards (Starter/Growth/Scale each get their own accent).
+const planAvatarClass = (label) => {
+  const key = String(label || 'starter').toLowerCase();
+  if (key === 'scale')  return 'bg-slate-700';
+  if (key === 'growth') return 'bg-lime-600';
+  return 'bg-amber-500';
+};
 
 const fmtDate = (iso) => {
   if (!iso) return '—';
@@ -54,6 +64,24 @@ function loadStripe() {
     document.head.appendChild(s);
   });
   return _rzpLoad;
+}
+
+// Razorpay Checkout loader — used by the Wallet tab's "Add funds" flow so
+// top-ups open the native Razorpay popup (UPI / cards / netbanking / wallet)
+// instead of redirecting off-page.
+let _razorpayLoad;
+function loadRazorpay() {
+  if (window.Razorpay) return Promise.resolve(window.Razorpay);
+  if (_razorpayLoad) return _razorpayLoad;
+  _razorpayLoad = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    s.async = true;
+    s.onload = () => resolve(window.Razorpay);
+    s.onerror = () => reject(new Error('Could not load Razorpay'));
+    document.head.appendChild(s);
+  });
+  return _razorpayLoad;
 }
 
 // Per-plan-tier pill colour for the "Starter / Growth / Scale" tag.
@@ -115,22 +143,24 @@ export default function Billing() {
   const load = async () => {
     setErr('');
     try {
-      const [w, s, nums, callsRes, plansRes, cardsRes] = await Promise.all([
+      const [w, s, nums, callsRes, plansRes, cardsRes, packsRes] = await Promise.all([
         // A wallet fetch failure (e.g. no DB) must not block the other calls
-        // in this batch — /api/plans in particular is a static catalog that
-        // works with no DB at all, so the Plans tab shouldn't get stuck on
-        // "Loading plans…" just because the wallet couldn't load.
-        api('/api/wallet').catch((e) => { setErr(e.message); return { wallet: null, transactions: [], packs: [] }; }),
+        // in this batch — /api/plans and /api/wallet/packs are both static
+        // catalogs that work with no DB at all, so the Plans tab and the
+        // Wallet tab's preset amount buttons shouldn't get stuck just
+        // because the wallet couldn't load.
+        api('/api/wallet').catch((e) => { setErr(e.message); return { wallet: null, transactions: [] }; }),
         api('/api/twilio/stats').catch((e) => { setStatsErr(e.message); return null; }),
         api('/api/numbers').catch(() => ({ numbers: [] })),
         api('/api/twilio/calls?limit=500').catch(() => ({ calls: [] })),
         api('/api/plans').catch(() => ({ plans: [] })),
         api('/api/payment-methods').catch(() => ({ cards: [] })),
+        api('/api/wallet/packs').catch(() => ({ packs: [] })),
       ]);
       if (!mountedRef.current) return;
       setWallet(w.wallet);
       setTransactions(w.transactions);
-      setPacks(w.packs);
+      setPacks(packsRes.packs || []);
       if (s) setStats(s);
       setNumbers(nums.numbers || []);
       setCards(cardsRes.cards || []);
@@ -142,30 +172,6 @@ export default function Billing() {
   };
 
   useEffect(() => { load(); }, []);  // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Finalize a Stripe Checkout return (?session_id=…) — persists the newly
-  // saved card, then reloads. If the user was mid-way through assigning a card
-  // to a plan (we stashed the DID before redirecting), jump back to the
-  // Auto-recharge tab and re-open the chooser for that plan.
-  const [resumePlanId, setResumePlanId] = useState(null);
-  useEffect(() => {
-    const sp = new URLSearchParams(window.location.search);
-    const sessionId = sp.get('session_id');
-    if (!sessionId) return;
-    (async () => {
-      try { await api('/api/stripe/checkout-return', { method: 'POST', body: { sessionId } }); }
-      catch (e) { setErr(e.message || 'Could not finalize card'); }
-      await load();
-      // Clean the URL so a refresh doesn't re-finalize.
-      window.history.replaceState({}, '', window.location.pathname);
-      const pending = sessionStorage.getItem('ar.resumePlan');
-      if (pending) {
-        sessionStorage.removeItem('ar.resumePlan');
-        setTab('autorecharge');
-        setResumePlanId(pending);
-      }
-    })();
-  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!currentUser) return null;
 
@@ -194,18 +200,11 @@ export default function Billing() {
   return (
     <div>
       {/* ===== HEADER ====================================================== */}
-      {/* "+ Add plan / number" sits on its own row, right-aligned above the
-          title — matching the reference layout, which keeps it visually
-          separate from the "Transaction history" ghost button below. */}
-      <div className="flex justify-end">
-        <button
-          onClick={() => setShowAddPlan(true)}
-          className={`px-4 py-2 rounded-lg text-white text-sm font-semibold ${BRAND_GRADIENT}`}
-        >
-          + Add plan / number
-        </button>
-      </div>
-      <div className="mt-3 flex items-start justify-between gap-3 flex-wrap">
+      {/* No page-level "+ Add plan / number" here anymore — the sticky top
+          bar (Customer.jsx) already shows one on every dashboard page,
+          including this one, so a second copy here was a duplicate.
+          "Active plans" below still has its own in-context copy. */}
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Billing &amp; minutes</h1>
           <p className="text-sm text-mute mt-1">
@@ -283,8 +282,6 @@ export default function Billing() {
           cards={cards}
           onSaved={load}
           onGoWallet={() => setTab('wallet')}
-          resumePlanId={resumePlanId}
-          onResumed={() => setResumePlanId(null)}
         />
       )}
 
@@ -677,6 +674,32 @@ function WalletTab({ wallet, transactions, packs, currentUser, onSaved }) {
   const [saveCardBusy, setSaveCardBusy] = useState(false);
   const [saveCardErr, setSaveCardErr]   = useState('');
 
+  // Low-minutes alert threshold — syncs from the wallet whenever it (re)loads,
+  // but stays locally editable in between so typing isn't fought by refetches.
+  const [threshold, setThreshold]         = useState(wallet?.lowBalanceThreshold ?? 20);
+  const [thresholdBusy, setThresholdBusy] = useState(false);
+  const [thresholdMsg, setThresholdMsg]   = useState('');
+
+  useEffect(() => {
+    if (wallet?.lowBalanceThreshold != null) setThreshold(wallet.lowBalanceThreshold);
+  }, [wallet?.lowBalanceThreshold]);
+
+  const saveThreshold = async () => {
+    setThresholdBusy(true); setThresholdMsg('');
+    try {
+      await api('/api/wallet/preferences', {
+        method: 'PATCH',
+        body: { lowBalanceThreshold: Number(threshold) || 0 },
+      });
+      setThresholdMsg('✓ Saved');
+      await onSaved?.();
+    } catch (e) {
+      setThresholdMsg(e.message || 'Could not save');
+    } finally {
+      setThresholdBusy(false);
+    }
+  };
+
   useEffect(() => {
     if (!selectedPackId && defaultPackId) setSelectedPackId(defaultPackId);
   }, [defaultPackId, selectedPackId]);
@@ -685,18 +708,58 @@ function WalletTab({ wallet, transactions, packs, currentUser, onSaved }) {
   const customAmountInt = Math.max(0, Math.floor(Number(customAmount) || 0));
   const finalAmount = customAmountInt > 0 ? customAmountInt : (pickedPack?.amount || 0);
 
+  // Opens the native Razorpay Checkout popup (UPI / cards / netbanking /
+  // wallet) instead of redirecting off-page. The server creates a real
+  // Razorpay order first; the popup's success handler posts the returned
+  // payment id + signature back to the server, which verifies the HMAC
+  // signature before crediting the wallet — the amount credited always
+  // comes from the verified Razorpay payment, never from anything the
+  // browser sends directly.
   const addFunds = async () => {
     if (!finalAmount) return;
     setTopUpBusy(true); setTopUpErr('');
     try {
-      
-      // Use the existing topup endpoint when a pack is picked; otherwise we
-      // build a custom-amount order (treats it as a virtual pack).
       const body = customAmountInt > 0
         ? { customAmount: customAmountInt }
         : { pack: selectedPackId };
-      const order = await api('/api/stripe/checkout-session/topup', { method: 'POST', body });
-      if (order.url) { window.location.href = order.url; return; }
+      const order = await api('/api/razorpay/order/topup', { method: 'POST', body });
+      const Razorpay = await loadRazorpay();
+
+      const rzp = new Razorpay({
+        key: order.keyId,
+        amount: order.amount,
+        currency: order.currency,
+        name: 'KallUS',
+        description: `Wallet top-up · ${rand(order.pack.amount)}`,
+        order_id: order.orderId,
+        prefill: order.prefill,
+        theme: { color: '#4d7c0f' },
+        handler: async (response) => {
+          try {
+            await api('/api/razorpay/verify/topup', {
+              method: 'POST',
+              body: {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                packId: order.pack.id,
+              },
+            });
+            setCustomAmount('');
+            await onSaved?.();
+          } catch (e) {
+            setTopUpErr(e.message || 'Payment succeeded but crediting the wallet failed — contact support.');
+          } finally {
+            setTopUpBusy(false);
+          }
+        },
+        modal: { ondismiss: () => setTopUpBusy(false) },
+      });
+      rzp.on('payment.failed', (resp) => {
+        setTopUpErr(resp.error?.description || 'Payment failed');
+        setTopUpBusy(false);
+      });
+      rzp.open();
     } catch (e) {
       setTopUpErr(e.message);
       setTopUpBusy(false);
@@ -706,11 +769,11 @@ function WalletTab({ wallet, transactions, packs, currentUser, onSaved }) {
   const saveCard = async () => {
     setSaveCardBusy(true); setSaveCardErr('');
     try {
-      
-      const order = await api('/api/stripe/setup-intent', { method: 'POST' });
-      if (order.url) { window.location.href = order.url; return; }
+      await startAddCard();
+      await onSaved?.();
     } catch (e) {
       setSaveCardErr(e.message);
+    } finally {
       setSaveCardBusy(false);
     }
   };
@@ -740,6 +803,34 @@ function WalletTab({ wallet, transactions, packs, currentUser, onSaved }) {
           </div>
         </div>
 
+        {/* Low-minutes alert card */}
+        <div className="form-card">
+          <div className="text-lg font-bold text-slate-900">Low-minutes alert</div>
+          <div className="text-xs text-mute mt-1">
+            We'll warn you on the dashboard and by email when your remaining minutes drop to this level.
+          </div>
+          <div className="mt-4 flex items-center gap-3 flex-wrap">
+            <input
+              type="number"
+              min={0}
+              step={1}
+              className="input text-sm w-28"
+              value={threshold}
+              onChange={(e) => setThreshold(e.target.value)}
+              disabled={thresholdBusy}
+            />
+            <span className="text-sm text-slate-700">minutes left</span>
+            <button
+              onClick={saveThreshold}
+              disabled={thresholdBusy}
+              className={`ml-auto px-4 py-2 rounded-lg text-white text-sm font-semibold ${BRAND_GRADIENT} disabled:opacity-60`}
+            >
+              {thresholdBusy ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+          {thresholdMsg && <div className="mt-2 text-xs text-mute">{thresholdMsg}</div>}
+        </div>
+
         {/* Add funds card */}
         <div className="form-card">
           <div className="text-lg font-bold text-slate-900">Add funds</div>
@@ -759,8 +850,8 @@ function WalletTab({ wallet, transactions, packs, currentUser, onSaved }) {
                   disabled={topUpBusy}
                   className={`rounded-lg border-2 p-3 text-center transition ${
                     isPicked
-                      ? 'border-rose-500 ring-2 ring-rose-100 bg-rose-50/50'
-                      : 'border-slate-200 bg-white hover:border-rose-300'
+                      ? 'border-lime-500 ring-2 ring-lime-100 bg-lime-50/50'
+                      : 'border-slate-200 bg-white hover:border-lime-300'
                   } disabled:opacity-60 disabled:cursor-not-allowed`}
                 >
                   <div className="text-lg font-extrabold text-slate-900">{rand(p.amount)}</div>
@@ -905,20 +996,52 @@ function CardPill({ card }) {
 
 // Redirect to Stripe's hosted page to add a card. If a plan id is passed, we
 // stash it so we can re-open that plan's chooser when Stripe redirects back.
-async function startAddCard(planId) {
-  if (planId) sessionStorage.setItem('ar.resumePlan', String(planId));
-  const { url } = await api('/api/stripe/checkout-session/setup', {
-    method: 'POST', body: { returnPath: '/dashboard/billing' },
+// Saves a card via the native Razorpay popup instead of a page redirect —
+// Razorpay tokenises the card when Checkout runs with a customer_id + a
+// tiny $100 verification charge, which gets credited straight back to the
+// wallet server-side so the customer isn't out of pocket for it. Resolves
+// once the card is actually saved (server-verified), so callers can refresh
+// their card list immediately instead of round-tripping through a redirect.
+async function startAddCard() {
+  const order = await api('/api/razorpay/order/save-card', { method: 'POST' });
+  const Razorpay = await loadRazorpay();
+  return new Promise((resolve, reject) => {
+    const rzp = new Razorpay({
+      key: order.keyId,
+      amount: order.amount,
+      currency: order.currency,
+      name: 'KallUS',
+      description: 'Save card for auto-recharge',
+      order_id: order.orderId,
+      customer_id: order.customerId,
+      recurring: 1,
+      prefill: order.prefill,
+      theme: { color: '#4d7c0f' },
+      handler: async (response) => {
+        try {
+          const result = await api('/api/razorpay/verify/save-card', {
+            method: 'POST',
+            body: {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            },
+          });
+          resolve(result);
+        } catch (e) { reject(e); }
+      },
+      modal: { ondismiss: () => reject(new Error('Card setup cancelled')) },
+    });
+    rzp.on('payment.failed', (resp) => reject(new Error(resp.error?.description || 'Payment failed')));
+    rzp.open();
   });
-  if (!url) throw new Error('Stripe did not return a checkout URL');
-  window.location.href = url;
 }
 
 // =============================================================================
 // CardChooserModal — pick which saved card a plan's auto-recharge should use,
 // or add a new one. Confirming enables auto-recharge for that plan.
 // =============================================================================
-function CardChooserModal({ number: n, cards, onClose, onConfirm }) {
+function CardChooserModal({ number: n, cards, onClose, onConfirm, onCardSaved }) {
   const preselect = n.autoRechargePmId && cards.some((c) => c.id === n.autoRechargePmId)
     ? n.autoRechargePmId
     : (cards.find((c) => c.isDefault)?.id || cards[0]?.id || null);
@@ -941,8 +1064,14 @@ function CardChooserModal({ number: n, cards, onClose, onConfirm }) {
 
   const addNew = async () => {
     setBusy(true); setErr('');
-    try { await startAddCard(n.id); }     // redirects away
-    catch (e) { setErr(e.message || 'Could not start card setup'); setBusy(false); }
+    try {
+      await startAddCard();
+      await onCardSaved?.();   // refreshes the cards list so the new one appears below
+    } catch (e) {
+      setErr(e.message || 'Could not save card');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -963,12 +1092,12 @@ function CardChooserModal({ number: n, cards, onClose, onConfirm }) {
           ) : (
             cards.map((c) => (
               <label key={c.id} className={`flex items-center gap-3 rounded-xl border-2 px-3 py-2.5 cursor-pointer transition ${
-                selected === c.id ? 'border-rose-400 ring-2 ring-rose-100' : 'border-slate-200 hover:border-slate-300'
+                selected === c.id ? 'border-lime-500 ring-2 ring-lime-100' : 'border-slate-200 hover:border-slate-300'
               }`}>
                 <input
                   type="radio"
                   name="ar-card"
-                  className="accent-rose-500"
+                  className="accent-lime-600"
                   checked={selected === c.id}
                   onChange={() => setSelected(c.id)}
                 />
@@ -983,9 +1112,9 @@ function CardChooserModal({ number: n, cards, onClose, onConfirm }) {
           <button
             onClick={addNew}
             disabled={busy}
-            className="w-full mt-1 px-3 py-2.5 rounded-xl border-2 border-dashed border-slate-300 text-sm font-semibold text-slate-700 hover:border-rose-300 hover:text-rose-600 transition disabled:opacity-60"
+            className="w-full mt-1 px-3 py-2.5 rounded-xl border-2 border-dashed border-slate-300 text-sm font-semibold text-slate-700 hover:border-lime-300 hover:text-lime-700 transition disabled:opacity-60"
           >
-            + Add a new card
+            {busy ? 'Opening Razorpay…' : '+ Add a new card'}
           </button>
         </div>
 
@@ -1009,21 +1138,12 @@ function CardChooserModal({ number: n, cards, onClose, onConfirm }) {
 // =============================================================================
 // AutoRechargeTab — per-plan toggle; each plan picks (or adds) its own card.
 // =============================================================================
-function AutoRechargeTab({ numbers, cards = [], onSaved, resumePlanId, onResumed }) {
+function AutoRechargeTab({ numbers, cards = [], onSaved, onGoWallet }) {
   const [pending, setPending] = useState({});      // { [id]: true | false } while a PATCH settles
   const [err, setErr]         = useState('');
   const [chooserFor, setChooserFor] = useState(null);   // the number whose chooser modal is open
 
   const cardById = (id) => cards.find((c) => c.id === id) || null;
-
-  // After returning from Stripe's add-card page, re-open the chooser for the
-  // plan the user was setting up (now with the freshly-saved card listed).
-  useEffect(() => {
-    if (!resumePlanId) return;
-    const n = numbers.find((x) => x.id === resumePlanId);
-    if (n) setChooserFor(n);
-    onResumed?.();
-  }, [resumePlanId, numbers, onResumed]);
 
   // Toggle OFF immediately; toggle ON opens the card chooser (the actual
   // enable happens once a card is confirmed in the modal).
@@ -1050,83 +1170,118 @@ function AutoRechargeTab({ numbers, cards = [], onSaved, resumePlanId, onResumed
     await onSaved?.();
   };
 
+  // Sample plan shown only when the account has no real DID yet — same
+  // reasoning and same demo row as the My Plans tab (DEMO_NUMBER), so the
+  // page always shows what auto-recharge looks like instead of a bare
+  // empty state. Never overrides real data once /api/numbers returns one.
+  const isDemo = numbers.length === 0;
+  const displayNumbers = isDemo ? [DEMO_NUMBER] : numbers;
+  const offCount = displayNumbers.filter((n) => {
+    const isOn = pending[n.id] !== undefined ? pending[n.id] : !!n.autoRechargeEnabled;
+    return !isOn;
+  }).length;
+
   return (
     <div className="mt-6 grid lg:grid-cols-[1fr_300px] gap-6">
       {/* ====== Left column: per-plan list ====== */}
       <div>
-        <div className="text-lg font-bold text-slate-900">Auto-recharge per plan</div>
-        <div className="text-xs text-mute mt-1">
-          Turn auto-recharge on for the plans you want Stripe to top up automatically. Each plan can use its own card.
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <div className="text-lg font-bold text-slate-900">Auto-recharge per plan</div>
+            <div className="text-xs text-mute mt-1">
+              Turn auto-recharge on for the plans you want Razorpay to top up automatically using your saved card.
+            </div>
+          </div>
+          <span className="pill bg-slate-100 text-slate-600 text-xs font-semibold whitespace-nowrap">○ {offCount} OFF</span>
         </div>
 
         {err && (
           <div className="mt-3 text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">⚠ {err}</div>
         )}
 
-        {numbers.length === 0 && (
-          <div className="mt-4 form-card text-center text-mute">
-            No plans yet. Add one from the My Plans tab.
+        {isDemo && (
+          <div className="mt-3 flex items-start">
+            <span className="pill inline-flex items-center gap-1" style={{ background: 'var(--line-2)', color: 'var(--ink-3)' }}>
+              <Sparkles className="w-3 h-3" /> Sample data — connect a database for your real plans
+            </span>
           </div>
         )}
 
         <div className="mt-4 space-y-3">
-          {numbers.map((n) => {
+          {displayNumbers.map((n) => {
             const isOn = pending[n.id] !== undefined ? pending[n.id] : !!n.autoRechargeEnabled;
             const planLabel = n.plan?.label || 'Starter';
             const planAmount = n.plan?.amount || 0;
             const assigned = cardById(n.autoRechargePmId);
             return (
-              <div key={n.id} className={`rounded-xl border-2 bg-white p-4 transition ${isOn ? 'border-rose-400 ring-2 ring-rose-100' : 'border-slate-200'}`}>
-                <div className="flex items-start justify-between gap-3 flex-wrap">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="inline-flex items-center gap-1 text-sm font-bold text-slate-900">
-                        <Star className="w-3.5 h-3.5" fill="currentColor" /> {planLabel} plan
-                      </span>
-                      <span className="text-xs text-mute">· {rand(planAmount)}/mo</span>
-                    </div>
-                    <div className="mt-0.5 text-sm font-mono text-rose-600">{n.value}</div>
-                    {n.label && (
-                      <div className="mt-0.5 inline-flex items-center gap-1 text-xs text-mute">
-                        <Tag className="w-3 h-3" /> {n.label}
+              <div key={n.id} className="max-w-md rounded-xl border border-slate-200 bg-white p-3.5">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span
+                      className={`shrink-0 rounded-lg flex items-center justify-center text-white font-bold text-sm ${planAvatarClass(planLabel)}`}
+                      style={{ width: 36, height: 36, minWidth: 36, minHeight: 36, maxWidth: 36, maxHeight: 36, boxSizing: 'border-box' }}
+                    >
+                      {planLabel.charAt(0).toUpperCase()}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-sm font-bold text-slate-900">{planLabel} plan</span>
+                        <span className={`pill text-[10px] font-semibold ${isOn ? 'bg-lime-100 text-lime-700' : 'bg-slate-100 text-slate-500'}`}>
+                          {isOn ? 'ON' : 'OFF'}
+                        </span>
+                        {isDemo && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-semibold">
+                            <Sparkles className="w-2.5 h-2.5" /> Sample
+                          </span>
+                        )}
                       </div>
-                    )}
+                      <div className="text-sm font-mono text-blue-600 truncate">{n.value}</div>
+                      <div className="text-xs text-mute">
+                        {rand(planAmount)} /mo · {n.agentName || n.label || 'Unnamed agent'}
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Toggle */}
-                  <label className="inline-flex items-center gap-2 cursor-pointer select-none shrink-0">
+                  {/* Toggle — disabled on the sample row since there's no
+                      real DID behind it to PATCH. */}
+                  <label className={`inline-flex items-center gap-2 select-none shrink-0 ${isDemo ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`} title={isDemo ? 'Add a real plan from the My Plans tab to enable auto-recharge' : undefined}>
                     <input
                       type="checkbox"
                       className="sr-only peer"
                       checked={isOn}
                       onChange={(e) => onToggle(n, e.target.checked)}
-                      disabled={pending[n.id] !== undefined}
+                      disabled={isDemo || pending[n.id] !== undefined}
                     />
-                    <span className="relative w-11 h-6 bg-slate-300 rounded-full transition peer-checked:bg-rose-500 after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:w-5 after:h-5 after:transition peer-checked:after:translate-x-5" />
+                    <span className="relative w-11 h-6 bg-slate-300 rounded-full transition peer-checked:bg-lime-500 after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:w-5 after:h-5 after:transition peer-checked:after:translate-x-5" />
                     <span className="text-sm font-semibold text-slate-900 w-7">{isOn ? 'On' : 'Off'}</span>
                   </label>
                 </div>
 
-                {/* When ON, show which card will be charged + let them change it */}
-                {isOn && (
-                  <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between flex-wrap gap-2">
-                    <div className="text-xs text-mute">
-                      <strong className="text-slate-900">Stripe will charge</strong> when this plan's minutes run out:
-                    </div>
-                    {assigned ? (
-                      <div className="flex items-center gap-3">
-                        <CardPill card={assigned} />
-                        <button onClick={() => setChooserFor(n)} className="text-xs text-rose-600 font-semibold hover:underline">
-                          Change
-                        </button>
+                <div className="mt-3 pt-3 border-t border-slate-100">
+                  {isOn ? (
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="text-xs text-mute">
+                        <strong className="text-slate-900">Razorpay will charge</strong> when this plan's minutes run out:
                       </div>
-                    ) : (
-                      <button onClick={() => setChooserFor(n)} className="text-xs text-rose-600 font-semibold hover:underline">
-                        Choose a card →
-                      </button>
-                    )}
-                  </div>
-                )}
+                      {assigned ? (
+                        <div className="flex items-center gap-3">
+                          <CardPill card={assigned} />
+                          <button onClick={() => setChooserFor(n)} className="text-xs text-lime-700 font-semibold hover:underline">
+                            Change
+                          </button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setChooserFor(n)} className="text-xs text-lime-700 font-semibold hover:underline">
+                          Choose a card →
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-mute">
+                      Attach a card, then turn this on to keep this line running without manual top-ups.
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })}
@@ -1148,19 +1303,21 @@ function AutoRechargeTab({ numbers, cards = [], onSaved, resumePlanId, onResumed
           )}
           <button
             className={`mt-3 w-full px-3 py-2 rounded-lg text-white text-sm font-semibold ${BRAND_GRADIENT}`}
-            onClick={() => startAddCard(null).catch((e) => setErr(e.message))}
+            onClick={onGoWallet}
           >
             + Add a card
           </button>
         </div>
 
-        <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-4 text-xs text-slate-700">
-          <div className="inline-flex items-center gap-1 font-semibold text-slate-900 mb-1">
+        <div className="rounded-xl border border-lime-200 bg-lime-50/50 p-4 text-xs text-slate-700">
+          <div className="flex items-center gap-1 font-semibold text-slate-900 mb-1">
             <Lightbulb className="w-3.5 h-3.5" /> How it works
           </div>
-          When a plan you've enabled runs out of minutes, Stripe charges
-          that plan's chosen card for the plan's amount and resets the cycle —
-          calls keep going without manual intervention.
+          <p>
+            When a plan you've enabled runs out of minutes, Razorpay charges
+            that plan's chosen card for the plan's amount and resets the cycle —
+            calls keep going without manual intervention.
+          </p>
         </div>
       </div>
 
@@ -1170,6 +1327,7 @@ function AutoRechargeTab({ numbers, cards = [], onSaved, resumePlanId, onResumed
           cards={cards}
           onClose={() => setChooserFor(null)}
           onConfirm={(pmId) => confirmCard(chooserFor, pmId)}
+          onCardSaved={onSaved}
         />
       )}
     </div>

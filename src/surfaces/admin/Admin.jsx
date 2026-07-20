@@ -30,12 +30,12 @@ import Footer from '../../components/Footer.jsx';
 import BookingHistory from '../customer/BookingHistory.jsx';
 import Tickets from '../customer/Tickets.jsx';
 import Tools from '../customer/Tools.jsx';
+import KnowledgeBase from '../customer/KnowledgeBase.jsx';
 import BookingIcon from '../../components/BookingIcon.jsx';
 
 // Sidebar nav — unified across Admin/Customer to a common shape. Each entry
-// maps onto the closest existing admin page; several concepts here (e.g.
-// "Knowledge Base") don't have a dedicated admin screen, so they share a
-// page with a nearby entry rather than inventing a new one.
+// maps onto the closest existing admin page; some concepts still don't have
+// a dedicated admin screen and share a page with a nearby entry instead.
 // Split around "Call Activity" so the collapsible group renders inline,
 // right where the flat "Call Activity" entry used to sit (between Analytics
 // and Reports) instead of at the end of the list.
@@ -140,20 +140,21 @@ export default function Admin() {
         <Side list={NAV_TABS_BEFORE_CALLS} />
 
         <div className="nav-group">
-          <Link
-            to={`/admin/${CALL_ACTIVITY.id}`}
+          <button
+            type="button"
+            onClick={() => setCallActivityOpen((v) => !v)}
             className={`nav-group-toggle ${tab === CALL_ACTIVITY.id ? 'active' : ''}`}
+            aria-expanded={callActivityOpen}
           >
             <CALL_ACTIVITY.Icon size={16} strokeWidth={2} />
             <span className="flex-1">{CALL_ACTIVITY.label}</span>
             <span
               className={`nav-group-chevron ${callActivityOpen ? 'is-open' : ''}`}
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCallActivityOpen((v) => !v); }}
               aria-label={callActivityOpen ? 'Collapse Call Activity' : 'Expand Call Activity'}
             >
               ⌄
             </span>
-          </Link>
+          </button>
           {callActivityOpen && (
             <div className="nav-group-children">
               <Side list={CALL_ACTIVITY_CHILDREN} />
@@ -201,7 +202,8 @@ export default function Admin() {
         {tab === 'tools'                                 && <Tools />}
         {tab === 'playground'                            && <Playground />}
         {tab === 'mcp'                                    && <McpBrowser />}
-        {(tab === 'kb' || tab === 'bulk')               && <Bulk />}
+        {tab === 'kb'                                    && <KnowledgeBase />}
+        {tab === 'bulk'                                  && <Bulk />}
         {tab === 'analytics'                             && <Analytics />}
         {tab === 'usage'                                 && <Usage />}
         {(tab === 'calls' || tab === 'logs')            && <Logs />}

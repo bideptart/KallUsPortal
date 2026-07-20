@@ -22,7 +22,7 @@ import { api } from '../../api.js';
 //    reload.
 // =============================================================================
 const PROPAGATION_SECONDS = 120;
-const COUNTRY_CODE = '+91';
+const COUNTRY_CODE = '+1';
 
 // Shown only when the account has no real plans/numbers yet, so the page
 // still demonstrates its card-grid layout instead of sitting empty. Fake
@@ -58,7 +58,6 @@ export default function Tools() {
   const [numbers, setNumbers] = useState([]);
   const [selectedId, setSelectedId] = useState('');
   const [loadingNumbers, setLoadingNumbers] = useState(true);
-  const [isDemo, setIsDemo] = useState(false);
 
   // Blind-transfer state.
   const [current, setCurrent] = useState(null);   // { number, destinationName, source } | null
@@ -95,14 +94,11 @@ export default function Tools() {
       const real = r.numbers || [];
       if (real.length === 0) {
         setNumbers(DEMO_NUMBERS);
-        setIsDemo(true);
       } else {
         setNumbers(real);
-        setIsDemo(false);
       }
     } catch (e) {
       setNumbers(DEMO_NUMBERS);
-      setIsDemo(true);
     }
     finally { setLoadingNumbers(false); }
   };
@@ -238,17 +234,7 @@ export default function Tools() {
         <>
           <div className="flex items-center gap-2 mt-6 mb-2">
             <span className="text-[10px] uppercase tracking-wider text-mute font-semibold">Your plans &amp; numbers</span>
-            {isDemo && (
-              <span className="pill bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300 text-[10px] uppercase tracking-wider">
-                Sample data
-              </span>
-            )}
           </div>
-          {isDemo && (
-            <p className="text-xs text-mute -mt-1 mb-3">
-              No plans/numbers connected yet — showing a sample card so you can preview the layout.
-            </p>
-          )}
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {numbers.map((n) => {
               const isOpen = selectedId === n.id;
