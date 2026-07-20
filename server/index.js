@@ -34,7 +34,22 @@ import { createRequire } from 'module';
 // pdf-parse is CommonJS with an export shape Node's ESM interop can't
 // synthesize a `default` for — require() it directly instead.
 const require = createRequire(import.meta.url);
-const pdfParse = require('pdf-parse');
+// Loaded lazily (only when a PDF is actually uploaded) and wrapped in
+// try/catch so a missing/broken optional native dependency (e.g.
+// @napi-rs/canvas) can't crash the whole server at cold start and take
+// down unrelated routes such as /api/auth/signin.
+let _pdfParse = null;
+function getPdfParse() {
+    if (_pdfParse === null) {
+          try {
+                  _pdfParse = require('pdf-parse');
+          } catch (e) {
+                  console.error('[pdf-parse] failed to load:', e.message);
+                  _pdfParse = false;
+          }
+    }
+    return _pdfParse || null;
+}
 import {
   razorpayConfigured, razorpayKeyId, createOrder as rzpCreateOrder,
   verifyPaymentSignature as rzpVerifySignature, fetchPayment as rzpFetchPayment,
@@ -4449,7 +4464,9 @@ app.post('/api/kb/import-from-file', auth, (req, res) => {
     let text = '';
     try {
       if (ext === 'pdf') {
-        text = (await pdfParse(req.file.buffer)).text || '';
+        const pdfParse = getPdfParse();
+                  if (!pdfParse) return res.status(503).json({ error: 'PDF import is temporarily unavailable' });
+                  text = (await pdfParse(req.file.buffer)).text || '';
       } else if (ext === 'docx') {
         text = (await mammoth.extractRawText({ buffer: req.file.buffer })).value || '';
       } else if (ext === 'doc') {
