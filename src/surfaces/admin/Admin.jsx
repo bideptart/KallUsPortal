@@ -215,19 +215,9 @@ export default function Admin() {
         {tab === 'agent-detail-chat' && <ChatAgentDetail />}
         {tab === 'templates'     && <Templates />}
 
-        {/* Overview shares the Customer page, and Billing/Transactions share
-            the customer Payments/Transactions views — all three are designed
-            to end in a Footer. The other admin tabs (tables/tools) weren't,
-            so they keep the invisible sink that absorbs
-            `.dashboard-main > :last-child`'s auto margin without rendering
-            anything. */}
-        {(tab === 'overview' || tab === 'billing' || tab === 'transactions') ? (
-          <div className="pt-10 -mx-4 sm:-mx-6 lg:-mx-8">
-            <Footer />
-          </div>
-        ) : (
-          <div aria-hidden="true" />
-        )}
+        <div className="pt-10 -mx-4 sm:-mx-6 lg:-mx-8">
+          <Footer />
+        </div>
 
       </div>
     </div>
