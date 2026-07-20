@@ -5,6 +5,7 @@ import { api } from '../../api.js';
 const GREEN = '#3a5a0c';
 const GREEN_TINT = 'rgba(77,124,15,0.08)';
 const GREEN_BORDER = 'rgba(77,124,15,0.35)';
+const VOLUME_BAR_GREEN = '#A3D94F';
 
 const fmtDuration = (s) => {
   if (!s) return '0s';
@@ -266,7 +267,7 @@ export default function Analytics() {
             return (
               <div key={i} className="flex-1 flex flex-col items-center gap-1" title={`${d.date.toDateString()}: ${d.count} calls`}>
                 <div className="w-full flex items-end" style={{ height: 80 }}>
-                  <div className="w-full rounded-t" style={{ height: barPx, background: GREEN }} />
+                  <div className="w-full rounded-t" style={{ height: barPx, background: VOLUME_BAR_GREEN }} />
                 </div>
                 <div className="text-[9px] text-mute">{d.date.getDate()}</div>
               </div>
