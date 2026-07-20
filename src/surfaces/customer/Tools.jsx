@@ -45,11 +45,11 @@ function Toggle({ on, onChange, disabled }) {
       aria-checked={on}
       disabled={disabled}
       onClick={() => onChange(!on)}
-      className={`relative inline-flex items-center h-6 w-11 rounded-full transition-colors shrink-0 ${
-        on ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
-      } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+      className={`relative inline-flex items-center h-6 w-11 rounded-full transition-colors duration-200 ease-out shrink-0 ${
+        on ? 'bg-lime-600' : 'bg-slate-300 dark:bg-slate-700'
+      } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105 active:scale-95'}`}
     >
-      <span className={`inline-block h-[18px] w-[18px] transform rounded-full bg-white shadow transition-transform ${on ? 'translate-x-6' : 'translate-x-1'}`} />
+      <span className={`inline-block h-[18px] w-[18px] transform rounded-full bg-white shadow transition-transform duration-200 ease-[cubic-bezier(.34,1.56,.64,1)] ${on ? 'translate-x-6' : 'translate-x-1'}`} />
     </button>
   );
 }
@@ -73,6 +73,7 @@ export default function Tools() {
   const [notifOn, setNotifOn] = useState(false);
   const [notifEmail, setNotifEmail] = useState('');
   const [notifMsg, setNotifMsg] = useState('');
+  const [notifSectionOpen, setNotifSectionOpen] = useState(true);
 
   // Two-step save + propagation countdown (mirrors KbAgent).
   const [pendingSave, setPendingSave] = useState(null);   // { number, label } awaiting confirmation
@@ -187,14 +188,14 @@ export default function Tools() {
       </div>
 
       <div className="mt-4">
-        <button onClick={loadNumbers} disabled={loadingNumbers} className="btn-ghost text-sm">
+        <button onClick={loadNumbers} disabled={loadingNumbers} className="btn-teal text-sm transition duration-200 ease-out hover:scale-105 active:scale-95">
           {loadingNumbers ? 'Loading…' : '↻ Refresh'}
         </button>
       </div>
 
       {/* Propagation banner — shown after a save while the change goes live. */}
       {propagating && (
-        <div className={`mt-4 rounded-xl border p-4 ${propagationLocked ? 'border-lime-300 bg-lime-50' : 'border-green-300 bg-green-50'}`}>
+        <div className={`mt-4 rounded-xl border p-4 animate-fade-up ${propagationLocked ? 'border-lime-300 bg-lime-50' : 'border-green-300 bg-green-50'}`}>
           {propagationLocked ? (
             <>
               <div className="flex items-center gap-2 text-sm font-semibold text-lime-700">
@@ -236,7 +237,7 @@ export default function Tools() {
             <span className="text-[10px] uppercase tracking-wider text-mute font-semibold">Your plans &amp; numbers</span>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {numbers.map((n) => {
+            {numbers.map((n, i) => {
               const isOpen = selectedId === n.id;
               return (
                 <button
@@ -244,9 +245,10 @@ export default function Tools() {
                   type="button"
                   onClick={() => selectCard(n.id)}
                   disabled={propagationLocked}
-                  className={`form-card text-left transition relative ${isOpen ? 'border-lime-400 ring-2 ring-lime-500/30' : ''}`}
+                  style={{ animationDelay: `${i * 60}ms` }}
+                  className={`form-card text-left transition duration-200 ease-out relative animate-fade-up hover:shadow-md hover:-translate-y-0.5 ${isOpen ? 'border-lime-400 ring-2 ring-lime-500/30' : ''}`}
                 >
-                  <span className={`absolute top-4 right-4 text-mute transition-transform ${isOpen ? 'rotate-180' : ''}`}>▾</span>
+                  <span className={`absolute top-4 right-4 text-mute transition-transform duration-200 ease-out ${isOpen ? 'rotate-180' : ''}`}>▾</span>
                   <div className="font-bold text-slate-900 dark:text-slate-100 truncate pr-6">
                     {n.agentName || n.label || 'Unnamed agent'}
                   </div>
@@ -257,11 +259,11 @@ export default function Tools() {
                     <div className="mt-0.5 text-xs text-mute font-mono truncate">{n.agentSlug}</div>
                   )}
                   <div className="mt-3 flex items-center gap-2">
-                    <span className="pill bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 text-[10px] uppercase tracking-wider font-semibold">
+                    <span className="pill bg-lime-100 text-lime-700 dark:bg-lime-500/20 dark:text-lime-300 text-[10px] uppercase tracking-wider font-semibold">
                       {n.plan?.label || 'Starter'}
                     </span>
                     {isOpen && (
-                      <span className="pill bg-lime-100 text-lime-700 dark:bg-lime-500/20 dark:text-lime-300 text-[10px] uppercase tracking-wider font-semibold">
+                      <span className="pill bg-lime-100 text-lime-700 dark:bg-lime-500/20 dark:text-lime-300 text-[10px] uppercase tracking-wider font-semibold animate-pop-in">
                         Editing
                       </span>
                     )}
@@ -275,7 +277,7 @@ export default function Tools() {
             <p className="mt-4 text-sm text-mute italic">↑ Tap a card above to configure its tools.</p>
           ) : (
             <>
-              <div className="mt-8 flex items-start justify-between gap-3">
+              <div className="mt-8 flex items-start justify-between gap-3 animate-fade-up">
                 <div>
                   <div className="text-[10px] uppercase tracking-wider text-mute font-semibold">Configuring</div>
                   <div className="mt-0.5 font-bold text-slate-900 dark:text-slate-100">
@@ -283,12 +285,12 @@ export default function Tools() {
                     <span className="font-mono font-normal text-mute text-sm">{selected.value}</span>
                   </div>
                 </div>
-                <button onClick={() => setSelectedId('')} className="btn-ghost text-sm">✕ Close</button>
+                <button onClick={() => setSelectedId('')} className="btn-teal text-sm transition duration-200 ease-out hover:scale-105 active:scale-95">✕ Close</button>
               </div>
 
               {/* Blind transfer ------------------------------------------------ */}
-              <div className="text-[10px] uppercase tracking-wider text-mute font-semibold mt-6 mb-2">Blind transfer</div>
-              <div className="form-card">
+              <div className="text-[10px] uppercase tracking-wider text-mute font-semibold mt-6 mb-2 animate-fade-up">Blind transfer</div>
+              <div className="form-card animate-fade-up border-lime-200 dark:border-lime-500/30 transition duration-300 ease-out hover:shadow-md">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="font-bold text-slate-900 dark:text-slate-100">
@@ -313,7 +315,7 @@ export default function Tools() {
                           {COUNTRY_CODE}
                         </span>
                         <input
-                          className="input font-mono"
+                          className="input font-mono transition duration-200 ease-out focus:shadow-md"
                           value={input}
                           onChange={(e) => { setInput(e.target.value.replace(/[^\d]/g, '')); setMsg(''); setErr(''); }}
                           placeholder="8171428862"
@@ -328,7 +330,7 @@ export default function Tools() {
                     <div className="mt-3">
                       <label className="field-label">Destination label (optional)</label>
                       <input
-                        className="input"
+                        className="input transition duration-200 ease-out focus:shadow-md"
                         value={destLabel}
                         onChange={(e) => setDestLabel(e.target.value)}
                         placeholder="e.g. Manager, Sales lead"
@@ -348,20 +350,32 @@ export default function Tools() {
                       ) : (
                         <span className="text-xs text-mute">No forwarding number set yet.</span>
                       )}
-                      <button className="btn-teal ml-auto" onClick={requestSave} disabled={busy || curLoading || propagationLocked || !input.trim()}>
+                      <button
+                        className="btn-teal ml-auto transition duration-200 ease-out hover:scale-105 active:scale-95 disabled:opacity-90"
+                        onClick={requestSave}
+                        disabled={busy || curLoading || propagationLocked || !input.trim()}
+                      >
                         {propagationLocked ? `⏳ Locked · ${propagating.secondsLeft}s` : (busy ? 'Saving…' : 'Save transfer number')}
                       </button>
                     </div>
 
-                    {msg && <div className="mt-3 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">{msg}</div>}
-                    {err && <div className="mt-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">⚠ {err}</div>}
+                    {msg && <div className="mt-3 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-3 py-2 animate-fade-up">{msg}</div>}
+                    {err && <div className="mt-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2 animate-shake">⚠ {err}</div>}
                   </>
                 )}
               </div>
 
               {/* Booking notifications ---------------------------------------- */}
-              <div className="text-[10px] uppercase tracking-wider text-mute font-semibold mt-6 mb-2">Booking notifications</div>
-              <div className="form-card">
+              <button
+                type="button"
+                onClick={() => setNotifSectionOpen((o) => !o)}
+                className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-mute font-semibold mt-6 mb-2 animate-fade-up transition duration-200 ease-out hover:text-lime-600 dark:hover:text-lime-400"
+              >
+                <span className={`transition-transform duration-200 ease-out ${notifSectionOpen ? 'rotate-90' : ''}`}>▸</span>
+                Booking notifications
+              </button>
+              {notifSectionOpen && (
+              <div className="form-card animate-fade-up border-lime-200 dark:border-lime-500/30 transition duration-300 ease-out hover:shadow-md">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="font-bold text-slate-900 dark:text-slate-100">
@@ -380,7 +394,7 @@ export default function Tools() {
                     <div className="mt-4">
                       <label className="field-label">Notification email</label>
                       <input
-                        className="input"
+                        className="input transition duration-200 ease-out focus:shadow-md"
                         type="email"
                         value={notifEmail}
                         onChange={(e) => { setNotifEmail(e.target.value); setNotifMsg(''); }}
@@ -393,14 +407,19 @@ export default function Tools() {
                         : 'No notification target set — owner won’t receive a copy when meetings are booked.'}
                     </p>
                     <div className="mt-3">
-                      <button className="btn-teal" onClick={saveNotification} disabled={!notifEmail.trim()}>
+                      <button
+                        className="btn-teal transition duration-200 ease-out hover:scale-105 active:scale-95 disabled:opacity-90"
+                        onClick={saveNotification}
+                        disabled={!notifEmail.trim()}
+                      >
                         Save notification
                       </button>
                     </div>
-                    {notifMsg && <div className="mt-3 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">{notifMsg}</div>}
+                    {notifMsg && <div className="mt-3 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-3 py-2 animate-fade-up">{notifMsg}</div>}
                   </>
                 )}
               </div>
+              )}
             </>
           )}
         </>
@@ -410,8 +429,8 @@ export default function Tools() {
           BEFORE the change is sent. Proceed applies it and starts the
           countdown; Cancel dismisses with no change. */}
       {pendingSave !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4">
-          <div className="w-full max-w-md rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-backdrop-in">
+          <div className="w-full max-w-md rounded-xl bg-white dark:bg-slate-900 border p-6 animate-modal-in animate-modal-border-shadow">
             <div className="flex items-start gap-3">
               <span className="text-3xl shrink-0">⏱️</span>
               <div>
@@ -431,8 +450,8 @@ export default function Tools() {
               </div>
             </div>
             <div className="mt-6 flex items-center justify-end gap-2">
-              <button onClick={() => setPendingSave(null)} className="btn-ghost text-sm py-2 px-4">Cancel</button>
-              <button onClick={confirmSave} className="btn-teal text-sm py-2 px-4" autoFocus>
+              <button onClick={() => setPendingSave(null)} className="btn-ghost text-sm py-2 px-4 transition duration-200 ease-out hover:scale-105 active:scale-95">Cancel</button>
+              <button onClick={confirmSave} className="btn-teal text-sm py-2 px-4 transition duration-200 ease-out hover:scale-105 active:scale-95" autoFocus>
                 Proceed → start 2-minute window
               </button>
             </div>
