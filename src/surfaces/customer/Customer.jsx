@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
   LayoutDashboard, Bot, FlaskConical, BookOpen, TrendingUp, Zap,
-  FileText, CreditCard, Receipt, User, Menu,
+  FileText, CreditCard, Receipt, User, Menu, Wrench, Ticket,
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import Overview from './Overview.jsx';
+import Analytics from './Analytics.jsx';
 import Calls from './Calls.jsx';
 import Recordings from './Recordings.jsx';
 import Reports from './Reports.jsx';
@@ -19,50 +20,71 @@ import Numbers from './Numbers.jsx';
 import Billing from './Billing.jsx';
 import Transactions from './Transactions.jsx';
 import Tools from './Tools.jsx';
+import BookingHistory from './BookingHistory.jsx';
+import Tickets from './Tickets.jsx';
 import Account from './Account.jsx';
 import Logo from '../../components/Logo.jsx';
 import Footer from '../../components/Footer.jsx';
+import BookingIcon from '../../components/BookingIcon.jsx';
 
-// Sidebar nav — unified across Admin/Customer to a common shape. "Agents"
-// is the agents-list/table page; clicking a row goes to "Knowledge Base"
-// (KbAgent), the actual per-agent editor. "Analytics" reuses Overview (it
-// already shows the usage stat tiles).
-const NAV_TABS = [
-  { id: 'overview',     label: 'Overview',          Icon: LayoutDashboard, Component: Overview },
-  { id: 'agents',       label: 'Agents',            Icon: Bot,             Component: AgentsList },
-  { id: 'playground',   label: 'Playground',        Icon: FlaskConical,    Component: Tools },
-  { id: 'kb',           label: 'Knowledge Base',    Icon: BookOpen,        Component: KbAgent },
-  { id: 'analytics',    label: 'Analytics',         Icon: TrendingUp,      Component: Overview },
-  { id: 'calls',        label: 'Call Activity',     Icon: Zap,             Component: Calls },
-  { id: 'reports',      label: 'Reports',           Icon: FileText,        Component: Reports },
-  { id: 'billing',      label: 'Billing & minutes', Icon: CreditCard,      Component: Billing },
-  { id: 'transactions', label: 'Transactions',      Icon: Receipt,         Component: Transactions },
-  { id: 'account',      label: 'Account',           Icon: User,            Component: Account },
+// Sidebar nav — unified across Admin/Customer to a common shape. "Agents" is
+// the agents-list/table page; clicking a row goes to the per-agent editor.
+// "Knowledge Base" lands on KbAgent (it already holds both the legacy agent
+// config and the knowledge-base fields). "Analytics" gets its own page.
+// Split around "Call Activity" so the collapsible group renders inline,
+// right where the flat "Call Activity" entry used to sit (between Analytics
+// and Reports) instead of at the end of the list.
+const NAV_TABS_BEFORE_CALLS = [
+  { id: 'overview',  label: 'Overview',       Icon: LayoutDashboard, Component: Overview },
+  { id: 'agents',    label: 'Agents',         Icon: Bot,             Component: AgentsList },
+  { id: 'kb',        label: 'Knowledge Base', Icon: BookOpen,        Component: KbAgent },
+  { id: 'analytics', label: 'Analytics',      Icon: TrendingUp,      Component: Analytics },
+];
+const NAV_TABS_AFTER_CALLS = [
+  { id: 'reports',      label: 'Reports',           Icon: FileText,   Component: Reports },
+  { id: 'billing',      label: 'Billing & minutes', Icon: CreditCard, Component: Billing },
+  { id: 'transactions', label: 'Transactions',      Icon: Receipt,    Component: Transactions },
+  { id: 'account',      label: 'Account',           Icon: User,       Component: Account },
+];
+const NAV_TABS = [...NAV_TABS_BEFORE_CALLS, ...NAV_TABS_AFTER_CALLS];
+
+// "Call Activity" is a collapsible sidebar group: its own page (Calls) plus
+// three sub-pages that nest under it.
+const CALL_ACTIVITY = { id: 'calls', label: 'Call Activity', Icon: Zap, Component: Calls };
+const CALL_ACTIVITY_CHILDREN = [
+  { id: 'booking-history', label: 'Booking History', Icon: BookingIcon, Component: BookingHistory },
+  { id: 'tools',           label: 'Tools',           Icon: Wrench,      Component: Tools },
+  { id: 'tickets',         label: 'Tickets',         Icon: Ticket,      Component: Tickets },
 ];
 
 // Legacy tab ids from the previous 11-item layout — kept valid (but not
 // shown in the sidebar) so any existing bookmark or deep link still
 // resolves instead of bouncing to Overview.
 const LEGACY_TABS = [
-  { id: 'numbers',      label: 'Plan and Numbers',    Component: Numbers },
-  { id: 'recordings',   label: 'Recordings',          Component: Recordings },
-  { id: 'meetings',     label: 'Scheduled meetings',  Component: Meetings },
-  { id: 'tools',        label: 'Tools',               Component: Tools },
+  { id: 'numbers',      label: 'Plan and Numbers',   Component: Numbers },
+  { id: 'recordings',   label: 'Recordings',         Component: Recordings },
+  { id: 'meetings',     label: 'Scheduled meetings', Component: Meetings },
+  { id: 'playground',   label: 'Playground',         Component: Tools },
   // Reached by clicking a row on the Agents list — not a nav item itself.
-  { id: 'agent-detail',      label: 'Agent',           Component: AgentDetail },
-  { id: 'agent-detail-chat', label: 'Chat Agent',      Component: ChatAgentDetail },
+  { id: 'agent-detail',      label: 'Agent',            Component: AgentDetail },
+  { id: 'agent-detail-chat', label: 'Chat Agent',       Component: ChatAgentDetail },
   { id: 'templates',         label: 'Browse Templates', Component: Templates },
 ];
 
-const TABS = [...NAV_TABS, ...LEGACY_TABS];
+const TABS = [...NAV_TABS, CALL_ACTIVITY, ...CALL_ACTIVITY_CHILDREN, ...LEGACY_TABS];
 
 export default function Customer() {
   const { currentUser } = useApp();
   const { tab } = useParams();
   const [navOpen, setNavOpen] = useState(false);
+  const callActivityActive = tab === CALL_ACTIVITY.id || CALL_ACTIVITY_CHILDREN.some((t) => t.id === tab);
+  const [callActivityOpen, setCallActivityOpen] = useState(callActivityActive);
 
   // Close drawer when route changes
   useEffect(() => { setNavOpen(false); }, [tab]);
+
+  // Auto-expand the group whenever navigation lands on it or one of its children.
+  useEffect(() => { if (callActivityActive) setCallActivityOpen(true); }, [callActivityActive]);
 
   if (!currentUser) return null;
 
@@ -99,7 +121,47 @@ export default function Customer() {
         </div>
 
         <div className="sidenav-section mt-3">Manage</div>
-        {NAV_TABS.map((t) => (
+        {NAV_TABS_BEFORE_CALLS.map((t) => (
+          <Link
+            key={t.id}
+            to={`/dashboard/${t.id}`}
+            className={tab === t.id ? 'active' : ''}
+          >
+            <t.Icon size={16} strokeWidth={2} /> {t.label}
+          </Link>
+        ))}
+
+        <div className="nav-group">
+          <Link
+            to={`/dashboard/${CALL_ACTIVITY.id}`}
+            className={`nav-group-toggle ${tab === CALL_ACTIVITY.id ? 'active' : ''}`}
+          >
+            <CALL_ACTIVITY.Icon size={16} strokeWidth={2} />
+            <span className="flex-1">{CALL_ACTIVITY.label}</span>
+            <span
+              className={`nav-group-chevron ${callActivityOpen ? 'is-open' : ''}`}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCallActivityOpen((v) => !v); }}
+              aria-label={callActivityOpen ? 'Collapse Call Activity' : 'Expand Call Activity'}
+            >
+              ⌄
+            </span>
+          </Link>
+          {callActivityOpen && (
+            <div className="nav-group-children">
+              {CALL_ACTIVITY_CHILDREN.map((t) => (
+                <Link
+                  key={t.id}
+                  to={`/dashboard/${t.id}`}
+                  className={tab === t.id ? 'active' : ''}
+                >
+                  <t.Icon size={16} strokeWidth={2} /> {t.label}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {NAV_TABS_AFTER_CALLS.map((t) => (
           <Link
             key={t.id}
             to={`/dashboard/${t.id}`}
@@ -127,7 +189,7 @@ export default function Customer() {
             <Menu size={16} /> Menu
           </button>
           <div className="lg:hidden flex items-center gap-1.5 text-xs text-mute font-semibold uppercase tracking-wider">
-            {active.Icon && <active.Icon size={14} />} {active.label}
+            {active.Icon && <active.Icon size={14} strokeWidth={2} />} {active.label}
           </div>
           <div className="ml-auto flex items-center gap-3">
             <Link to="/dashboard/numbers" className="btn-teal text-sm whitespace-nowrap">+ Add plan / number</Link>

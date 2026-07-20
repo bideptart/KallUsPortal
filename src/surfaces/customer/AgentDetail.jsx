@@ -408,26 +408,21 @@ export default function AgentDetail() {
                   <PhoneCall size={14} /> Call history
                 </Link>
                 <Link
-                  to={`${basePath}/meetings`}
+                  to={`${basePath}/booking-history`}
                   className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-[var(--surface-2)]"
                   style={{ color: 'var(--ink-2)' }}
                   onClick={() => setMenuOpen(false)}
                 >
                   <CalendarCheck size={14} /> Booking history
                 </Link>
-                {/* Tickets aren't a real feature — the agent takes a message
-                    for issues/complaints instead of filing one (see the
-                    "Ticket vs meeting" standard rule on the Behavior tab). No
-                    backend table exists to list, so this stays an honest
-                    notice rather than a page with nothing behind it. */}
-                <button
-                  type="button"
-                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-left hover:bg-[var(--surface-2)]"
+                <Link
+                  to={`${basePath}/tickets`}
+                  className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-[var(--surface-2)]"
                   style={{ color: 'var(--ink-2)' }}
-                  onClick={() => { setMenuOpen(false); setNotice("Tickets aren't tracked yet — the agent takes a message instead."); }}
+                  onClick={() => setMenuOpen(false)}
                 >
                   <Ticket size={14} /> Tickets
-                </button>
+                </Link>
               </div>
             )}
           </div>

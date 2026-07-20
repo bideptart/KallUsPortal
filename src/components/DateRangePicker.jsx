@@ -77,7 +77,19 @@ const PRESETS = [
   },
 ];
 
-export default function DateRangePicker({ from, to, onChange, className = '' }) {
+// Active-chip accent — defaults to the brand's lime everywhere this component
+// is already used (Recordings, Calls); Reports passes accent="green" to match
+// its brand-green (#3a5a0c) accent instead.
+const ACCENTS = {
+  lime: { active: 'bg-lime-100 border-lime-300 text-lime-800', hover: 'hover:border-lime-300 hover:text-lime-700' },
+  green: {
+    active: 'bg-[rgba(77,124,15,0.08)] border-[rgba(77,124,15,0.35)] text-[#3a5a0c]',
+    hover: 'hover:border-[rgba(77,124,15,0.35)] hover:text-[#3a5a0c]',
+  },
+};
+
+export default function DateRangePicker({ from, to, onChange, className = '', accent = 'lime' }) {
+  const accentClasses = ACCENTS[accent] || ACCENTS.lime;
   // Highlight whichever preset's range matches the current (from, to). This
   // lets the picker show "Today" as active when first mounted, and stay in
   // sync when the user manually types matching dates.
@@ -106,8 +118,8 @@ export default function DateRangePicker({ from, to, onChange, className = '' }) 
               onClick={() => apply(p)}
               className={`px-3 py-1 rounded-full text-xs font-semibold border transition ${
                 active
-                  ? 'bg-lime-100 border-lime-300 text-lime-800'
-                  : 'bg-white border-slate-200 text-slate-600 hover:border-lime-300 hover:text-lime-700'
+                  ? accentClasses.active
+                  : `bg-white border-slate-200 text-slate-600 ${accentClasses.hover}`
               }`}
             >
               {p.label}

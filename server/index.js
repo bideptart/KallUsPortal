@@ -3518,8 +3518,11 @@ app.post('/api/numbers/:id/transfer', auth, async (req, res) => {
   if (!/^\+\d{8,15}$/.test(number)) {
     return res.status(400).json({ error: 'Enter a valid phone number in E.164 format, e.g. +14018677668' });
   }
+  // Optional human-readable label for the destination (e.g. "Manager", "Sales
+  // lead") — surfaced back on GET as `destinationName`.
+  const name = String(req.body?.name || '').trim().slice(0, 80) || undefined;
   try {
-    const out = unwrapMcp(await callTool('set_transfer_number', { number, agent_id: row.agent_id }));
+    const out = unwrapMcp(await callTool('set_transfer_number', { number, name, agent_id: row.agent_id }));
     // The tool refuses loopback (own DID) / invalid targets by returning an
     // `error` string (and no success flag). Surface that as a 400 so the UI
     // shows the reason instead of a false success.

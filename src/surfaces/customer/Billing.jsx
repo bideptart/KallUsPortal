@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Wallet, Star, Phone, Calendar, RefreshCw, Lightbulb, Sparkles, Tag } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
 import AddMinutesModal from '../../components/AddMinutesModal.jsx';
@@ -7,7 +8,23 @@ import AddMinutesModal from '../../components/AddMinutesModal.jsx';
 // behave identically here (single source of truth for the catalog UI).
 import { ChangePlanModal, AddNumberModal } from './Numbers.jsx';
 
-const inr = (n) => `$${Number(n || 0).toLocaleString('en-US')}`;
+const rand = (n) => `$${Number(n || 0).toLocaleString('en-US')}`;
+
+// Sample plan shown only when the account has no real DID yet (no DB
+// connected, or a brand-new signup) — never overrides a real plan once
+// /api/numbers returns one. Uses the actual Starter tier pricing from
+// server/plans.js so the numbers shown are realistic, not made up.
+const DEMO_NUMBER = {
+  id: 'demo-plan',
+  value: '+1 555 010 1234',
+  label: '',
+  isPrimary: true,
+  planCycle: 'monthly',
+  activatedAt: new Date(Date.now() - 11 * 24 * 60 * 60 * 1000).toISOString(),
+  nextRentalAt: new Date(Date.now() + 19 * 24 * 60 * 60 * 1000).toISOString(),
+  plan: { label: 'Starter', amount: 31, min: 250, rate: 0.13 },
+};
+const DEMO_USED_MINUTES = 48;
 
 const fmtDate = (iso) => {
   if (!iso) return '—';
@@ -47,9 +64,9 @@ const planTagClass = (id) => {
   return 'bg-slate-200 text-slate-700';
 };
 
-// Brand gradient — black to rose so billing matches the rest of the updated
-// application theme instead of the old blue-purple palette.
-const BRAND_GRADIENT = 'bg-[linear-gradient(135deg,#0b0b0c_0%,#171717_45%,#0d9488_100%)]';
+// Brand gradient — KallUS lime, matching --grad-start/--grad-mid/--grad-end
+// in index.css so Billing uses the same primary color as the rest of the app.
+const BRAND_GRADIENT = 'bg-[linear-gradient(135deg,#6fa524_0%,#5c8a1e_50%,#4d7c0f_100%)]';
 
 const TABS = [
   { id: 'my-plans',     label: 'My Plans' },
@@ -84,14 +101,26 @@ export default function Billing() {
   // the target plan id while that picker is open.
   const [pickNumberForPlan, setPickNumberForPlan] = useState(null);
 
+  // Reset to true on every effect setup (not just once via useRef's initial
+  // value) — React 18 StrictMode double-invokes effects in dev (mount →
+  // cleanup → mount again), and without resetting it here the cleanup from
+  // the first pass would permanently pin this to false, silently dropping
+  // every state update `load()` makes for the rest of the component's life.
   const mountedRef = useRef(true);
-  useEffect(() => () => { mountedRef.current = false; }, []);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const load = async () => {
     setErr('');
     try {
       const [w, s, nums, callsRes, plansRes, cardsRes] = await Promise.all([
-        api('/api/wallet'),
+        // A wallet fetch failure (e.g. no DB) must not block the other calls
+        // in this batch — /api/plans in particular is a static catalog that
+        // works with no DB at all, so the Plans tab shouldn't get stuck on
+        // "Loading plans…" just because the wallet couldn't load.
+        api('/api/wallet').catch((e) => { setErr(e.message); return { wallet: null, transactions: [], packs: [] }; }),
         api('/api/twilio/stats').catch((e) => { setStatsErr(e.message); return null; }),
         api('/api/numbers').catch(() => ({ numbers: [] })),
         api('/api/twilio/calls?limit=500').catch(() => ({ calls: [] })),
@@ -165,25 +194,27 @@ export default function Billing() {
   return (
     <div>
       {/* ===== HEADER ====================================================== */}
-      <div className="flex items-start justify-between gap-3 flex-wrap">
+      {/* "+ Add plan / number" sits on its own row, right-aligned above the
+          title — matching the reference layout, which keeps it visually
+          separate from the "Transaction history" ghost button below. */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => setShowAddPlan(true)}
+          className={`px-4 py-2 rounded-lg text-white text-sm font-semibold ${BRAND_GRADIENT}`}
+        >
+          + Add plan / number
+        </button>
+      </div>
+      <div className="mt-3 flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Billing &amp; Plans</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Billing &amp; minutes</h1>
           <p className="text-sm text-mute mt-1">
-            9278.ai Voice AI · operated by <strong>Acepeak</strong> · Signapore <span className="text-mute">IN</span>{' '}
-            — plans per number, instant upgrades, shared wallet.
+            <strong>KallUS</strong> Voice AI — plans per number, instant upgrades, shared wallet.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button className="btn-ghost text-sm" onClick={() => setTab('wallet')}>
-            ⬇ Invoices
-          </button>
-          <button
-            onClick={() => setShowAddPlan(true)}
-            className={`px-4 py-2 rounded-lg text-white text-sm font-semibold ${BRAND_GRADIENT}`}
-          >
-            + Add plan / number
-          </button>
-        </div>
+        <Link to="/dashboard/transactions" className="btn-ghost text-sm">
+          Transaction history
+        </Link>
       </div>
 
       {/* ===== TABS ======================================================== */}
@@ -196,7 +227,7 @@ export default function Billing() {
               onClick={() => setTab(t.id)}
               className={`px-3 sm:px-4 py-2 text-sm font-semibold whitespace-nowrap border-b-2 transition ${
                 active
-                  ? 'border-rose-500 text-rose-600'
+                  ? 'border-lime-600 text-lime-700'
                   : 'border-transparent text-mute hover:text-slate-900'
               }`}
             >
@@ -335,10 +366,10 @@ function MyPlansTab({
         {/* Shared Wallet Balance */}
         <div className={`rounded-2xl p-5 text-white shadow-lg ${BRAND_GRADIENT}`}>
           <div className="text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 opacity-90">
-            <span>👛</span>SHARED WALLET BALANCE
+            <Wallet className="w-3.5 h-3.5" />SHARED WALLET BALANCE
           </div>
           <div className="mt-2 text-4xl font-extrabold tracking-tight">
-            {inr(walletBalance)}
+            {rand(walletBalance)}
           </div>
           <div className="mt-3 flex items-center gap-2">
             <button
@@ -370,25 +401,38 @@ function MyPlansTab({
           </button>
         </div>
 
-        {numbers.length === 0 && (
-          <div className="form-card text-center text-mute">
-            You don't have any plans yet. Click <strong>+ Add plan / number</strong> above.
+        {numbers.length === 0 ? (
+          <div className="space-y-3">
+            <div className="flex items-start">
+              <span className="pill inline-flex items-center gap-1" style={{ background: 'var(--line-2)', color: 'var(--ink-3)' }}>
+                <Sparkles className="w-3 h-3" /> Sample data — connect a database for your real plans
+              </span>
+            </div>
+            <ActivePlanCard
+              number={DEMO_NUMBER}
+              walletBalance={walletBalance}
+              usedMinutes={DEMO_USED_MINUTES}
+              onChangePlan={onAddPlan}
+              onRestartPlan={onAddPlan}
+              onTopUp={onAddPlan}
+              demo
+            />
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {numbers.map((n) => (
+              <ActivePlanCard
+                key={n.id}
+                number={n}
+                walletBalance={walletBalance}
+                usedMinutes={usedMinutesForDid(n.value)}
+                onChangePlan={() => onChangePlan(n)}
+                onRestartPlan={() => onRestartPlan(n)}
+                onTopUp={() => onTopUpForNumber(n)}
+              />
+            ))}
           </div>
         )}
-
-        <div className="space-y-4">
-          {numbers.map((n) => (
-            <ActivePlanCard
-              key={n.id}
-              number={n}
-              walletBalance={walletBalance}
-              usedMinutes={usedMinutesForDid(n.value)}
-              onChangePlan={() => onChangePlan(n)}
-              onRestartPlan={() => onRestartPlan(n)}
-              onTopUp={() => onTopUpForNumber(n)}
-            />
-          ))}
-        </div>
       </div>
     </div>
   );
@@ -398,7 +442,7 @@ function MyPlansTab({
 // ActivePlanCard — a single per-DID card with gradient header, label pill,
 // status pill, phone number, minutes progress bar, dates, and action buttons.
 // =============================================================================
-function ActivePlanCard({ number: n, walletBalance, usedMinutes, onChangePlan, onRestartPlan, onTopUp }) {
+function ActivePlanCard({ number: n, walletBalance, usedMinutes, onChangePlan, onRestartPlan, onTopUp, demo = false }) {
   const planMin = Number(n.plan?.min) || 0;
   // Wallet rate for THIS number = the rate from THIS number's plan tier.
   // (Starter $12/min, Growth $11/min, Scale $10/min — never a flat $4.)
@@ -426,15 +470,22 @@ function ActivePlanCard({ number: n, walletBalance, usedMinutes, onChangePlan, o
       <div className={`${BRAND_GRADIENT} px-5 py-3 flex items-center justify-between gap-3 flex-wrap`}>
         <div className="text-white">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-base sm:text-lg font-bold">⭐ {n.plan?.label || 'Starter'} plan</span>
-            <span className="text-sm opacity-90">· {inr(n.plan?.amount || 0)}/mo</span>
+            <span className="inline-flex items-center gap-1.5 text-base sm:text-lg font-bold">
+              <Star className="w-4 h-4" fill="currentColor" /> {n.plan?.label || 'Starter'} plan
+            </span>
+            <span className="text-sm opacity-90">· {rand(n.plan?.amount || 0)}/mo</span>
           </div>
           <div className="text-xs sm:text-sm font-mono mt-0.5 opacity-95">{n.value}</div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          {demo && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/20 text-white text-xs font-semibold" title="Sample data — connect a database for your real plans">
+              <Sparkles className="w-3 h-3" /> Sample
+            </span>
+          )}
           {n.label && (
-            <span className="px-2.5 py-1 rounded-full bg-amber-300 text-amber-900 text-xs font-semibold">
-              🏷 {n.label}
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-300 text-amber-900 text-xs font-semibold">
+              <Tag className="w-3 h-3" /> {n.label}
             </span>
           )}
           {planExhausted ? (
@@ -454,7 +505,7 @@ function ActivePlanCard({ number: n, walletBalance, usedMinutes, onChangePlan, o
         {/* Minutes progress */}
         <div className="flex items-end justify-between gap-2 mb-2">
           <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-900">
-            <span>📞</span> AI voice minutes
+            <Phone className="w-3.5 h-3.5" /> AI voice minutes
           </div>
           <div className="text-sm font-bold text-slate-900">
             {used.toFixed(0)} <span className="text-mute font-normal">of {planMin}</span>
@@ -476,7 +527,7 @@ function ActivePlanCard({ number: n, walletBalance, usedMinutes, onChangePlan, o
         {/* Overflow warning */}
         {overflow > 0 && (
           <div className="mt-3 text-xs text-amber-700">
-            Plan minutes used up — extra {overflow.toFixed(0)} min billed from wallet ({inr(overflowCost)}).
+            Plan minutes used up — extra {overflow.toFixed(0)} min billed from wallet ({rand(overflowCost)}).
             <strong className="text-amber-800"> Restart plan to reset</strong>, or it resets on renewal.
           </div>
         )}
@@ -484,11 +535,11 @@ function ActivePlanCard({ number: n, walletBalance, usedMinutes, onChangePlan, o
         {/* Dates */}
         <div className="mt-4 flex items-center gap-4 flex-wrap text-xs text-mute">
           <div className="flex items-center gap-1.5">
-            <span>📅</span>
+            <Calendar className="w-3.5 h-3.5" />
             Activated <span className="text-slate-900 font-semibold">{fmtDate(n.activatedAt)}</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span>🔁</span>
+            <RefreshCw className="w-3.5 h-3.5" />
             Renews <span className="text-slate-900 font-semibold">{fmtDate(n.nextRentalAt)}</span>
             {daysLeft != null && (
               <span className="text-mute">({daysLeft}d left)</span>
@@ -512,7 +563,7 @@ function ActivePlanCard({ number: n, walletBalance, usedMinutes, onChangePlan, o
                 Change plan
               </button>
               <button onClick={onRestartPlan} className="btn-ghost text-xs">Restart plan</button>
-              <Link to={`/dashboard/kb?n=${n.id}`} className="btn-ghost text-xs">Edit agent</Link>
+              <Link to={demo ? '/dashboard/agents' : `/dashboard/agents?n=${n.id}`} className="btn-ghost text-xs">Edit agent</Link>
               {isPrimary && (
                 <span className="text-xs text-mute ml-1">Primary — cannot release</span>
               )}
@@ -520,10 +571,10 @@ function ActivePlanCard({ number: n, walletBalance, usedMinutes, onChangePlan, o
                 <button onClick={onTopUp} className="btn-ghost text-xs ml-auto">+ Add wallet funds</button>
               ) : (
                 <span
-                  className="text-[11px] text-mute ml-auto"
+                  className="inline-flex items-center gap-1 text-[11px] text-mute ml-auto"
                   title="Wallet top-ups are available on yearly plans. Restart the plan to refresh your minutes."
                 >
-                  💡 Monthly plan — restart to refresh minutes
+                  <Lightbulb className="w-3 h-3" /> Monthly plan — restart to refresh minutes
                 </span>
               )}
             </div>
@@ -570,7 +621,7 @@ function PlansTab({ plans, numbers, onPickPlan }) {
               <div className="text-lg font-extrabold text-slate-900">{p.label}</div>
               {p.sub && <div className="text-xs text-mute mt-0.5">{p.sub}</div>}
               <div className="mt-3 flex items-end gap-1">
-                <span className="text-3xl font-extrabold text-slate-900">{inr(p.amount)}</span>
+                <span className="text-3xl font-extrabold text-slate-900">{rand(p.amount)}</span>
                 <span className="text-xs text-mute pb-1">/mo</span>
               </div>
               <div className="text-[11px] text-mute mt-1">
@@ -681,9 +732,9 @@ function WalletTab({ wallet, transactions, packs, currentUser, onSaved }) {
         {/* Current Balance card */}
         <div className={`rounded-2xl p-6 text-white shadow-lg ${BRAND_GRADIENT}`}>
           <div className="text-xs font-semibold uppercase tracking-wider opacity-90 flex items-center gap-1.5">
-            <span>👛</span>CURRENT BALANCE
+            <Wallet className="w-3.5 h-3.5" />CURRENT BALANCE
           </div>
-          <div className="mt-2 text-4xl font-extrabold">{inr(balance)}</div>
+          <div className="mt-2 text-4xl font-extrabold">{rand(balance)}</div>
           <div className="text-xs opacity-90 mt-1">
             Used as backup when a number's plan minutes run out.
           </div>
@@ -712,7 +763,7 @@ function WalletTab({ wallet, transactions, packs, currentUser, onSaved }) {
                       : 'border-slate-200 bg-white hover:border-rose-300'
                   } disabled:opacity-60 disabled:cursor-not-allowed`}
                 >
-                  <div className="text-lg font-extrabold text-slate-900">{inr(p.amount)}</div>
+                  <div className="text-lg font-extrabold text-slate-900">{rand(p.amount)}</div>
                 </button>
               );
             })}
@@ -738,7 +789,7 @@ function WalletTab({ wallet, transactions, packs, currentUser, onSaved }) {
             disabled={topUpBusy || !finalAmount}
             className={`mt-4 w-full px-4 py-2.5 rounded-lg text-white text-sm font-semibold ${BRAND_GRADIENT} disabled:opacity-60`}
           >
-            {topUpBusy ? 'Opening Stripe…' : `Add ${inr(finalAmount)} to wallet`}
+            {topUpBusy ? 'Opening Stripe…' : `Add ${rand(finalAmount)} to wallet`}
           </button>
 
           {topUpErr && <div className="mt-2 text-xs text-red-600">⚠ {topUpErr}</div>}
@@ -820,7 +871,7 @@ function WalletTab({ wallet, transactions, packs, currentUser, onSaved }) {
                         Number(t.amountUsd) > 0 ? 'text-emerald-600' : 'text-slate-700'
                       }`}>
                         {t.amountUsd
-                          ? (Number(t.amountUsd) > 0 ? `+${inr(Math.abs(t.amountUsd))}` : `−${inr(Math.abs(t.amountUsd))}`)
+                          ? (Number(t.amountUsd) > 0 ? `+${rand(Math.abs(t.amountUsd))}` : `−${rand(Math.abs(t.amountUsd))}`)
                           : '—'
                         }
                       </td>
@@ -899,8 +950,8 @@ function CardChooserModal({ number: n, cards, onClose, onConfirm }) {
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
         <div className="px-5 py-4 border-b border-slate-100">
           <div className="text-sm font-bold text-slate-900">Card for auto-recharge</div>
-          <div className="text-xs text-mute mt-0.5">
-            ⭐ {n.plan?.label || 'Starter'} plan · <span className="font-mono">{n.value}</span>
+          <div className="inline-flex items-center gap-1 text-xs text-mute mt-0.5">
+            <Star className="w-3 h-3" fill="currentColor" /> {n.plan?.label || 'Starter'} plan · <span className="font-mono">{n.value}</span>
           </div>
         </div>
 
@@ -1029,11 +1080,17 @@ function AutoRechargeTab({ numbers, cards = [], onSaved, resumePlanId, onResumed
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-bold text-slate-900">⭐ {planLabel} plan</span>
-                      <span className="text-xs text-mute">· {inr(planAmount)}/mo</span>
+                      <span className="inline-flex items-center gap-1 text-sm font-bold text-slate-900">
+                        <Star className="w-3.5 h-3.5" fill="currentColor" /> {planLabel} plan
+                      </span>
+                      <span className="text-xs text-mute">· {rand(planAmount)}/mo</span>
                     </div>
                     <div className="mt-0.5 text-sm font-mono text-rose-600">{n.value}</div>
-                    {n.label && <div className="mt-0.5 text-xs text-mute">🏷 {n.label}</div>}
+                    {n.label && (
+                      <div className="mt-0.5 inline-flex items-center gap-1 text-xs text-mute">
+                        <Tag className="w-3 h-3" /> {n.label}
+                      </div>
+                    )}
                   </div>
 
                   {/* Toggle */}
@@ -1098,7 +1155,9 @@ function AutoRechargeTab({ numbers, cards = [], onSaved, resumePlanId, onResumed
         </div>
 
         <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-4 text-xs text-slate-700">
-          <div className="font-semibold text-slate-900 mb-1">💡 How it works</div>
+          <div className="inline-flex items-center gap-1 font-semibold text-slate-900 mb-1">
+            <Lightbulb className="w-3.5 h-3.5" /> How it works
+          </div>
           When a plan you've enabled runs out of minutes, Stripe charges
           that plan's chosen card for the plan's amount and resets the cycle —
           calls keep going without manual intervention.
@@ -1151,7 +1210,7 @@ function RestartPlanModal({ number: n, currentUser, onClose, onApplied }) {
           <div>
             <div className="text-xs font-semibold text-mute uppercase tracking-wider">Restart plan</div>
             <div className="mt-1 text-base font-bold text-slate-900">{n.value}</div>
-            <div className="text-xs text-mute">{n.plan?.label} plan · {inr(n.plan?.amount)}</div>
+            <div className="text-xs text-mute">{n.plan?.label} plan · {rand(n.plan?.amount)}</div>
           </div>
           <button onClick={onClose} className="text-2xl text-mute hover:text-slate-900">×</button>
         </div>
@@ -1172,7 +1231,7 @@ function RestartPlanModal({ number: n, currentUser, onClose, onApplied }) {
             disabled={busy}
             className={`px-5 py-2 rounded-lg text-white text-sm font-semibold ${BRAND_GRADIENT}`}
           >
-            {busy ? 'Opening Stripe…' : `Pay ${inr(n.plan?.amount)} →`}
+            {busy ? 'Opening Stripe…' : `Pay ${rand(n.plan?.amount)} →`}
           </button>
         </div>
       </div>
@@ -1234,8 +1293,14 @@ function PickNumberToUpgradeModal({ numbers, targetPlanId, onClose, onPicked }) 
                 <div className="min-w-0">
                   <div className="font-mono text-sm font-semibold text-slate-900">{n.value}</div>
                   <div className="mt-0.5 text-xs text-mute flex items-center gap-2 flex-wrap">
-                    <span>⭐ Currently on <strong className="text-slate-700">{n.plan?.label || 'Starter'}</strong></span>
-                    {n.label && <span>· 🏷 {n.label}</span>}
+                    <span className="inline-flex items-center gap-1">
+                      <Star className="w-3 h-3" fill="currentColor" /> Currently on <strong className="text-slate-700">{n.plan?.label || 'Starter'}</strong>
+                    </span>
+                    {n.label && (
+                      <span className="inline-flex items-center gap-1">
+                        · <Tag className="w-3 h-3" /> {n.label}
+                      </span>
+                    )}
                   </div>
                 </div>
                 {isCurrent
