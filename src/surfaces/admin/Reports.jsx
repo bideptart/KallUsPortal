@@ -377,9 +377,9 @@ export default function Reports() {
                         <span className="text-mute">{fmtTime(r.startTime)}</span>
                         <span className="pill bg-slate-100 text-slate-700 text-xs">{fmtDirection(r.direction)}</span>
                         {r.hasTranscript ? (
-                          <span className="pill bg-teal-100 text-teal-700 text-xs">transcript available</span>
+                          <span className="pill bg-[#3a5a0c] text-white text-xs">Transcript available</span>
                         ) : (
-                          <span className="pill bg-slate-100 text-slate-500 text-xs">no transcript</span>
+                          <span className="pill bg-slate-100 text-slate-500 text-xs">No transcript</span>
                         )}
                         {viewTab === 'recording' && (
                           r.audioUrl ? (
