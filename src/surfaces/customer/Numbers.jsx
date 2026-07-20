@@ -32,19 +32,19 @@ const POLL_INTERVAL_MS = 4000;
 // drives backend validation; the pill gives each tier a distinct accent.
 const PLAN_OPTIONS = [
   { id: 'starter', label: 'Starter', pill: 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200' },
-  { id: 'growth',  label: 'Growth',  pill: 'bg-rose-100 text-rose-700 dark:bg-rose-500/30 dark:text-rose-200' },
+  { id: 'growth',  label: 'Growth',  pill: 'bg-lime-100 text-lime-700 dark:bg-lime-500/30 dark:text-lime-200' },
   { id: 'scale',   label: 'Scale',   pill: 'bg-amber-500/20 text-amber-700 dark:bg-amber-500/30 dark:text-amber-200' },
 ];
 const planPillClass = (id) => (PLAN_OPTIONS.find((p) => p.id === id) || PLAN_OPTIONS[0]).pill;
 
-// Plan-card header band — black to rose so these cards match the updated app
-// shell instead of the old blue-purple product theme.
+// Plan-card header band — black to the brand lime so these cards match the
+// app shell's accent color.
 const planHeaderClass = () =>
-  'bg-[linear-gradient(135deg,#0b0b0c_0%,#171717_45%,#0d9488_100%)]';
+  'bg-[linear-gradient(135deg,#0b0b0c_0%,#171717_45%,#4d7c0f_100%)]';
 
 const StatusBadge = ({ status }) => {
   const map = {
-    ready:       { cls: 'bg-rose-100 text-rose-700',     label: '● Live' },
+    ready:       { cls: 'bg-lime-100 text-lime-700',     label: '● Live' },
     in_progress: { cls: 'bg-amber-500/20 text-amber-600', label: '⏳ Provisioning' },
     failed:      { cls: 'bg-red-500/20 text-red-600',     label: '✗ Failed' },
   };
@@ -147,7 +147,7 @@ export default function Numbers() {
                 <div className="flex items-center gap-3 flex-wrap">
                   <div className="font-mono text-lg text-slate-900">{n.value}</div>
                   {n.label && (
-                    <span className="pill bg-rose-100 text-rose-700 text-xs">
+                    <span className="pill bg-lime-100 text-lime-700 text-xs">
                       🏷 {n.label}
                     </span>
                   )}
@@ -245,8 +245,8 @@ function PlanCard({ plan, isSelected, isCurrent, isFeatured, disabled, onClick }
         isCurrent
           ? 'border-slate-200 bg-slate-50 cursor-not-allowed'
           : isSelected
-            ? 'border-rose-500 ring-4 ring-rose-100 bg-white shadow-lg'
-            : 'border-slate-200 bg-white hover:border-rose-300 hover:shadow-md'
+            ? 'border-lime-500 ring-4 ring-lime-100 bg-white shadow-lg'
+            : 'border-slate-200 bg-white hover:border-lime-300 hover:shadow-md'
       }`}
     >
       {isFeatured && !isCurrent && (
@@ -277,7 +277,7 @@ function PlanCard({ plan, isSelected, isCurrent, isFeatured, disabled, onClick }
       <ul className="mt-4 space-y-1.5 text-xs text-slate-700 flex-1">
         {(plan.perks || []).map((perk, i) => (
           <li key={i} className="flex items-start gap-2">
-            <span className="shrink-0 mt-0.5 w-3.5 h-3.5 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-[9px] font-bold">✓</span>
+            <span className="shrink-0 mt-0.5 w-3.5 h-3.5 rounded-full bg-lime-100 text-lime-700 flex items-center justify-center text-[9px] font-bold">✓</span>
             <span>{perk}</span>
           </li>
         ))}
@@ -285,7 +285,7 @@ function PlanCard({ plan, isSelected, isCurrent, isFeatured, disabled, onClick }
 
       {/* Selected indicator pinned to the card foot */}
       {isSelected && !isCurrent && (
-        <div className="mt-3 pt-3 border-t border-slate-100 text-xs font-semibold text-rose-600 text-center">
+        <div className="mt-3 pt-3 border-t border-slate-100 text-xs font-semibold text-lime-700 text-center">
           ✓ Selected
         </div>
       )}
@@ -417,18 +417,18 @@ export function ChangePlanModal({ number, currentUser, onClose, onApplied, defau
 
         {/* === Pro-rata quote panel =============================== */}
         {selectedId && number?.plan?.id !== selectedId && (
-          <div className="mx-6 mb-4 rounded-xl border border-rose-200 bg-rose-50/50 p-5">
-            <div className="text-xs font-semibold text-rose-700 uppercase tracking-wider">You pay today</div>
+          <div className="mx-6 mb-4 rounded-xl border p-5" style={{ borderColor: 'var(--line)', background: 'var(--surface-tint)' }}>
+            <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--primary)' }}>You pay today</div>
             {quoteErr && <div className="mt-2 text-sm text-red-600">⚠ {quoteErr}</div>}
             {!quote && !quoteErr && <div className="mt-2 text-sm text-mute">Calculating…</div>}
             {quote && (
               <>
                 <div className="mt-2 grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                  <div className="flex justify-between border-b border-rose-100 pb-1.5">
+                  <div className="flex justify-between border-b pb-1.5" style={{ borderColor: 'var(--line-2)' }}>
                     <span className="text-mute">{quote.targetPlan.label} plan</span>
                     <span className="font-semibold text-slate-900">{fmtInr(quote.targetPlan.amount)}</span>
                   </div>
-                  <div className="flex justify-between border-b border-rose-100 pb-1.5">
+                  <div className="flex justify-between border-b pb-1.5" style={{ borderColor: 'var(--line-2)' }}>
                     <span className="text-mute">
                       Credit for {quote.daysRemaining.toFixed(0)} unused day{quote.daysRemaining === 1 ? '' : 's'}
                     </span>
@@ -439,7 +439,7 @@ export function ChangePlanModal({ number, currentUser, onClose, onApplied, defau
                     <span className="text-2xl font-extrabold text-slate-900">{fmtInr(quote.amountInr)}</span>
                   </div>
                 </div>
-                <div className="mt-3 pt-3 border-t border-rose-100 grid sm:grid-cols-2 gap-2 text-xs">
+                <div className="mt-3 pt-3 border-t grid sm:grid-cols-2 gap-2 text-xs" style={{ borderColor: 'var(--line-2)' }}>
                   <div>
                     <div className="text-mute uppercase tracking-wider font-semibold">New plan starts</div>
                     <div className="mt-0.5 text-slate-900 font-semibold">{fmtDate(quote.newActivatedAt)}</div>
@@ -570,14 +570,14 @@ export function AddNumberModal({ currentUser, onClose, onAdded }) {
 
         {/* === Confirmation panel ================================= */}
         {selectedPlan && (
-          <div className="mx-6 mb-4 rounded-xl border border-rose-200 bg-rose-50/50 p-5">
-            <div className="text-xs font-semibold text-rose-700 uppercase tracking-wider">Order summary</div>
+          <div className="mx-6 mb-4 rounded-xl border p-5" style={{ borderColor: 'var(--line)', background: 'var(--surface-tint)' }}>
+            <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--primary)' }}>Order summary</div>
             <div className="mt-2 grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-              <div className="flex justify-between border-b border-rose-100 pb-1.5">
+              <div className="flex justify-between border-b pb-1.5" style={{ borderColor: 'var(--line-2)' }}>
                 <span className="text-mute">{selectedPlan.label} plan</span>
                 <span className="font-semibold text-slate-900">{fmtInr(selectedPlan.amount)}</span>
               </div>
-              <div className="flex justify-between border-b border-rose-100 pb-1.5">
+              <div className="flex justify-between border-b pb-1.5" style={{ borderColor: 'var(--line-2)' }}>
                 <span className="text-mute">Phone number</span>
                 <span className="font-mono text-slate-900">
                   {preview?.number?.value || '— assigned at checkout —'}
@@ -588,7 +588,7 @@ export function AddNumberModal({ currentUser, onClose, onAdded }) {
                 <span className="text-2xl font-extrabold text-slate-900">{fmtInr(selectedPlan.amount)}</span>
               </div>
             </div>
-            <div className="mt-3 pt-3 border-t border-rose-100 grid sm:grid-cols-2 gap-2 text-xs">
+            <div className="mt-3 pt-3 border-t grid sm:grid-cols-2 gap-2 text-xs" style={{ borderColor: 'var(--line-2)' }}>
               <div>
                 <div className="text-mute uppercase tracking-wider font-semibold">Plan starts</div>
                 <div className="mt-0.5 text-slate-900 font-semibold">

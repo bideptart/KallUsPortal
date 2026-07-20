@@ -16,7 +16,8 @@ import AgentsList from './AgentsList.jsx';
 import AgentDetail from './AgentDetail.jsx';
 import ChatAgentDetail from './ChatAgentDetail.jsx';
 import Templates from './Templates.jsx';
-import Numbers from './Numbers.jsx';
+import Playground from './Playground.jsx';
+import Numbers, { AddNumberModal } from './Numbers.jsx';
 import Billing from './Billing.jsx';
 import Transactions from './Transactions.jsx';
 import Tools from './Tools.jsx';
@@ -35,10 +36,11 @@ import BookingIcon from '../../components/BookingIcon.jsx';
 // right where the flat "Call Activity" entry used to sit (between Analytics
 // and Reports) instead of at the end of the list.
 const NAV_TABS_BEFORE_CALLS = [
-  { id: 'overview',  label: 'Overview',       Icon: LayoutDashboard, Component: Overview },
-  { id: 'agents',    label: 'Agents',         Icon: Bot,             Component: AgentsList },
-  { id: 'kb',        label: 'Knowledge Base', Icon: BookOpen,        Component: KbAgent },
-  { id: 'analytics', label: 'Analytics',      Icon: TrendingUp,      Component: Analytics },
+  { id: 'overview',    label: 'Overview',       Icon: LayoutDashboard, Component: Overview },
+  { id: 'agents',      label: 'Agents',         Icon: Bot,             Component: AgentsList },
+  { id: 'playground',  label: 'Playground',     Icon: FlaskConical,    Component: Playground },
+  { id: 'kb',          label: 'Knowledge Base', Icon: BookOpen,        Component: KbAgent },
+  { id: 'analytics',   label: 'Analytics',      Icon: TrendingUp,      Component: Analytics },
 ];
 const NAV_TABS_AFTER_CALLS = [
   { id: 'reports',      label: 'Reports',           Icon: FileText,   Component: Reports },
@@ -64,7 +66,6 @@ const LEGACY_TABS = [
   { id: 'numbers',      label: 'Plan and Numbers',   Component: Numbers },
   { id: 'recordings',   label: 'Recordings',         Component: Recordings },
   { id: 'meetings',     label: 'Scheduled meetings', Component: Meetings },
-  { id: 'playground',   label: 'Playground',         Component: Tools },
   // Reached by clicking a row on the Agents list — not a nav item itself.
   { id: 'agent-detail',      label: 'Agent',            Component: AgentDetail },
   { id: 'agent-detail-chat', label: 'Chat Agent',       Component: ChatAgentDetail },
@@ -77,6 +78,7 @@ export default function Customer() {
   const { currentUser } = useApp();
   const { tab } = useParams();
   const [navOpen, setNavOpen] = useState(false);
+  const [showAddPlan, setShowAddPlan] = useState(false);
   const callActivityActive = tab === CALL_ACTIVITY.id || CALL_ACTIVITY_CHILDREN.some((t) => t.id === tab);
   const [callActivityOpen, setCallActivityOpen] = useState(callActivityActive);
 
@@ -192,7 +194,7 @@ export default function Customer() {
             {active.Icon && <active.Icon size={14} strokeWidth={2} />} {active.label}
           </div>
           <div className="ml-auto flex items-center gap-3">
-            <Link to="/dashboard/numbers" className="btn-teal text-sm whitespace-nowrap">+ Add plan / number</Link>
+            <button type="button" className="btn-teal text-sm whitespace-nowrap" onClick={() => setShowAddPlan(true)}>+ Add plan / number</button>
           </div>
         </div>
 
@@ -206,6 +208,14 @@ export default function Customer() {
           <Footer />
         </div>
       </div>
+
+      {showAddPlan && (
+        <AddNumberModal
+          currentUser={currentUser}
+          onClose={() => setShowAddPlan(false)}
+          onAdded={() => setShowAddPlan(false)}
+        />
+      )}
     </div>
   );
 }

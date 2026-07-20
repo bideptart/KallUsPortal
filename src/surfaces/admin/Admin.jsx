@@ -10,6 +10,7 @@ import Signups from './Signups.jsx';
 import Customers from './Customers.jsx';
 import Resellers from './Resellers.jsx';
 import Numbers from './Numbers.jsx';
+import { AddNumberModal } from '../customer/Numbers.jsx';
 import Payments from './Payments.jsx';
 import Bulk from './Bulk.jsx';
 import Logs from './Logs.jsx';
@@ -21,6 +22,7 @@ import AgentsList from '../customer/AgentsList.jsx';
 import AgentDetail from '../customer/AgentDetail.jsx';
 import ChatAgentDetail from '../customer/ChatAgentDetail.jsx';
 import Templates from '../customer/Templates.jsx';
+import Playground from '../customer/Playground.jsx';
 import Analytics from '../customer/Analytics.jsx';
 import Transactions from '../customer/Transactions.jsx';
 import Logo from '../../components/Logo.jsx';
@@ -38,10 +40,11 @@ import BookingIcon from '../../components/BookingIcon.jsx';
 // right where the flat "Call Activity" entry used to sit (between Analytics
 // and Reports) instead of at the end of the list.
 const NAV_TABS_BEFORE_CALLS = [
-  { id: 'overview',  label: 'Overview',       Icon: LayoutDashboard },
-  { id: 'agents',    label: 'Agents',         Icon: Bot },
-  { id: 'kb',        label: 'Knowledge Base', Icon: BookOpen },
-  { id: 'analytics', label: 'Analytics',      Icon: TrendingUp },
+  { id: 'overview',    label: 'Overview',       Icon: LayoutDashboard },
+  { id: 'agents',      label: 'Agents',         Icon: Bot },
+  { id: 'playground',  label: 'Playground',     Icon: FlaskConical },
+  { id: 'kb',          label: 'Knowledge Base', Icon: BookOpen },
+  { id: 'analytics',   label: 'Analytics',      Icon: TrendingUp },
 ];
 const NAV_TABS_AFTER_CALLS = [
   { id: 'reports',      label: 'Reports',           Icon: FileText },
@@ -53,9 +56,9 @@ const NAV_TABS = [...NAV_TABS_BEFORE_CALLS, ...NAV_TABS_AFTER_CALLS];
 
 // "Call Activity" is a collapsible sidebar group: its own page (Logs) plus
 // three sub-pages that nest under it. "Tools" reuses the same card-grid
-// Tools page as the customer dashboard; the MCP browser (formerly the
-// top-level "Playground" entry) stays reachable at its legacy /admin/mcp
-// and /admin/playground links.
+// Tools page as the customer dashboard; the MCP tool browser stays
+// reachable at its legacy /admin/mcp link (distinct from the "Playground"
+// nav entry above, which is the agent test/tune page shared with Customer).
 const CALL_ACTIVITY = { id: 'calls', label: 'Call Activity', Icon: Zap };
 const CALL_ACTIVITY_CHILDREN = [
   { id: 'booking-history', label: 'Booking History', Icon: BookingIcon },
@@ -80,7 +83,6 @@ const LEGACY_TABS = [
   { id: 'mcp',          label: 'MCP browser' },
   { id: 'plans',        label: 'Plans & pricing' },
   { id: 'settings',     label: 'Settings (credentials)' },
-  { id: 'playground',   label: 'Playground' },
   // Reached by clicking a row on the Agents list — not a nav item itself.
   { id: 'agent-detail',      label: 'Agent' },
   { id: 'agent-detail-chat', label: 'Chat Agent' },
@@ -93,6 +95,7 @@ export default function Admin() {
   const { currentUser } = useApp();
   const { tab } = useParams();
   const [navOpen, setNavOpen] = useState(false);
+  const [showAddPlan, setShowAddPlan] = useState(false);
   const callActivityActive = tab === CALL_ACTIVITY.id || CALL_ACTIVITY_CHILDREN.some((t) => t.id === tab);
   const [callActivityOpen, setCallActivityOpen] = useState(callActivityActive);
 
@@ -178,7 +181,7 @@ export default function Admin() {
             {ActiveIcon && <ActiveIcon size={14} strokeWidth={2} />} {activeLabel}
           </div>
           <div className="ml-auto flex items-center gap-3">
-            <Link to="/admin/numbers" className="btn-teal text-sm whitespace-nowrap">+ Add plan / number</Link>
+            <button type="button" className="btn-teal text-sm whitespace-nowrap" onClick={() => setShowAddPlan(true)}>+ Add plan / number</button>
           </div>
         </div>
 
@@ -196,7 +199,8 @@ export default function Admin() {
         {tab === 'agents'                                && <AgentsList />}
         {tab === 'customers'                             && <Customers />}
         {tab === 'tools'                                 && <Tools />}
-        {(tab === 'playground' || tab === 'mcp')        && <McpBrowser />}
+        {tab === 'playground'                            && <Playground />}
+        {tab === 'mcp'                                    && <McpBrowser />}
         {(tab === 'kb' || tab === 'bulk')               && <Bulk />}
         {tab === 'analytics'                             && <Analytics />}
         {tab === 'usage'                                 && <Usage />}
@@ -220,6 +224,14 @@ export default function Admin() {
         </div>
 
       </div>
+
+      {showAddPlan && (
+        <AddNumberModal
+          currentUser={currentUser}
+          onClose={() => setShowAddPlan(false)}
+          onAdded={() => setShowAddPlan(false)}
+        />
+      )}
     </div>
   );
 }
