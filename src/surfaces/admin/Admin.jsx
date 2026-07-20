@@ -127,15 +127,15 @@ export default function Admin() {
       {navOpen && <div className="mobile-nav-backdrop" onClick={() => setNavOpen(false)} />}
 
       <aside className={`sidenav ${navOpen ? 'is-open' : ''}`}>
-        <div className="h-16 flex items-center gap-2 px-4 bg-white sticky top-0 z-30">
-          <Link to="/admin/overview" className="flex items-center gap-2 flex-1 min-w-0" aria-label="kallus.io home">
-            <Logo size={44} showWordmark={false} />
-            <span className="font-mono text-sm lowercase text-mute tracking-tight truncate">kallus.io</span>
+        <div className="h-16 flex items-center gap-1.5 px-3 bg-white sticky top-0 z-30">
+          <Link to="/admin/overview" className="flex items-center gap-2 min-w-0" aria-label="kallus.io home">
+            <Logo size={36} showWordmark={false} />
+            <span className="font-mono text-sm lowercase text-mute tracking-tight whitespace-nowrap">kallus.io</span>
           </Link>
           {isAdminTier && (
             <button
               type="button"
-              className="hidden lg:inline-flex shrink-0 w-6 h-6 items-center justify-center rounded-md text-mute hover:bg-slate-100 hover:text-slate-900 text-xs"
+              className="hidden lg:inline-flex ml-auto shrink-0 w-6 h-6 items-center justify-center rounded-md text-mute hover:bg-slate-100 hover:text-slate-900 text-xs"
               onClick={() => setNavCollapsed(true)}
               aria-label="Collapse sidebar"
               title="Collapse sidebar"
