@@ -60,7 +60,9 @@ const DEMO_CALLS = Array.from({ length: 15 }, (_, i) => {
   const inbound = i % 5 !== 3;
   const start = new Date(Date.now() - (i * 9 + Math.floor(rand(i) * 6)) * 3600 * 1000);
   const duration = 5 + Math.floor(rand(i * 7) * 115);
-  const sentiments = [null, null, 'neutral', null, 'negative', null, 'neutral', null];
+  // Every row carries a sentiment so the placeholder table reads as fully
+  // populated (no "—" gaps) rather than partially filled.
+  const sentiments = ['neutral', 'positive', 'neutral', 'negative', 'neutral', 'positive', 'neutral', 'negative'];
   return {
     sid: `demo-${i}`,
     startTime: start.toISOString(),
@@ -275,54 +277,64 @@ export default function Analytics() {
       </div>
 
       {/* Recent activity + Failed/no-answer */}
-      <div className="mt-6 grid lg:grid-cols-[1fr_320px] gap-5 items-start">
+      <div className="mt-6 grid lg:grid-cols-[1fr_200px] gap-4 items-stretch">
         <div className="form-card p-0 overflow-x-auto">
-          <div className="px-5 pt-5 pb-3 text-lg font-bold text-slate-900">Recent activity</div>
-          <table>
+          <div className="px-4 pt-4 pb-2 text-base font-bold text-slate-900">Recent activity</div>
+          <table className="text-xs">
             <thead>
               <tr>
-                <th>Time</th>
-                <th>Type</th>
-                <th>From</th>
-                <th>To</th>
-                <th>Duration</th>
-                <th>Status</th>
-                <th>Sentiment</th>
+                <th className="!py-2 !px-2">Time</th>
+                <th className="!py-2 !px-2">Type</th>
+                <th className="!py-2 !px-2">From</th>
+                <th className="!py-2 !px-2">To</th>
+                <th className="!py-2 !px-2">Duration</th>
+                <th className="!py-2 !px-2">Status</th>
+                <th className="!py-2 !px-2">Sentiment</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
                 <tr><td colSpan={7} className="text-center text-mute py-8">No calls in this range.</td></tr>
               )}
-              {filtered.slice(0, 15).map((c) => (
+              {filtered.slice(0, 15).map((c) => {
+                const isInbound = fmtDirection(c.direction) === 'Inbound';
+                return (
                 <tr key={c.sid}>
-                  <td className="whitespace-nowrap">{fmtTime(c.startTime)}</td>
-                  <td className="text-mute">{fmtDirection(c.direction)}</td>
-                  <td className="font-mono">{fmtNumber(c.from)}</td>
-                  <td className="font-mono">{fmtNumber(c.to)}</td>
-                  <td>{fmtDuration(c.duration)}</td>
-                  <td>
+                  <td className="whitespace-nowrap !py-1.5 !px-2">{fmtTime(c.startTime)}</td>
+                  <td className="text-mute !py-1.5 !px-2 whitespace-nowrap">{isInbound ? '↘ In' : '↗ Out'}</td>
+                  <td className="font-mono !py-1.5 !px-2">{fmtNumber(c.from)}</td>
+                  <td className="font-mono !py-1.5 !px-2">{fmtNumber(c.to)}</td>
+                  <td className="!py-1.5 !px-2 whitespace-nowrap">{fmtDuration(c.duration)}</td>
+                  <td className="!py-1.5 !px-2">
                     <span className="pill" style={{ background: GREEN_TINT, color: GREEN }}>
                       {ANSWERED.has(c.status) ? 'answered' : c.status || 'failed'}
                     </span>
                   </td>
-                  <td>
+                  <td className="!py-1.5 !px-2">
                     {c.sentiment ? (
-                      <span className={`pill ${c.sentiment === 'negative' ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-600'}`}>
+                      <span
+                        className="pill"
+                        style={c.sentiment === 'negative'
+                          ? { background: '#fef2f2', color: '#dc2626' }
+                          : c.sentiment === 'positive'
+                            ? { background: GREEN_TINT, color: GREEN }
+                            : { background: '#f1f5f9', color: '#475569' }}
+                      >
                         {c.sentiment[0].toUpperCase() + c.sentiment.slice(1)}
                       </span>
                     ) : <span className="text-mute">—</span>}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
 
-        <div className="form-card">
-          <div className="text-lg font-bold text-slate-900">Failed / no-answer ({failedCalls.length})</div>
+        <div className="form-card !px-3 flex flex-col h-full">
+          <div className="text-sm font-bold text-slate-900 whitespace-nowrap">Failed / no-answer ({failedCalls.length})</div>
           {failedCalls.length === 0 ? (
-            <div className="text-center text-mute text-sm py-10">No failed calls</div>
+            <div className="flex-1 flex items-center justify-center text-center text-mute text-sm">No failed calls</div>
           ) : (
             <ul className="mt-3 space-y-2 text-sm">
               {failedCalls.slice(0, 10).map((c) => (
