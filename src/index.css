@@ -273,7 +273,7 @@ h1, h2, h3, h4, h5, h6 {
     }
     .sidenav.is-open { transform: translateX(0); }
   }
-  .sidenav a {
+  .sidenav a, .sidenav .nav-group-toggle {
     display: flex; align-items: center; gap: 8px;
     padding: 9px 14px; color: var(--ink-2); border-radius: 9px;
     font-size: 14px; margin: 2px 12px; cursor: pointer;
@@ -281,20 +281,23 @@ h1, h2, h3, h4, h5, h6 {
     transition: background .15s, color .15s, border-color .15s;
     position: relative;
     font-weight: 500;
+    width: calc(100% - 24px);
+    background: none;
+    text-align: left;
   }
-  .sidenav a.active {
+  .sidenav a.active, .sidenav .nav-group-toggle.active {
     color: var(--ink);
     background: linear-gradient(90deg, rgba(77,124,15,0.10), rgba(15,23,42,0.02));
     border-color: rgba(77,124,15,0.20);
     font-weight: 600;
   }
-  .sidenav a.active::before {
+  .sidenav a.active::before, .sidenav .nav-group-toggle.active::before {
     content: '';
     position: absolute; left: -12px; top: 8px; bottom: 8px;
     width: 3px; border-radius: 3px;
     background: linear-gradient(180deg, var(--grad-start), var(--grad-end));
   }
-  .sidenav a:hover:not(.active) { background: var(--surface-2); color: var(--ink); }
+  .sidenav a:hover:not(.active), .sidenav .nav-group-toggle:hover:not(.active) { background: var(--surface-2); color: var(--ink); }
   .sidenav-section {
     font-size: 10px; text-transform: uppercase; color: #94a3b8;
     padding: 18px 20px 8px; letter-spacing: 0.1em; font-weight: 700;
