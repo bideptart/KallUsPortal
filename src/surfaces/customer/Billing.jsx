@@ -200,18 +200,11 @@ export default function Billing() {
   return (
     <div>
       {/* ===== HEADER ====================================================== */}
-      {/* "+ Add plan / number" sits on its own row, right-aligned above the
-          title — matching the reference layout, which keeps it visually
-          separate from the "Transaction history" ghost button below. */}
-      <div className="flex justify-end">
-        <button
-          onClick={() => setShowAddPlan(true)}
-          className={`px-4 py-2 rounded-lg text-white text-sm font-semibold ${BRAND_GRADIENT}`}
-        >
-          + Add plan / number
-        </button>
-      </div>
-      <div className="mt-3 flex items-start justify-between gap-3 flex-wrap">
+      {/* No page-level "+ Add plan / number" here anymore — the sticky top
+          bar (Customer.jsx) already shows one on every dashboard page,
+          including this one, so a second copy here was a duplicate.
+          "Active plans" below still has its own in-context copy. */}
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Billing &amp; minutes</h1>
           <p className="text-sm text-mute mt-1">
