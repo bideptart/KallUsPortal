@@ -28,6 +28,13 @@ import {
 } from './language.js';
 import { TTS_VOICES, ttsConfigured, generateSample, cachedSamplePath, mapToPreviewVoice } from './tts.js';
 import OpenAI from 'openai';
+import multer from 'multer';
+import mammoth from 'mammoth';
+import { createRequire } from 'module';
+// pdf-parse is CommonJS with an export shape Node's ESM interop can't
+// synthesize a `default` for — require() it directly instead.
+const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse');
 import {
   razorpayConfigured, razorpayKeyId, createOrder as rzpCreateOrder,
   verifyPaymentSignature as rzpVerifySignature, fetchPayment as rzpFetchPayment,
@@ -4412,6 +4419,89 @@ app.post('/api/kb/import-from-website', auth, async (req, res) => {
     faqCount: faqs.length,
     bytesFetched: html.length,
     textChars: text.length,
+  });
+});
+
+// POST /api/kb/import-from-file
+//
+// Same extraction as import-from-website (KB_IMPORT_SYSTEM prompt through
+// Grok/Gemini), but the source text comes from an uploaded PDF or DOCX
+// instead of a fetched webpage. Old binary .doc isn't supported — mammoth
+// only reads the modern zip-based .docx format.
+const kbFileUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 15 * 1024 * 1024 }, // 15 MB
+}).single('file');
+
+app.post('/api/kb/import-from-file', auth, (req, res) => {
+  kbFileUpload(req, res, async (uploadErr) => {
+    if (uploadErr) {
+      return res.status(400).json({ error: uploadErr.message || 'Upload failed' });
+    }
+    if (!xai) {
+      return res.status(503).json({ error: 'AI provider not configured — set GOOGLE_API_KEY (Gemini) or XAI_API_KEY in .env' });
+    }
+    if (!req.file) return res.status(400).json({ error: 'file is required' });
+
+    const name = req.file.originalname || 'upload';
+    const ext = (name.split('.').pop() || '').toLowerCase();
+
+    let text = '';
+    try {
+      if (ext === 'pdf') {
+        text = (await pdfParse(req.file.buffer)).text || '';
+      } else if (ext === 'docx') {
+        text = (await mammoth.extractRawText({ buffer: req.file.buffer })).value || '';
+      } else if (ext === 'doc') {
+        return res.status(415).json({ error: 'Old .doc format isn’t supported — please save as .docx or PDF and try again.' });
+      } else {
+        return res.status(415).json({ error: 'Only .pdf and .docx files are supported.' });
+      }
+    } catch (e) {
+      return res.status(422).json({ error: 'Could not read that file: ' + (e.message || 'parse error') });
+    }
+
+    text = text.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, 50000);
+    if (text.length < 100) {
+      return res.status(422).json({ error: 'That file contained too little text to extract a knowledge base' });
+    }
+
+    let parsed;
+    try {
+      const completion = await xai.chat.completions.create({
+        model: XAI_MODEL,
+        response_format: { type: 'json_object' },
+        temperature: 0.2,
+        max_tokens: 2200,
+        messages: [
+          { role: 'system', content: KB_IMPORT_SYSTEM },
+          { role: 'user',   content: `Source document: ${name}\n\nExtracted text:\n${text}` },
+        ],
+      });
+      parsed = JSON.parse(completion.choices?.[0]?.message?.content || '{}');
+    } catch (e) {
+      return res.status(502).json({ error: 'AI extraction failed: ' + (e.message || 'unknown') });
+    }
+
+    const kbCompany = String(parsed.company || '').trim();
+    const faqs = Array.isArray(parsed.faqs) ? parsed.faqs : [];
+    const kbFaqs = faqs
+      .filter((f) => f && f.q && f.a)
+      .map((f) => `Q: ${String(f.q).trim()}\nA: ${String(f.a).trim()}`)
+      .join('\n\n');
+
+    if (!kbCompany && !kbFaqs) {
+      return res.status(422).json({ error: 'AI returned an empty KB — the file may not have useful content' });
+    }
+
+    res.json({
+      ok: true,
+      fileName: name,
+      kbCompany,
+      kbFaqs,
+      faqCount: faqs.length,
+      textChars: text.length,
+    });
   });
 });
 

@@ -22,3 +22,6 @@ log/
 
 # Runtime caches
 server/tts-cache/
+
+# Local SQLite demo-auth database
+server/data/

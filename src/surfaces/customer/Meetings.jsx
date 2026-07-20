@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../../api.js';
 
 // =============================================================================
@@ -82,15 +82,26 @@ function MonthCalendar({ month, onPrev, onNext, onToday, meetingsByDay, selected
   const inMonth = (d) => d.getMonth() === month.getMonth();
 
   return (
-    <div className="form-card">
+    <div className="form-card border-lime-200 dark:border-lime-500/30 animate-fade-up">
       <div className="flex items-center justify-between mb-3">
-        <button onClick={onPrev} className="btn-ghost text-sm px-2 py-1" aria-label="Previous month">←</button>
+        <button
+          onClick={onPrev}
+          className="btn-ghost text-sm w-8 h-8 flex items-center justify-center rounded-full transition duration-200 ease-out hover:scale-110 active:scale-95"
+          aria-label="Previous month"
+        >←</button>
         <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
           {MONTHS[month.getMonth()]} {month.getFullYear()}
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={onToday} className="btn-ghost text-xs px-2 py-1">Today</button>
-          <button onClick={onNext} className="btn-ghost text-sm px-2 py-1" aria-label="Next month">→</button>
+          <button
+            onClick={onToday}
+            className="btn-teal text-xs px-3 py-1 transition duration-200 ease-out hover:scale-105 active:scale-95"
+          >Today</button>
+          <button
+            onClick={onNext}
+            className="btn-ghost text-sm w-8 h-8 flex items-center justify-center rounded-full transition duration-200 ease-out hover:scale-110 active:scale-95"
+            aria-label="Next month"
+          >→</button>
         </div>
       </div>
 
@@ -110,10 +121,14 @@ function MonthCalendar({ month, onPrev, onNext, onToday, meetingsByDay, selected
               key={key}
               onClick={() => onSelectDay(isSelected ? null : key)}
               className={[
-                'aspect-square rounded-lg border text-left p-1.5 flex flex-col transition',
-                muted ? 'text-slate-300 dark:text-slate-600 border-transparent' : 'text-slate-700 dark:text-slate-300 border-slate-100 dark:border-slate-800',
-                isToday ? 'ring-2 ring-lime-500/60' : '',
-                isSelected ? 'bg-lime-500 text-white border-lime-500 dark:bg-lime-600 dark:border-lime-600' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50',
+                'aspect-square rounded-lg text-left p-1.5 flex flex-col transition duration-200 ease-out hover:scale-105 active:scale-95',
+                muted ? 'text-slate-300 dark:text-slate-600' : 'text-slate-700 dark:text-slate-300',
+                muted
+                  ? 'border border-transparent'
+                  : isToday && !isSelected
+                  ? 'border-2 border-lime-600 dark:border-lime-500 animate-today-ring'
+                  : 'border border-slate-100 dark:border-slate-800',
+                isSelected ? 'bg-lime-500 text-white border-lime-500 dark:bg-lime-600 dark:border-lime-600 animate-pop-in' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50',
               ].join(' ')}
             >
               <span className={`text-xs font-semibold ${isSelected ? 'text-white' : ''}`}>{d.getDate()}</span>
@@ -122,7 +137,8 @@ function MonthCalendar({ month, onPrev, onNext, onToday, meetingsByDay, selected
                   {events.slice(0, 3).map((_, i) => (
                     <span
                       key={i}
-                      className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-lime-500'}`}
+                      style={{ animationDelay: `${i * 60}ms` }}
+                      className={`w-1.5 h-1.5 rounded-full animate-dot-pop ${isSelected ? 'bg-white' : 'bg-lime-500'}`}
                     />
                   ))}
                   {events.length > 3 && (
@@ -148,7 +164,7 @@ function MeetingRow({ m }) {
   const pillCls = STATUS_PILL[statusKey] || STATUS_PILL.scheduled;
   const synced = !!m.calendar_link || !!m.calendar_event_id;
   return (
-    <div className="form-card hover:border-lime-500/40 transition">
+    <div className="form-card border-lime-200 dark:border-lime-500/30 hover:border-lime-500/60 transition">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap text-xs">
@@ -241,6 +257,22 @@ export default function Meetings({
   });
   const [selectedDay, setSelectedDay] = useState(null);
 
+  // Detects the moment the sticky calendar actually locks into place (its
+  // sentinel scrolls above the sticky offset) so the "stuck" shadow can ease
+  // in via a CSS transition instead of snapping the instant sticky engages.
+  const [calendarStuck, setCalendarStuck] = useState(false);
+  const calendarSentinel = useRef(null);
+  useEffect(() => {
+    const el = calendarSentinel.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => setCalendarStuck(!entry.isIntersecting),
+      { rootMargin: '-81px 0px 0px 0px', threshold: 1 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   const load = async () => {
     setLoading(true);
     setErr('');
@@ -317,7 +349,7 @@ export default function Meetings({
             />
             Upcoming only
           </label>
-          <button onClick={load} disabled={loading} className="btn-ghost text-sm">
+          <button onClick={load} disabled={loading} className="btn-teal text-sm transition duration-200 ease-out hover:scale-105 active:scale-95">
             {loading ? 'Loading…' : '↻ Refresh'}
           </button>
         </div>
@@ -331,27 +363,32 @@ export default function Meetings({
 
       <div className="mt-6 grid lg:grid-cols-[360px_1fr] gap-6">
         {/* === LEFT: month calendar ============================================ */}
-        <div>
-          <MonthCalendar
-            month={month}
-            onPrev={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}
-            onNext={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}
-            onToday={() => {
-              const n = new Date();
-              setMonth(new Date(n.getFullYear(), n.getMonth(), 1));
-            }}
-            meetingsByDay={meetingsByDay}
-            selectedDay={selectedDay}
-            onSelectDay={setSelectedDay}
-          />
-          {selectedDay && (
-            <button
-              onClick={() => setSelectedDay(null)}
-              className="mt-3 w-full btn-ghost text-xs"
-            >
-              ✕ Clear day filter ({selectedDay})
-            </button>
-          )}
+        <div className="relative">
+          <div ref={calendarSentinel} className="absolute top-0 left-0 h-px w-px" aria-hidden="true" />
+          <div className="lg:sticky lg:top-20 lg:self-start">
+            <div className={`transition-shadow duration-300 ease-out rounded-xl ${calendarStuck ? 'shadow-lg' : 'shadow-none'}`}>
+              <MonthCalendar
+                month={month}
+                onPrev={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}
+                onNext={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}
+                onToday={() => {
+                  const n = new Date();
+                  setMonth(new Date(n.getFullYear(), n.getMonth(), 1));
+                }}
+                meetingsByDay={meetingsByDay}
+                selectedDay={selectedDay}
+                onSelectDay={setSelectedDay}
+              />
+              {selectedDay && (
+                <button
+                  onClick={() => setSelectedDay(null)}
+                  className="mt-3 w-full btn-ghost text-xs"
+                >
+                  ✕ Clear day filter ({selectedDay})
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* === RIGHT: meeting list ============================================ */}
