@@ -1171,7 +1171,7 @@ app.post('/api/razorpay/verify', async (req, res) => {
 // Razorpay top-up — credit the customer's wallet via the Razorpay modal.
 // ============================================================================
 app.post('/api/razorpay/order/topup', auth, async (req, res) => {
-  if (!stripeConfigured) return res.status(503).json({ error: 'Payment not configured' });
+  if (!razorpayConfigured) return res.status(503).json({ error: 'Payment not configured' });
 
   // Two paths: a fixed pack id (existing behaviour) OR a custom amount
   // (entered in the new Wallet tab's "Custom amount ($)" field). For the
@@ -1189,7 +1189,11 @@ app.post('/api/razorpay/order/topup', auth, async (req, res) => {
 
   let order;
   try {
-    order = { url: 'stripe-pending', id: 'stripe_' + Date.now() };
+    order = await rzpCreateOrder({
+      amountInr: pack.amount,
+      receipt: `topup-${req.user.id}-${Date.now()}`,
+      notes: { userId: String(req.user.id), packId: pack.id },
+    });
   } catch (e) {
     return res.status(502).json({ error: e.message || 'Could not create top-up order' });
   }
@@ -1210,12 +1214,18 @@ app.post('/api/razorpay/order/topup', auth, async (req, res) => {
 });
 
 app.post('/api/razorpay/verify/topup', auth, async (req, res) => {
-  if (!stripeConfigured) return res.status(503).json({ error: 'Payment not configured' });
+  if (!razorpayConfigured) return res.status(503).json({ error: 'Payment not configured' });
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature, packId } = req.body || {};
   if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !packId) {
     return res.status(400).json({ error: 'razorpay_order_id, razorpay_payment_id, razorpay_signature, and packId required' });
   }
-  const pack = findPack(packId);
+  // Custom-amount top-ups use the synthesised 'custom' pack id — findPack()
+  // only knows the fixed catalog. Its amount/mins are derived below from the
+  // Razorpay-verified payment itself (server-trusted), never from anything
+  // the client sends, so a tampered request can't credit more minutes than
+  // was actually paid for.
+  const isCustom = packId === 'custom';
+  const pack = isCustom ? { id: 'custom', rate: PACKS[0]?.rate || 4 } : findPack(packId);
   if (!pack) return res.status(400).json({ error: 'Unknown pack' });
 
   if (!rzpVerifySignature({
@@ -1227,7 +1237,7 @@ app.post('/api/razorpay/verify/topup', auth, async (req, res) => {
   }
 
   let payment;
-  try { payment = { status: 'captured', amount: 0 }; }
+  try { payment = await rzpFetchPayment(razorpay_payment_id); }
   catch (e) { return res.status(502).json({ error: 'Could not fetch payment: ' + e.message }); }
 
   if (payment.status !== 'captured' && payment.status !== 'authorized') {
@@ -1235,7 +1245,10 @@ app.post('/api/razorpay/verify/topup', auth, async (req, res) => {
   }
 
   const amountInr = Number(payment.amount || 0) / 100;
-  if (Math.round(amountInr) !== Math.round(pack.amount)) {
+  if (isCustom) {
+    pack.amount = amountInr;
+    pack.mins = Math.floor(amountInr / pack.rate);
+  } else if (Math.round(amountInr) !== Math.round(pack.amount)) {
     return res.status(400).json({ error: 'Payment amount mismatch' });
   }
 
@@ -1311,10 +1324,14 @@ const ensureRazorpayCustomer = async (user) => {
 };
 
 app.post('/api/razorpay/order/save-card', auth, async (req, res) => {
-  if (!stripeConfigured) return res.status(503).json({ error: 'Payment not configured' });
+  if (!razorpayConfigured) return res.status(503).json({ error: 'Payment not configured' });
   try {
     const customerId = await ensureRazorpayCustomer(req.user);
-    const order = { url: 'stripe-pending', id: 'stripe_' + Date.now() };
+    const order = await rzpCreateOrder({
+      amountInr: SAVE_CARD_AMOUNT_USD,
+      receipt: `savecard-${req.user.id}-${Date.now()}`,
+      notes: { userId: String(req.user.id), purpose: 'save-card' },
+    });
     res.json({
       orderId:    order.id,
       amount:     order.amount,
@@ -1334,7 +1351,7 @@ app.post('/api/razorpay/order/save-card', auth, async (req, res) => {
 });
 
 app.post('/api/razorpay/verify/save-card', auth, async (req, res) => {
-  if (!stripeConfigured) return res.status(503).json({ error: 'Payment not configured' });
+  if (!razorpayConfigured) return res.status(503).json({ error: 'Payment not configured' });
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body || {};
   if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
     return res.status(400).json({ error: 'razorpay creds required' });
@@ -1344,7 +1361,7 @@ app.post('/api/razorpay/verify/save-card', auth, async (req, res) => {
   }
 
   let payment;
-  try { payment = { status: 'captured', amount: 0 }; }
+  try { payment = await rzpFetchPayment(razorpay_payment_id); }
   catch (e) { return res.status(502).json({ error: 'Could not fetch payment: ' + e.message }); }
   if (payment.status !== 'captured' && payment.status !== 'authorized') {
     return res.status(402).json({ error: `Payment not completed (status: ${payment.status})` });
