@@ -102,7 +102,7 @@ export default function KnowledgeBase() {
   const NewButton = ({ className = '' }) => (
     <button
       onClick={() => setCreating(true)}
-      className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition ${className}`}
+      className={`btn-teal inline-flex items-center gap-2 ${className}`}
     >
       <Plus className="w-4 h-4" /> New knowledge base
     </button>
@@ -111,7 +111,7 @@ export default function KnowledgeBase() {
   return (
     <div>
       <div className="flex items-start gap-3">
-        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shrink-0">
+        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
           <BookOpen className="w-5 h-5" />
         </div>
         <div>
@@ -122,11 +122,11 @@ export default function KnowledgeBase() {
 
       <NewButton className="mt-4" />
 
-      <div className="mt-4 rounded-xl border border-violet-200 bg-violet-50 dark:border-violet-500/30 dark:bg-violet-500/10 p-4 flex gap-3">
-        <Info className="w-4 h-4 text-violet-600 dark:text-violet-400 shrink-0 mt-0.5" />
+      <div className="mt-4 rounded-xl border border-lime-200 bg-lime-50 dark:border-lime-500/30 dark:bg-lime-500/10 p-4 flex gap-3">
+        <Info className="w-4 h-4 text-lime-600 dark:text-lime-400 shrink-0 mt-0.5" />
         <p className="text-sm text-slate-700 dark:text-slate-300">
           Every agent already has its own knowledge base. Save one here to <strong>reuse it across numbers</strong> — then
-          apply it from the <Link to={`${basePath}/agents`} className="text-violet-600 dark:text-violet-400 font-semibold hover:underline">Agents</Link> page
+          apply it from the <Link to={`${basePath}/agents`} className="text-lime-600 dark:text-lime-400 font-semibold hover:underline">Agents</Link> page
           under <strong>Import from knowledge base</strong>. The agent keeps its own editable copy.
         </p>
       </div>
@@ -170,7 +170,7 @@ export default function KnowledgeBase() {
               <Link to={`${basePath}/agents`} className="text-sm text-lime-600 dark:text-lime-400 font-semibold hover:underline">
                 Edit on agent →
               </Link>
-              <button onClick={() => saveCopy(n)} className="inline-flex items-center gap-1.5 text-sm text-violet-600 dark:text-violet-400 font-semibold hover:underline">
+              <button onClick={() => saveCopy(n)} className="inline-flex items-center gap-1.5 text-sm text-lime-600 dark:text-lime-400 font-semibold hover:underline">
                 <Copy className="w-3.5 h-3.5" /> Save a copy
               </button>
             </div>
@@ -186,7 +186,7 @@ export default function KnowledgeBase() {
 
       {saved.length === 0 ? (
         <div className="mt-4 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 py-14 px-6 text-center">
-          <div className="mx-auto w-12 h-12 rounded-xl bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center text-violet-600 dark:text-violet-400">
+          <div className="mx-auto w-12 h-12 rounded-xl bg-lime-100 dark:bg-lime-500/20 flex items-center justify-center text-lime-600 dark:text-lime-400">
             <BookOpen className="w-5 h-5" />
           </div>
           <div className="mt-4 font-bold text-slate-900 dark:text-slate-100">No saved knowledge bases yet</div>
