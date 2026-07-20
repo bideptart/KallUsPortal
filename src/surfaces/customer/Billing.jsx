@@ -211,7 +211,7 @@ export default function Billing() {
             <strong>KallUS</strong> Voice AI — plans per number, instant upgrades, shared wallet.
           </p>
         </div>
-        <Link to="/dashboard/transactions" className="btn-ghost text-sm">
+        <Link to="/dashboard/transactions" className="btn-ghost text-sm !rounded-lg">
           Transaction history
         </Link>
       </div>
