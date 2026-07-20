@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
+import { Users, CreditCard, Star, Handshake, Menu } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import Logo from '../../components/Logo.jsx';
-import TopBar from '../../components/TopBar.jsx';
 import Footer from '../../components/Footer.jsx';
 import Customers from './Customers.jsx';
 import Plans from './Plans.jsx';
@@ -13,10 +13,10 @@ import SubResellers from './SubResellers.jsx';
 // manage customers, not further sub-resellers, so the Sub-resellers tab is
 // hidden for them (and the backend rejects the create call as a backstop).
 const ALL_TABS = [
-  { id: 'customers',     label: '👥 My customers' },
-  { id: 'purchases',     label: '💳 Plan purchases' },
-  { id: 'plans',         label: '⭐ My plans' },
-  { id: 'sub-resellers', label: '🤝 Sub-resellers', resellerOnly: true },
+  { id: 'customers',     label: 'My customers',  Icon: Users },
+  { id: 'purchases',     label: 'Plan purchases', Icon: CreditCard },
+  { id: 'plans',         label: 'My plans',       Icon: Star },
+  { id: 'sub-resellers', label: 'Sub-resellers',  Icon: Handshake, resellerOnly: true },
 ];
 
 // =============================================================================
@@ -76,7 +76,7 @@ export default function Reseller() {
             to={`/reseller/${t.id}`}
             className={tab === t.id ? 'active' : ''}
           >
-            {t.label}
+            <t.Icon size={16} strokeWidth={2} /> {t.label}
           </Link>
         ))}
       </aside>
@@ -88,13 +88,10 @@ export default function Reseller() {
             onClick={() => setNavOpen(true)}
             aria-label="Open menu"
           >
-            <span>☰</span> Menu
+            <Menu size={16} /> Menu
           </button>
           <div className="lg:hidden text-xs text-mute font-semibold uppercase tracking-wider truncate">
             {activeLabel}
-          </div>
-          <div className="ml-auto">
-            <TopBar />
           </div>
         </div>
 

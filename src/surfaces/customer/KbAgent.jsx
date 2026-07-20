@@ -8,11 +8,11 @@ import { useVoicePreview } from '../../hooks/useVoicePreview.js';
 // natively, not phonetically). Kore is the calm, articulate default.
 // `gender` matches the voice the preview actually renders (server/tts.js
 // GEMINI_TO_GOOGLE_EN) so the label agrees with what the customer hears.
-const VOICES = [
-  { value: 'Kore',     label: 'Kore',     desc: 'Calm, articulate (default)', gender: 'female' },
-  { value: 'Puck',     label: 'Puck',     desc: 'Bright, energetic',          gender: 'male'   },
-  { value: 'Charon',   label: 'Charon',   desc: 'Informative, steady',        gender: 'male'   },
-  { value: 'Aoede',    label: 'Aoede',    desc: 'Warm, breathy',              gender: 'female' },
+export const VOICES = [
+  { value: 'Kore',     label: 'Kore',     desc: 'Calm, articulate (default)', gender: 'female', allLang: true },
+  { value: 'Puck',     label: 'Puck',     desc: 'Bright, energetic',          gender: 'male',   allLang: true },
+  { value: 'Charon',   label: 'Charon',   desc: 'Informative, steady',        gender: 'male',   allLang: true },
+  { value: 'Aoede',    label: 'Aoede',    desc: 'Warm, breathy',              gender: 'female', allLang: true },
   { value: 'Fenrir',   label: 'Fenrir',   desc: 'Excitable, young',           gender: 'male'   },
   { value: 'Leda',     label: 'Leda',     desc: 'Youthful, friendly',         gender: 'female' },
   { value: 'Orus',     label: 'Orus',     desc: 'Firm, authoritative',        gender: 'male'   },
@@ -30,14 +30,14 @@ const AVATAR_GRADIENTS = [
   'linear-gradient(135deg,#f59e0b,#fbbf24)',  // amber
   'linear-gradient(135deg,#6366f1,#818cf8)',  // indigo
 ];
-const gradientFor = (key) => {
+export const gradientFor = (key) => {
   let h = 0;
   for (const ch of String(key)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return AVATAR_GRADIENTS[h % AVATAR_GRADIENTS.length];
 };
 
 // Map a number's provisioning status → { dot colour, human label }.
-const statusMeta = (status) => {
+export const statusMeta = (status) => {
   const s = String(status || '').toLowerCase();
   if (['active', 'provisioned', 'ready', 'ok', 'synced'].includes(s)) return { dot: 'bg-emerald-500', label: 'Active' };
   if (['error', 'failed'].includes(s))                                 return { dot: 'bg-red-500',     label: 'Error' };
@@ -56,21 +56,20 @@ const GenderChip = ({ gender }) => (
   </span>
 );
 
-const LANGUAGES = [
-  { value: 'en-US', label: 'English (US)',     native: 'English',       flag: '🇺🇸' },
-  { value: 'en-US', label: 'English (India)',  native: 'English',       flag: '🇮🇳' },
-  { value: 'hi-IN', label: 'Hindi',            native: 'हिन्दी',          flag: '🇮🇳' },
-  { value: 'bn-IN', label: 'Bengali',          native: 'বাংলা',           flag: '🇮🇳' },
-  { value: 'te-IN', label: 'Telugu',           native: 'తెలుగు',          flag: '🇮🇳' },
-  { value: 'mr-IN', label: 'Marathi',          native: 'मराठी',           flag: '🇮🇳' },
-  { value: 'ta-IN', label: 'Tamil',            native: 'தமிழ்',           flag: '🇮🇳' },
-  { value: 'ur-IN', label: 'Urdu',             native: 'اُردُو',           flag: '🇮🇳' },
-  { value: 'gu-IN', label: 'Gujarati',         native: 'ગુજરાતી',         flag: '🇮🇳' },
-  { value: 'kn-IN', label: 'Kannada',          native: 'ಕನ್ನಡ',          flag: '🇮🇳' },
-  { value: 'ml-IN', label: 'Malayalam',        native: 'മലയാളം',        flag: '🇮🇳' },
-  { value: 'pa-IN', label: 'Punjabi',          native: 'ਪੰਜਾਬੀ',          flag: '🇮🇳' },
-  { value: 'or-IN', label: 'Odia',             native: 'ଓଡ଼ିଆ',           flag: '🇮🇳' },
-  { value: 'as-IN', label: 'Assamese',         native: 'অসমীয়া',         flag: '🇮🇳' },
+// South Africa's official languages (English + the other 10), matching the
+// South African phone number / Rand currency used elsewhere in the demo data.
+export const LANGUAGES = [
+  { value: 'en-ZA',  label: 'English (South Africa)', native: 'English',    flag: '🇿🇦' },
+  { value: 'af-ZA',  label: 'Afrikaans',               native: 'Afrikaans',  flag: '🇿🇦' },
+  { value: 'zu-ZA',  label: 'Zulu',                     native: 'isiZulu',   flag: '🇿🇦' },
+  { value: 'xh-ZA',  label: 'Xhosa',                    native: 'isiXhosa',  flag: '🇿🇦' },
+  { value: 'st-ZA',  label: 'Sesotho',                  native: 'Sesotho',   flag: '🇿🇦' },
+  { value: 'tn-ZA',  label: 'Setswana',                 native: 'Setswana',  flag: '🇿🇦' },
+  { value: 'nso-ZA', label: 'Sepedi',                   native: 'Sepedi',    flag: '🇿🇦' },
+  { value: 'ts-ZA',  label: 'Tsonga',                   native: 'Xitsonga',  flag: '🇿🇦' },
+  { value: 'ss-ZA',  label: 'Swati',                    native: 'siSwati',   flag: '🇿🇦' },
+  { value: 've-ZA',  label: 'Venda',                    native: 'Tshivenda', flag: '🇿🇦' },
+  { value: 'nr-ZA',  label: 'Ndebele',                  native: 'isiNdebele', flag: '🇿🇦' },
 ];
 
 const emptyDraft = () => ({

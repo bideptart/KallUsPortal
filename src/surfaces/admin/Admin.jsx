@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
+import {
+  LayoutDashboard, Bot, FlaskConical, BookOpen, TrendingUp, Zap,
+  FileText, CreditCard, Receipt, User, Menu,
+} from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
 import Signups from './Signups.jsx';
@@ -12,8 +16,11 @@ import Logs from './Logs.jsx';
 import Plans from './Plans.jsx';
 import Settings from './Settings.jsx';
 import Overview from '../customer/Overview.jsx';
+import AgentsList from '../customer/AgentsList.jsx';
+import AgentDetail from '../customer/AgentDetail.jsx';
+import ChatAgentDetail from '../customer/ChatAgentDetail.jsx';
+import Templates from '../customer/Templates.jsx';
 import Logo from '../../components/Logo.jsx';
-import TopBar from '../../components/TopBar.jsx';
 import Footer from '../../components/Footer.jsx';
 
 // Sidebar nav — unified across Admin/Customer to a common shape. Each entry
@@ -21,34 +28,39 @@ import Footer from '../../components/Footer.jsx';
 // "Knowledge Base") don't have a dedicated admin screen, so they share a
 // page with a nearby entry rather than inventing a new one.
 const NAV_TABS = [
-  { id: 'overview',     label: '📊 Overview' },
-  { id: 'agents',       label: '🤖 Agents' },
-  { id: 'playground',   label: '🧪 Playground' },
-  { id: 'kb',           label: '📖 Knowledge Base' },
-  { id: 'analytics',    label: '📈 Analytics' },
-  { id: 'calls',        label: '⚡ Call Activity' },
-  { id: 'reports',      label: '📄 Reports' },
-  { id: 'billing',      label: '💳 Billing & minutes' },
-  { id: 'transactions', label: '🧾 Transactions' },
-  { id: 'account',      label: '👤 Account' },
+  { id: 'overview',     label: 'Overview',          Icon: LayoutDashboard },
+  { id: 'agents',       label: 'Agents',            Icon: Bot },
+  { id: 'playground',   label: 'Playground',        Icon: FlaskConical },
+  { id: 'kb',           label: 'Knowledge Base',    Icon: BookOpen },
+  { id: 'analytics',    label: 'Analytics',         Icon: TrendingUp },
+  { id: 'calls',        label: 'Call Activity',     Icon: Zap },
+  { id: 'reports',      label: 'Reports',           Icon: FileText },
+  { id: 'billing',      label: 'Billing & minutes', Icon: CreditCard },
+  { id: 'transactions', label: 'Transactions',      Icon: Receipt },
+  { id: 'account',      label: 'Account',           Icon: User },
 ];
 
 // Legacy tab ids from the previous Operations/Reports/Setup layout — kept
 // valid (but not shown in the sidebar) so any existing bookmark or deep link
-// still resolves to the right page instead of 404ing.
+// still resolves to the right page instead of 404ing. Text-only (no icon —
+// they never render in the Side loop, just the mobile page-title fallback).
 const LEGACY_TABS = [
-  { id: 'signups',   label: '🆕 Signups' },
-  { id: 'customers', label: '👥 Customers' },
-  { id: 'resellers', label: '🏷 Resellers' },
-  { id: 'numbers',   label: '☎ Numbers inventory' },
-  { id: 'payments',  label: '💳 Payments & revenue' },
-  { id: 'bulk',      label: '📦 Bulk import' },
-  { id: 'logs',      label: '📋 Activity logs' },
-  { id: 'usage',     label: '📊 Usage analytics' },
-  { id: 'health',    label: '🩺 System health' },
-  { id: 'mcp',       label: '🔌 MCP browser' },
-  { id: 'plans',     label: '💎 Plans & pricing' },
-  { id: 'settings',  label: '🔌 Settings (credentials)' },
+  { id: 'signups',      label: 'Signups' },
+  { id: 'customers',    label: 'Customers' },
+  { id: 'resellers',    label: 'Resellers' },
+  { id: 'numbers',      label: 'Numbers inventory' },
+  { id: 'payments',     label: 'Payments & revenue' },
+  { id: 'bulk',         label: 'Bulk import' },
+  { id: 'logs',         label: 'Activity logs' },
+  { id: 'usage',        label: 'Usage analytics' },
+  { id: 'health',       label: 'System health' },
+  { id: 'mcp',          label: 'MCP browser' },
+  { id: 'plans',        label: 'Plans & pricing' },
+  { id: 'settings',     label: 'Settings (credentials)' },
+  // Reached by clicking a row on the Agents list — not a nav item itself.
+  { id: 'agent-detail',      label: 'Agent' },
+  { id: 'agent-detail-chat', label: 'Chat Agent' },
+  { id: 'templates', label: 'Browse Templates' },
 ];
 
 const VALID_TABS = new Set([...NAV_TABS, ...LEGACY_TABS].map((t) => t.id));
@@ -68,11 +80,13 @@ export default function Admin() {
       to={`/admin/${t.id}`}
       className={tab === t.id ? 'active' : ''}
     >
-      {t.label}
+      {t.Icon && <t.Icon size={16} strokeWidth={2} />} {t.label}
     </Link>
   ));
 
-  const activeLabel = [...NAV_TABS, ...LEGACY_TABS].find((t) => t.id === tab)?.label || '';
+  const activeTab = [...NAV_TABS, ...LEGACY_TABS].find((t) => t.id === tab);
+  const activeLabel = activeTab?.label || '';
+  const ActiveIcon = activeTab?.Icon;
 
   return (
     <div className="dashboard-shell">
@@ -99,25 +113,21 @@ export default function Admin() {
       <div className="dashboard-main">
         {/* Sticky top bar — same shape + height as the customer dashboard so
             the divider line under the sidebar logo continues across the
-            entire page width. TopBar internally hides the Check Balance pill
-            for admins (they have no plan), leaving just the user avatar
-            dropdown with Sign out. */}
+            entire page width. No user-avatar widget here anymore — Sign Out
+            isn't reachable from the UI (see Customer.jsx for the same note). */}
         <div className="sticky top-0 z-30 bg-white -mt-5 sm:-mt-6 lg:-mt-8 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-3 border-b border-slate-200 mb-6">
           <button
             className="mobile-nav-toggle lg:hidden"
             onClick={() => setNavOpen(true)}
             aria-label="Open menu"
           >
-            <span>☰</span> Menu
+            <Menu size={16} /> Menu
           </button>
-          <div className="lg:hidden text-xs text-mute font-semibold uppercase tracking-wider truncate">
-            {activeLabel}
+          <div className="lg:hidden flex items-center gap-1.5 text-xs text-mute font-semibold uppercase tracking-wider truncate">
+            {ActiveIcon && <ActiveIcon size={14} />} {activeLabel}
           </div>
           <div className="ml-auto flex items-center gap-3">
-            {tab === 'overview' && (
-              <Link to="/admin/numbers" className="btn-teal text-sm whitespace-nowrap">+ Add plan / number</Link>
-            )}
-            {tab !== 'overview' && <TopBar />}
+            <Link to="/admin/numbers" className="btn-teal text-sm whitespace-nowrap">+ Add plan / number</Link>
           </div>
         </div>
 
@@ -132,7 +142,8 @@ export default function Admin() {
             admin landing page reachable at its legacy URL. */}
         {tab === 'overview'                             && <Overview />}
         {tab === 'signups'                              && <Signups />}
-        {(tab === 'agents' || tab === 'customers')      && <Customers />}
+        {tab === 'agents'                               && <AgentsList />}
+        {tab === 'customers'                            && <Customers />}
         {(tab === 'playground' || tab === 'mcp')        && <McpBrowser />}
         {(tab === 'kb' || tab === 'bulk')               && <Bulk />}
         {(tab === 'analytics' || tab === 'usage')       && <Usage />}
@@ -140,21 +151,16 @@ export default function Admin() {
         {(tab === 'reports' || tab === 'health')        && <Health />}
         {(tab === 'billing' || tab === 'transactions' || tab === 'payments') && <Payments />}
         {(tab === 'account' || tab === 'settings')      && <Settings />}
-        {tab === 'resellers' && <Resellers />}
-        {tab === 'numbers'   && <Numbers />}
-        {tab === 'plans'     && <Plans />}
+        {tab === 'resellers'     && <Resellers />}
+        {tab === 'numbers'       && <Numbers />}
+        {tab === 'plans'         && <Plans />}
+        {tab === 'agent-detail'  && <AgentDetail />}
+        {tab === 'agent-detail-chat' && <ChatAgentDetail />}
+        {tab === 'templates'     && <Templates />}
 
-        {/* Overview shares the Customer page, which is designed to end in a
-            Footer — the other admin tabs (tables/tools) weren't, so they keep
-            the invisible sink that absorbs `.dashboard-main > :last-child`'s
-            auto margin without rendering anything. */}
-        {tab === 'overview' ? (
-          <div className="pt-10 -mx-4 sm:-mx-6 lg:-mx-8">
-            <Footer />
-          </div>
-        ) : (
-          <div aria-hidden="true" />
-        )}
+        <div className="pt-10 -mx-4 sm:-mx-6 lg:-mx-8">
+          <Footer />
+        </div>
 
       </div>
     </div>

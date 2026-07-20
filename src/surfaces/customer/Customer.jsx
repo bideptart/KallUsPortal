@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
+import {
+  LayoutDashboard, Bot, FlaskConical, BookOpen, TrendingUp, Zap,
+  FileText, CreditCard, Receipt, User, Menu,
+} from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import Overview from './Overview.jsx';
 import Calls from './Calls.jsx';
@@ -7,40 +11,47 @@ import Recordings from './Recordings.jsx';
 import Reports from './Reports.jsx';
 import Meetings from './Meetings.jsx';
 import KbAgent from './KbAgent.jsx';
+import AgentsList from './AgentsList.jsx';
+import AgentDetail from './AgentDetail.jsx';
+import ChatAgentDetail from './ChatAgentDetail.jsx';
+import Templates from './Templates.jsx';
 import Numbers from './Numbers.jsx';
 import Billing from './Billing.jsx';
 import Transactions from './Transactions.jsx';
 import Tools from './Tools.jsx';
 import Account from './Account.jsx';
-import TopBar from '../../components/TopBar.jsx';
 import Logo from '../../components/Logo.jsx';
 import Footer from '../../components/Footer.jsx';
 
 // Sidebar nav — unified across Admin/Customer to a common shape. "Agents"
-// and "Knowledge Base" both land on KbAgent (it already holds both the
-// agent config and the knowledge-base fields); "Analytics" reuses Overview
-// (it already shows the usage stat tiles).
+// is the agents-list/table page; clicking a row goes to "Knowledge Base"
+// (KbAgent), the actual per-agent editor. "Analytics" reuses Overview (it
+// already shows the usage stat tiles).
 const NAV_TABS = [
-  { id: 'overview',     label: '📊 Overview',          Component: Overview },
-  { id: 'agents',       label: '🤖 Agents',            Component: KbAgent },
-  { id: 'playground',   label: '🧪 Playground',        Component: Tools },
-  { id: 'kb',           label: '📖 Knowledge Base',    Component: KbAgent },
-  { id: 'analytics',    label: '📈 Analytics',         Component: Overview },
-  { id: 'calls',        label: '⚡ Call Activity',     Component: Calls },
-  { id: 'reports',      label: '📄 Reports',           Component: Reports },
-  { id: 'billing',      label: '💳 Billing & minutes', Component: Billing },
-  { id: 'transactions', label: '🧾 Transactions',      Component: Transactions },
-  { id: 'account',      label: '👤 Account',           Component: Account },
+  { id: 'overview',     label: 'Overview',          Icon: LayoutDashboard, Component: Overview },
+  { id: 'agents',       label: 'Agents',            Icon: Bot,             Component: AgentsList },
+  { id: 'playground',   label: 'Playground',        Icon: FlaskConical,    Component: Tools },
+  { id: 'kb',           label: 'Knowledge Base',    Icon: BookOpen,        Component: KbAgent },
+  { id: 'analytics',    label: 'Analytics',         Icon: TrendingUp,      Component: Overview },
+  { id: 'calls',        label: 'Call Activity',     Icon: Zap,             Component: Calls },
+  { id: 'reports',      label: 'Reports',           Icon: FileText,        Component: Reports },
+  { id: 'billing',      label: 'Billing & minutes', Icon: CreditCard,      Component: Billing },
+  { id: 'transactions', label: 'Transactions',      Icon: Receipt,         Component: Transactions },
+  { id: 'account',      label: 'Account',           Icon: User,            Component: Account },
 ];
 
 // Legacy tab ids from the previous 11-item layout — kept valid (but not
 // shown in the sidebar) so any existing bookmark or deep link still
 // resolves instead of bouncing to Overview.
 const LEGACY_TABS = [
-  { id: 'numbers',    label: '📱 Plan and Numbers',    Component: Numbers },
-  { id: 'recordings', label: '🎙 Recordings',          Component: Recordings },
-  { id: 'meetings',   label: '📅 Scheduled meetings',  Component: Meetings },
-  { id: 'tools',      label: '🛠 Tools',               Component: Tools },
+  { id: 'numbers',      label: 'Plan and Numbers',    Component: Numbers },
+  { id: 'recordings',   label: 'Recordings',          Component: Recordings },
+  { id: 'meetings',     label: 'Scheduled meetings',  Component: Meetings },
+  { id: 'tools',        label: 'Tools',               Component: Tools },
+  // Reached by clicking a row on the Agents list — not a nav item itself.
+  { id: 'agent-detail',      label: 'Agent',           Component: AgentDetail },
+  { id: 'agent-detail-chat', label: 'Chat Agent',      Component: ChatAgentDetail },
+  { id: 'templates',         label: 'Browse Templates', Component: Templates },
 ];
 
 const TABS = [...NAV_TABS, ...LEGACY_TABS];
@@ -94,7 +105,7 @@ export default function Customer() {
             to={`/dashboard/${t.id}`}
             className={tab === t.id ? 'active' : ''}
           >
-            {t.label}
+            <t.Icon size={16} strokeWidth={2} /> {t.label}
           </Link>
         ))}
       </aside>
@@ -103,23 +114,23 @@ export default function Customer() {
         {/* Sticky top bar — same 64px height as the sidebar logo so the
             shared border-b draws one continuous line across the page. The
             negative margins cancel dashboard-main's responsive padding so
-            the bar (and its bg-white) extends edge-to-edge. */}
+            the bar (and its bg-white) extends edge-to-edge. No user-avatar
+            widget here anymore (removed on request) — Sign Out, My Profile,
+            Change Password, and Add Minutes are no longer reachable from
+            the UI; Account settings still work via the Account nav tab. */}
         <div className="sticky top-0 z-30 bg-white -mt-5 sm:-mt-6 lg:-mt-8 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-3 border-b border-slate-200 mb-6">
           <button
             className="mobile-nav-toggle lg:hidden"
             onClick={() => setNavOpen(true)}
             aria-label="Open menu"
           >
-            <span>☰</span> Menu
+            <Menu size={16} /> Menu
           </button>
-          <div className="lg:hidden text-xs text-mute font-semibold uppercase tracking-wider">
-            {active.label}
+          <div className="lg:hidden flex items-center gap-1.5 text-xs text-mute font-semibold uppercase tracking-wider">
+            {active.Icon && <active.Icon size={14} />} {active.label}
           </div>
           <div className="ml-auto flex items-center gap-3">
-            {tab === 'overview' && (
-              <Link to="/dashboard/numbers" className="btn-teal text-sm whitespace-nowrap">+ Add plan / number</Link>
-            )}
-            {tab !== 'overview' && <TopBar />}
+            <Link to="/dashboard/numbers" className="btn-teal text-sm whitespace-nowrap">+ Add plan / number</Link>
           </div>
         </div>
 

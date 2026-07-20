@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Sparkles, AlarmClock, Zap, Phone, AlertTriangle } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
 
@@ -168,20 +169,20 @@ export default function Overview({ rechargeOn }) {
       {demoMode && (
         <div className="flex items-start">
           <span className="pill" style={{ background: 'var(--line-2)', color: 'var(--ink-3)' }}>
-            ✦ Sample data — connect a database for live numbers
+            <Sparkles size={12} /> Sample data — connect a database for live numbers
           </span>
         </div>
       )}
 
       {statsErr && !demoMode && (
-        <div className="mt-4 text-xs text-amber-400">⚠ Live stats unavailable: {statsErr}</div>
+        <div className="mt-4 text-xs text-amber-400 inline-flex items-center gap-1"><AlertTriangle size={12} /> Live stats unavailable: {statsErr}</div>
       )}
 
       <ProvisioningBanner />
 
       {isLow && (
         <div className="mt-6 rounded-lg border-2 border-amber-500/60 bg-amber-500/10 p-4 flex items-start gap-3">
-          <span className="text-2xl">⏰</span>
+          <AlarmClock size={22} className="text-amber-500 flex-shrink-0" />
           <div className="flex-1">
             <div className="font-semibold text-amber-400">Low minutes — only {minLeft.toFixed(1)} left</div>
             <p className="text-sm text-mute mt-1">
@@ -192,8 +193,8 @@ export default function Overview({ rechargeOn }) {
             </p>
             <div className="mt-3 flex gap-2 items-center">
               {!autoTopupOn && (
-                <button className="btn-teal text-sm" onClick={quickTopUp} disabled={topupBusy}>
-                  {topupBusy ? 'Charging…' : '⚡ Top up 83 min ($1,000)'}
+                <button className="btn-teal text-sm inline-flex items-center gap-1.5" onClick={quickTopUp} disabled={topupBusy}>
+                  {topupBusy ? 'Charging…' : <><Zap size={14} /> Top up 83 min ($1,000)</>}
                 </button>
               )}
               <Link to={`${basePath}/billing`} className="btn-ghost text-sm">Manage wallet →</Link>
@@ -230,7 +231,6 @@ export default function Overview({ rechargeOn }) {
                 <tr
                   key={n.id}
                   className="cursor-pointer"
-                  title="Open this agent to edit"
                   tabIndex={0}
                   role="button"
                   onClick={() => navigate(`${basePath}/agents`)}
@@ -434,7 +434,7 @@ function ProvisioningBanner() {
 
   return (
     <div className="mt-4 rounded-lg border border-amber-500/40 bg-amber-500/5 p-4 flex items-start gap-3">
-      <span className="text-2xl">📞</span>
+      <Phone size={22} className="text-amber-500 flex-shrink-0" />
       <div className="flex-1">
         <div className="font-semibold text-amber-400">
           Inbound calling: {status === 'in_progress' ? 'in progress…' : status === 'failed' ? 'failed' : 'not provisioned yet'}
