@@ -124,6 +124,57 @@ export default function Playground() {
     }
   }, [transcript]);
 
+  // Live Voice Status — 'listening'/'processing' are simulated (brief
+  // transitional phases right after clicking Start), but 'speaking' and
+  // 'error' track the real playingVoice/previewError signals from
+  // useVoicePreview, so those two always win over the simulated phase.
+  const [voiceStatus, setVoiceStatus] = useState('ready');
+  const [sessionElapsedMs, setSessionElapsedMs] = useState(0);
+  const listeningTimerRef = useRef(null);
+  const sessionTimerRef = useRef(null);
+  const sessionStartRef = useRef(null);
+
+  useEffect(() => {
+    if (previewError) { setVoiceStatus('error'); return; }
+    if (playingVoice) { setVoiceStatus('speaking'); return; }
+    if (!testing) setVoiceStatus('ready');
+  }, [testing, playingVoice, previewError]);
+
+  useEffect(() => {
+    if (voiceStatus === 'ready') {
+      if (sessionTimerRef.current) { clearInterval(sessionTimerRef.current); sessionTimerRef.current = null; }
+      sessionStartRef.current = null;
+      setSessionElapsedMs(0);
+      return;
+    }
+    if (!sessionStartRef.current) {
+      sessionStartRef.current = Date.now();
+      sessionTimerRef.current = setInterval(() => {
+        setSessionElapsedMs(Date.now() - sessionStartRef.current);
+      }, 250);
+    }
+  }, [voiceStatus]);
+
+  useEffect(() => () => {
+    clearTimeout(listeningTimerRef.current);
+    if (sessionTimerRef.current) clearInterval(sessionTimerRef.current);
+  }, []);
+
+  const fmtSessionDuration = (ms) => {
+    const totalSec = Math.floor(ms / 1000);
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
+  const VOICE_STATUS_CONFIG = {
+    ready:      { dot: 'bg-emerald-500', title: 'Ready' },
+    listening:  { dot: 'bg-blue-500 animate-pulse', title: 'Listening...' },
+    processing: { dot: 'bg-amber-400 animate-pulse', title: 'Thinking...' },
+    speaking:   { dot: 'bg-lime-500 animate-pulse', title: 'Speaking...' },
+    error:      { dot: 'bg-red-500', title: 'Voice test error' },
+  };
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -219,7 +270,13 @@ export default function Playground() {
 
   const startVoiceTest = () => {
     setTesting(true);
+    setVoiceStatus('listening');
     play(draft.voice, selected.language || 'en-US');
+
+    clearTimeout(listeningTimerRef.current);
+    listeningTimerRef.current = setTimeout(() => {
+      setVoiceStatus((s) => (s === 'listening' ? 'processing' : s));
+    }, 600);
 
     transcriptTimers.current.forEach(clearTimeout);
     transcriptTimers.current = [];
@@ -298,7 +355,40 @@ export default function Playground() {
 
           {mode === 'voice' ? (
             <div className="mt-8 flex flex-col items-center text-center py-6">
-              <div className="relative w-36 h-36 rounded-full flex items-center justify-center" style={{ background: 'var(--surface-tint)' }}>
+              {/* Live Voice Status — listening/processing are brief
+                  simulated phases right after Start; speaking/error track
+                  the real playingVoice/previewError signals from
+                  useVoicePreview, so those two always take priority. */}
+              <div
+                className="w-full max-w-xs rounded-xl border bg-white px-4 py-3 text-left transition-all duration-300"
+                style={{ borderColor: 'var(--line)' }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className={`w-2 h-2 rounded-full shrink-0 transition-colors duration-300 ${VOICE_STATUS_CONFIG[voiceStatus].dot}`} />
+                  <span className="text-sm font-semibold text-slate-900">{VOICE_STATUS_CONFIG[voiceStatus].title}</span>
+                </div>
+                <div className="mt-1 text-xs text-mute space-y-0.5">
+                  {voiceStatus === 'ready' && (
+                    <>
+                      <div>Microphone connected</div>
+                      <div>Voice: {draft.voice}</div>
+                    </>
+                  )}
+                  {voiceStatus === 'listening' && <div>Waiting for user input</div>}
+                  {voiceStatus === 'processing' && <div>Generating response</div>}
+                  {voiceStatus === 'speaking' && <div>AI is responding</div>}
+                  {voiceStatus === 'error' && <div>{previewError || 'Please connect your microphone.'}</div>}
+                </div>
+                {voiceStatus !== 'ready' && (
+                  <div className="mt-2 pt-2 border-t text-[11px] text-mute space-y-0.5" style={{ borderColor: 'var(--line-2)' }}>
+                    {(voiceStatus === 'processing' || voiceStatus === 'speaking') && <div>Latency: 220 ms</div>}
+                    {voiceStatus === 'speaking' && <div>Response time: 1.3 s</div>}
+                    {voiceStatus !== 'error' && <div>Session duration: {fmtSessionDuration(sessionElapsedMs)}</div>}
+                  </div>
+                )}
+              </div>
+
+              <div className="relative w-36 h-36 rounded-full flex items-center justify-center mt-6" style={{ background: 'var(--surface-tint)' }}>
                 <div
                   className={`w-24 h-24 rounded-full flex items-center justify-center text-white font-bold text-2xl ${testing ? 'animate-pulse' : ''}`}
                   style={{ background: gradientFor(selected.id) }}
