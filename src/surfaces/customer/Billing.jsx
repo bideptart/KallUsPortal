@@ -466,6 +466,15 @@ function ActivePlanCard({ number: n, walletBalance, usedMinutes, onChangePlan, o
   const daysLeft = renews ? Math.ceil((renews.getTime() - Date.now()) / 86400000) : null;
   const isPrimary = !!n.isPrimary;
 
+  // Action-pill hover swap — whichever pill is hovered becomes the solid
+  // green "primary" one and the rest fall back to plain white, so only one
+  // action ever reads as "the" thing to click. Defaults to Change plan.
+  const [hoveredAction, setHoveredAction] = useState(null);
+  const activeAction = hoveredAction || 'change';
+  const greenPill = `px-4 py-1.5 rounded-full border border-transparent text-white text-xs font-semibold transition-colors ${BRAND_GRADIENT}`;
+  const whitePill = 'btn-ghost text-xs px-4 py-1.5 font-semibold transition-colors';
+  const pillClass = (id) => (activeAction === id ? greenPill : whitePill);
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
       {/* ===== Header band ===== */}
@@ -560,12 +569,28 @@ function ActivePlanCard({ number: n, walletBalance, usedMinutes, onChangePlan, o
             <div className="mt-4 flex items-center gap-2 flex-wrap">
               <button
                 onClick={onChangePlan}
-                className={`px-4 py-1.5 rounded-full border border-transparent text-white text-xs font-semibold ${BRAND_GRADIENT}`}
+                onMouseEnter={() => setHoveredAction('change')}
+                onMouseLeave={() => setHoveredAction(null)}
+                className={pillClass('change')}
               >
                 Change plan
               </button>
-              <button onClick={onRestartPlan} className="btn-ghost text-xs px-4 py-1.5 font-semibold hover:border-lime-400 hover:bg-lime-50 hover:text-lime-700">Restart plan</button>
-              <Link to={demo ? '/dashboard/agents' : `/dashboard/agents?n=${n.id}`} className="btn-ghost text-xs px-4 py-1.5 font-semibold hover:border-lime-400 hover:bg-lime-50 hover:text-lime-700">Edit agent</Link>
+              <button
+                onClick={onRestartPlan}
+                onMouseEnter={() => setHoveredAction('restart')}
+                onMouseLeave={() => setHoveredAction(null)}
+                className={pillClass('restart')}
+              >
+                Restart plan
+              </button>
+              <Link
+                to={demo ? '/dashboard/agents' : `/dashboard/agents?n=${n.id}`}
+                onMouseEnter={() => setHoveredAction('edit')}
+                onMouseLeave={() => setHoveredAction(null)}
+                className={pillClass('edit')}
+              >
+                Edit agent
+              </Link>
               {isPrimary && (
                 <span className="text-xs text-mute ml-1">Primary — cannot release</span>
               )}
