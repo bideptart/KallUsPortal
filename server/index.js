@@ -315,6 +315,17 @@ const runMigrations = async () => {
   // without scanning the wallet ledger. Idempotent inserts depend on it.
   await q(`ALTER TABLE user_numbers ADD COLUMN IF NOT EXISTS provisioning_ref TEXT`);
 
+  // Cycle anchor — set on new plan / plan restart / plan change so billing
+  // logic (fmtDateLong, the rent-anchor math, etc.) has a real timestamp to
+  // work from instead of always falling back to created_at. NULL until the
+  // first rent/restart, matching every read site's `|| created_at` fallback.
+  await q(`ALTER TABLE user_numbers ADD COLUMN IF NOT EXISTS last_rented_at TIMESTAMPTZ`);
+
+  // LiveKit room name for this number's dispatch rule — read by publicNumber()
+  // and cleared on release, but never had a migration adding it (only
+  // livekit_trunk_id/livekit_dispatch_id were in the original CREATE TABLE).
+  await q(`ALTER TABLE user_numbers ADD COLUMN IF NOT EXISTS livekit_room_name TEXT`);
+
   // Per-number auto-recharge toggle — when ON, the saved payment method gets
   // charged for this DID's plan amount whenever the cycle is about to lapse
   // and the plan minutes are exhausted. Defaults to OFF.
