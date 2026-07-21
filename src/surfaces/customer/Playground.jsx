@@ -354,13 +354,13 @@ export default function Playground() {
           </div>
 
           {mode === 'voice' ? (
-            <div className="mt-8 flex flex-col items-center text-center py-6">
+            <div className="mt-3 flex flex-col items-center text-center py-2">
               {/* Live Voice Status — listening/processing are brief
                   simulated phases right after Start; speaking/error track
                   the real playingVoice/previewError signals from
                   useVoicePreview, so those two always take priority. */}
               <div
-                className="w-full max-w-xs rounded-xl border bg-white px-4 py-3 text-left transition-all duration-300"
+                className="w-full max-w-xs rounded-xl border bg-white px-4 py-2.5 text-left transition-all duration-300"
                 style={{ borderColor: 'var(--line)' }}
               >
                 <div className="flex items-center gap-2">
@@ -380,7 +380,7 @@ export default function Playground() {
                   {voiceStatus === 'error' && <div>{previewError || 'Please connect your microphone.'}</div>}
                 </div>
                 {voiceStatus !== 'ready' && (
-                  <div className="mt-2 pt-2 border-t text-[11px] text-mute space-y-0.5" style={{ borderColor: 'var(--line-2)' }}>
+                  <div className="mt-1.5 pt-1.5 border-t text-[11px] text-mute space-y-0.5" style={{ borderColor: 'var(--line-2)' }}>
                     {(voiceStatus === 'processing' || voiceStatus === 'speaking') && <div>Latency: 220 ms</div>}
                     {voiceStatus === 'speaking' && <div>Response time: 1.3 s</div>}
                     {voiceStatus !== 'error' && <div>Session duration: {fmtSessionDuration(sessionElapsedMs)}</div>}
@@ -388,9 +388,9 @@ export default function Playground() {
                 )}
               </div>
 
-              <div className="relative w-36 h-36 rounded-full flex items-center justify-center mt-6" style={{ background: 'var(--surface-tint)' }}>
+              <div className="relative w-20 h-20 rounded-full flex items-center justify-center mt-3" style={{ background: 'var(--surface-tint)' }}>
                 <div
-                  className={`w-24 h-24 rounded-full flex items-center justify-center text-white font-bold text-2xl ${testing ? 'animate-pulse' : ''}`}
+                  className={`w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-lg ${testing ? 'animate-pulse' : ''}`}
                   style={{ background: gradientFor(selected.id) }}
                 >
                   {(selected.agentName || '?')[0].toUpperCase()}
@@ -400,11 +400,11 @@ export default function Playground() {
               {/* Live Conversation transcript — simulated (no live
                   speech-to-text pipeline yet), appended progressively so it
                   reads like a real conversation while the voice sample plays. */}
-              <div className="mt-6 w-full max-w-sm text-left rounded-xl border bg-white overflow-hidden" style={{ borderColor: 'var(--line)' }}>
-                <div className="px-3 py-2 border-b text-xs font-semibold text-slate-900" style={{ borderColor: 'var(--line)' }}>
+              <div className="mt-3 w-full max-w-sm text-left rounded-xl border bg-white overflow-hidden" style={{ borderColor: 'var(--line)' }}>
+                <div className="px-3 py-1.5 border-b text-xs font-semibold text-slate-900" style={{ borderColor: 'var(--line)' }}>
                   Live Conversation
                 </div>
-                <div ref={transcriptScrollRef} className="p-3 space-y-3 overflow-y-auto" style={{ maxHeight: 300 }}>
+                <div ref={transcriptScrollRef} className="p-2.5 space-y-2 overflow-y-auto" style={{ maxHeight: 160 }}>
                   {transcript.length === 0 ? (
                     <p className="text-xs text-mute">
                       Your conversation transcript will appear here once the voice test begins.
@@ -434,13 +434,13 @@ export default function Playground() {
 
               <button
                 type="button"
-                className="btn-teal mt-6 inline-flex items-center gap-2"
+                className="btn-teal mt-3 inline-flex items-center gap-2"
                 onClick={startVoiceTest}
                 disabled={!draft.voice}
               >
                 <Phone size={15} /> {testing ? 'Playing…' : 'Start voice test'}
               </button>
-              <p className="mt-3 text-xs text-mute max-w-xs">
+              <p className="mt-2 text-xs text-mute max-w-xs">
                 Plays a sample of {draft.voice}'s voice — live two-way voice testing from your browser isn't wired up yet.
               </p>
               {previewError && <p className="mt-1 text-xs text-red-600">{previewError}</p>}
