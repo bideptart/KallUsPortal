@@ -302,8 +302,8 @@ export default function Analytics() {
                   <div
                     className="rounded-t transition"
                     style={{
-                      width: '55%',
-                      maxWidth: 20,
+                      width: '70%',
+                      maxWidth: 30,
                       height: barPx,
                       background: isSelected ? '#6fa524' : VOLUME_BAR_GREEN,
                       ...(isSelected ? { border: '2px solid #4d7c0f' } : {}),
