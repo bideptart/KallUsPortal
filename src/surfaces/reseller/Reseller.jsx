@@ -1,13 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { Users, CreditCard, Star, Handshake, Menu, LogOut } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import Logo from '../../components/Logo.jsx';
 import Footer from '../../components/Footer.jsx';
-import Customers from './Customers.jsx';
-import Plans from './Plans.jsx';
-import Purchases from './Purchases.jsx';
-import SubResellers from './SubResellers.jsx';
+
+const Customers = lazy(() => import('./Customers.jsx'));
+const Plans = lazy(() => import('./Plans.jsx'));
+const Purchases = lazy(() => import('./Purchases.jsx'));
+const SubResellers = lazy(() => import('./SubResellers.jsx'));
 
 // `resellerOnly` tabs are visible only to top-level resellers. Sub-resellers
 // manage customers, not further sub-resellers, so the Sub-resellers tab is
@@ -101,10 +102,12 @@ export default function Reseller() {
           </div>
         </div>
 
+        <Suspense fallback={<div className="text-sm text-mute py-10 text-center">Loading…</div>}>
         {tab === 'customers'     && <Customers />}
         {tab === 'purchases'     && <Purchases />}
         {tab === 'plans'         && <Plans />}
         {tab === 'sub-resellers' && <SubResellers />}
+        </Suspense>
 
         <div className="pt-10 -mx-4 sm:-mx-6 lg:-mx-8">
           <Footer />

@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&family=Fragment+Mono&display=swap');
+/* Font stylesheet is loaded from index.html via a non-blocking <link> instead
+   of @import here — @import is render-blocking and delays font discovery
+   until this whole stylesheet parses. */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

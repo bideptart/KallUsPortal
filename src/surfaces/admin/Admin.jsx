@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
   LayoutDashboard, Bot, FlaskConical, BookOpen, TrendingUp, Zap,
@@ -6,33 +6,37 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
-import Signups from './Signups.jsx';
-import Customers from './Customers.jsx';
-import Resellers from './Resellers.jsx';
-import Numbers from './Numbers.jsx';
 import { AddNumberModal } from '../customer/Numbers.jsx';
-import Payments from './Payments.jsx';
-import Bulk from './Bulk.jsx';
-import Logs from './Logs.jsx';
-import Plans from './Plans.jsx';
-import Settings from './Settings.jsx';
-import Account from '../customer/Account.jsx';
-import Reports from './Reports.jsx';
-import Overview from '../customer/Overview.jsx';
-import AgentsList from '../customer/AgentsList.jsx';
-import AgentDetail from '../customer/AgentDetail.jsx';
-import ChatAgentDetail from '../customer/ChatAgentDetail.jsx';
-import Templates from '../customer/Templates.jsx';
-import Playground from '../customer/Playground.jsx';
-import Analytics from '../customer/Analytics.jsx';
-import Transactions from '../customer/Transactions.jsx';
 import Logo from '../../components/Logo.jsx';
 import Footer from '../../components/Footer.jsx';
-import BookingHistory from '../customer/BookingHistory.jsx';
-import Tickets from '../customer/Tickets.jsx';
-import Tools from '../customer/Tools.jsx';
-import KnowledgeBase from '../customer/KnowledgeBase.jsx';
 import BookingIcon from '../../components/BookingIcon.jsx';
+
+// Every tab body is its own chunk — a visitor on Overview never downloads
+// Settings/Bulk-import/Plans code, and vice versa.
+const Signups = lazy(() => import('./Signups.jsx'));
+const Customers = lazy(() => import('./Customers.jsx'));
+const Resellers = lazy(() => import('./Resellers.jsx'));
+const Numbers = lazy(() => import('./Numbers.jsx'));
+const Payments = lazy(() => import('./Payments.jsx'));
+const Bulk = lazy(() => import('./Bulk.jsx'));
+const Logs = lazy(() => import('./Logs.jsx'));
+const Plans = lazy(() => import('./Plans.jsx'));
+const Settings = lazy(() => import('./Settings.jsx'));
+const Account = lazy(() => import('../customer/Account.jsx'));
+const Reports = lazy(() => import('./Reports.jsx'));
+const Overview = lazy(() => import('../customer/Overview.jsx'));
+const AgentsList = lazy(() => import('../customer/AgentsList.jsx'));
+const AgentDetail = lazy(() => import('../customer/AgentDetail.jsx'));
+const ChatAgentDetail = lazy(() => import('../customer/ChatAgentDetail.jsx'));
+const Templates = lazy(() => import('../customer/Templates.jsx'));
+const Playground = lazy(() => import('../customer/Playground.jsx'));
+const Analytics = lazy(() => import('../customer/Analytics.jsx'));
+const Transactions = lazy(() => import('../customer/Transactions.jsx'));
+const BookingHistory = lazy(() => import('../customer/BookingHistory.jsx'));
+const Tickets = lazy(() => import('../customer/Tickets.jsx'));
+const TicketDetail = lazy(() => import('../customer/TicketDetail.jsx'));
+const Tools = lazy(() => import('../customer/Tools.jsx'));
+const KnowledgeBase = lazy(() => import('../customer/KnowledgeBase.jsx'));
 
 // Sidebar nav — unified across Admin/Customer to a common shape. Each entry
 // maps onto the closest existing admin page; some concepts still don't have
@@ -89,6 +93,8 @@ const LEGACY_TABS = [
   { id: 'agent-detail',      label: 'Agent' },
   { id: 'agent-detail-chat', label: 'Chat Agent' },
   { id: 'templates',         label: 'Browse Templates' },
+  // Reached by clicking a row on the Tickets list — not a nav item itself.
+  { id: 'ticket-detail',     label: 'Ticket' },
 ];
 
 const VALID_TABS = new Set([...NAV_TABS, CALL_ACTIVITY, ...CALL_ACTIVITY_CHILDREN, ...LEGACY_TABS].map((t) => t.id));
@@ -227,6 +233,7 @@ export default function Admin() {
             renders mostly empty states for admin accounts since they don't
             carry their own number/plan/agent. 'signups' keeps the original
             admin landing page reachable at its legacy URL. */}
+        <Suspense fallback={<div className="text-sm text-mute py-10 text-center">Loading…</div>}>
         {tab === 'overview'                             && <Overview />}
         {tab === 'signups'                              && <Signups />}
         {tab === 'agents'                                && <AgentsList />}
@@ -250,9 +257,11 @@ export default function Admin() {
         {tab === 'plans'         && <Plans />}
         {tab === 'booking-history' && <BookingHistory />}
         {tab === 'tickets'       && <Tickets />}
+        {tab === 'ticket-detail' && <TicketDetail />}
         {tab === 'agent-detail'  && <AgentDetail />}
         {tab === 'agent-detail-chat' && <ChatAgentDetail />}
         {tab === 'templates'     && <Templates />}
+        </Suspense>
 
         <div className="pt-10 -mx-4 sm:-mx-6 lg:-mx-8">
           <Footer />

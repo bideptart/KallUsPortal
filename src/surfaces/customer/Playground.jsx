@@ -159,7 +159,15 @@ export default function Playground() {
   if (!currentUser || !draft) return null;
 
   const set = (patch) => setDraft((d) => ({ ...d, ...patch }));
-  const dirty = JSON.stringify(draft) !== JSON.stringify(savedDraft);
+  // Was JSON.stringify(draft) !== JSON.stringify(savedDraft) — re-serializing
+  // the whole draft (prompt/company/FAQs can run up to 50,000 chars each) on
+  // every render made every keystroke in those fields laggy. A per-field
+  // comparison is O(1) for the untouched fields instead.
+  const dirty = draft.greeting !== savedDraft.greeting
+    || draft.prompt !== savedDraft.prompt
+    || draft.kbCompany !== savedDraft.kbCompany
+    || draft.kbFaqs !== savedDraft.kbFaqs
+    || draft.voice !== savedDraft.voice;
   const isChatAgent = selected.type === 'chat';
   const isAdminTier = currentUser.userType === 'superadmin' || currentUser.userType === 'admin';
   const basePath = isAdminTier ? '/admin' : '/dashboard';
