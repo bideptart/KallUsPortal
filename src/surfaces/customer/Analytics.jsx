@@ -298,10 +298,12 @@ export default function Analytics() {
                 className="flex-1 flex flex-col items-center gap-1 cursor-pointer"
                 title={`${d.date.toDateString()}: ${d.count} calls`}
               >
-                <div className="w-full flex items-end" style={{ height: 80 }}>
+                <div className="w-full flex items-end justify-center" style={{ height: 80 }}>
                   <div
-                    className="w-full rounded-t transition"
+                    className="rounded-t transition"
                     style={{
+                      width: '55%',
+                      maxWidth: 20,
                       height: barPx,
                       background: isSelected ? '#6fa524' : VOLUME_BAR_GREEN,
                       ...(isSelected ? { border: '2px solid #4d7c0f' } : {}),
