@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Receipt } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Receipt, Wallet, CheckCircle2 } from 'lucide-react';
 import { api } from '../../api.js';
 import { useApp } from '../../AppContext.jsx';
 import DateRangePicker, { todayRange } from '../../components/DateRangePicker.jsx';
@@ -253,11 +254,39 @@ export default function Transactions() {
               <tr><td colSpan={7} className="text-center text-mute py-10">Loading transactions…</td></tr>
             )}
             {!loading && filtered.length === 0 && (
-              <tr><td colSpan={7} className="text-center text-mute py-10">
-                {(txns && txns.length === 0)
-                  ? 'No transactions yet.'
-                  : 'No transactions in this date range yet.'}
-              </td></tr>
+              <tr>
+                <td colSpan={7} className="p-0">
+                  {(txns && txns.length === 0) ? (
+                    <div className="animate-fade-up flex flex-col items-center text-center px-6 py-14">
+                      {/* Illustration — wallet + checkmark badge, soft green accents, no emoji */}
+                      <div className="relative w-28 h-28 flex items-center justify-center rounded-full" style={{ background: 'var(--surface-tint)' }}>
+                        <Wallet className="w-12 h-12" style={{ color: 'var(--primary)' }} strokeWidth={1.5} />
+                        <span className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm">
+                          <CheckCircle2 className="w-6 h-6 text-lime-600" strokeWidth={1.75} />
+                        </span>
+                      </div>
+
+                      <h3 className="mt-5 text-lg font-bold text-slate-900">No Transactions Yet</h3>
+                      <p className="mt-2 text-sm text-mute max-w-sm">
+                        Your payments, wallet top-ups, plan purchases, and renewals will appear here once you start using KallUS.
+                      </p>
+
+                      <div className="mt-6 flex items-center gap-3 flex-wrap justify-center">
+                        <Link to="/dashboard/billing?tab=wallet" className="btn-teal text-sm">+ Add Funds</Link>
+                        <Link to="/dashboard/billing?tab=plans" className="btn-ghost text-sm">Browse Plans</Link>
+                      </div>
+
+                      <div className="mt-4 flex items-center gap-3 text-xs text-mute">
+                        <Link to="/dashboard/billing?tab=plans" className="hover:text-lime-700 hover:underline">View Pricing</Link>
+                        <span aria-hidden="true">•</span>
+                        <Link to="/dashboard/billing" className="hover:text-lime-700 hover:underline">Learn about Billing</Link>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center text-mute py-10">No transactions in this date range yet.</div>
+                  )}
+                </td>
+              </tr>
             )}
             {!loading && filtered.map((t) => {
               const meta = kindMeta(t.type);

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Wallet, Star, Phone, Calendar, RefreshCw, Lightbulb, Tag, CreditCard } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
@@ -105,7 +105,11 @@ const TABS = [
 
 export default function Billing() {
   const { currentUser } = useApp();
-  const [tab, setTab] = useState('my-plans');
+  const [searchParams] = useSearchParams();
+  // Deep-link support (?tab=wallet etc.) — e.g. the "Add Funds" / "Browse
+  // Plans" CTAs on the Transactions empty state land here directly.
+  const tabParam = searchParams.get('tab');
+  const [tab, setTab] = useState(TABS.some((t) => t.id === tabParam) ? tabParam : 'my-plans');
 
   const [stats, setStats] = useState(null);
   const [statsErr, setStatsErr] = useState('');
