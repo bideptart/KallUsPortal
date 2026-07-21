@@ -306,7 +306,10 @@ export default function Analytics() {
                       maxWidth: 30,
                       height: barPx,
                       background: isSelected ? '#6fa524' : VOLUME_BAR_GREEN,
-                      ...(isSelected ? { border: '2px solid #4d7c0f' } : {}),
+                      ...(isSelected ? {
+                        border: '2px solid #4d7c0f',
+                        boxShadow: '0 0 16px 5px rgba(163,217,79,0.6), 0 0 4px 1px rgba(163,217,79,0.85)',
+                      } : {}),
                     }}
                   />
                 </div>
