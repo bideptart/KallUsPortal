@@ -304,11 +304,11 @@ export default function Analytics() {
                     style={{
                       height: barPx,
                       background: VOLUME_BAR_GREEN,
-                      ...(isSelected ? { boxShadow: '0 0 0 2px #0f172a', outline: '2px solid #0f172a', outlineOffset: 1 } : {}),
+                      ...(isSelected ? { boxShadow: `0 0 0 2px ${GREEN}`, outline: `2px solid ${GREEN}`, outlineOffset: 1 } : {}),
                     }}
                   />
                 </div>
-                <div className={`text-[9px] ${isSelected ? 'font-bold' : 'text-mute'}`} style={isSelected ? { color: '#0f172a' } : undefined}>
+                <div className={`text-[9px] ${isSelected ? 'font-bold' : 'text-mute'}`} style={isSelected ? { color: GREEN } : undefined}>
                   {d.date.getDate()}
                 </div>
               </div>
