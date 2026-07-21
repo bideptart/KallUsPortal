@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AlarmClock, Zap, Phone, AlertTriangle, LayoutDashboard } from 'lucide-react';
+import { AlarmClock, Zap, Phone, AlertTriangle, LayoutDashboard, RefreshCw, TrendingUp } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
 
@@ -151,6 +151,16 @@ export default function Overview({ rechargeOn }) {
   const isLow = !demoMode && minLeft <= lowThreshold;
   const autoTopupOn = wallet?.autoTopupEnabled ?? currentUser.autoTopupEnabled;
 
+  // Proactive "renews soon" nudge — only meaningful for a single-number
+  // account (a multi-number account has staggered renewal dates, so one
+  // countdown wouldn't represent all of them). Shown in demo mode too since
+  // it's purely navigational (no charge risk), unlike the low-minutes banner.
+  const nextRenewal = displayNumbers[0]?.nextRentalAt ? new Date(displayNumbers[0].nextRentalAt) : null;
+  const daysUntilRenewal = nextRenewal && !isNaN(nextRenewal.getTime())
+    ? Math.ceil((nextRenewal.getTime() - Date.now()) / 86400000)
+    : null;
+  const renewalSoon = displayNumbers.length === 1 && daysUntilRenewal != null && daysUntilRenewal <= 7;
+
   // Per-row usage breakdown is only exact when the customer has a single DID
   // — /api/twilio/stats aggregates across every number, so with more than
   // one it can't be attributed to a specific row without new backend work.
@@ -202,6 +212,26 @@ export default function Overview({ rechargeOn }) {
               )}
               <Link to={`${basePath}/billing`} className="btn-ghost text-sm">Manage wallet →</Link>
               {topupMsg && <span className="text-xs text-mute ml-2">{topupMsg}</span>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {renewalSoon && (
+        <div className="mt-6 rounded-lg border-2 border-lime-500/60 bg-lime-500/10 p-4 flex items-start gap-3">
+          <RefreshCw size={22} className="text-lime-600 flex-shrink-0" />
+          <div className="flex-1">
+            <div className="font-semibold text-lime-700">
+              {daysUntilRenewal <= 0 ? 'Plan renewal is due' : `Plan renews in ${daysUntilRenewal} day${daysUntilRenewal === 1 ? '' : 's'}`}
+            </div>
+            <p className="text-sm text-mute mt-1">
+              Your {displayNumbers[0]?.plan?.label || 'current'} plan renews on {fmtDate(nextRenewal)}. Upgrade now to lock in more minutes before it resets.
+            </p>
+            <div className="mt-3 flex gap-2 items-center">
+              <Link to={`${basePath}/billing?tab=plans`} className="btn-teal text-sm inline-flex items-center gap-1.5">
+                <TrendingUp size={14} /> Upgrade plan
+              </Link>
+              <Link to={`${basePath}/billing`} className="btn-ghost text-sm">Manage plan →</Link>
             </div>
           </div>
         </div>

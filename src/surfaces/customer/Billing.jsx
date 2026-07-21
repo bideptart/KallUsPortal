@@ -470,6 +470,12 @@ function ActivePlanCard({ number: n, walletBalance, usedMinutes, onChangePlan, o
 
   const renews = n.nextRentalAt ? new Date(n.nextRentalAt) : null;
   const daysLeft = renews ? Math.ceil((renews.getTime() - Date.now()) / 86400000) : null;
+  // Same urgency thresholds as Numbers.jsx's NumberRentalLine — red once
+  // overdue, amber inside the last 5 days, muted otherwise.
+  const renewalTone =
+      daysLeft != null && daysLeft < 0 ? 'text-red-600 font-semibold'
+    : daysLeft != null && daysLeft <= 5 ? 'text-amber-600 font-semibold'
+    : 'text-mute';
   const isPrimary = !!n.isPrimary;
 
   // Action-pill hover swap — whichever pill is hovered becomes the solid
@@ -554,7 +560,9 @@ function ActivePlanCard({ number: n, walletBalance, usedMinutes, onChangePlan, o
             <RefreshCw className="w-3.5 h-3.5" />
             Renews <span className="text-slate-900 font-semibold">{fmtDate(n.nextRentalAt)}</span>
             {daysLeft != null && (
-              <span className="text-mute">({daysLeft}d left)</span>
+              <span className={renewalTone}>
+                ({daysLeft < 0 ? `${Math.abs(daysLeft)}d overdue` : `${daysLeft}d left`})
+              </span>
             )}
           </div>
         </div>
