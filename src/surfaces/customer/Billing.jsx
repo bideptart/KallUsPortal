@@ -620,7 +620,7 @@ function PlansTab({ plans, numbers, onPickPlan }) {
       <p className="text-sm text-mute mb-4">
         Each plan provisions one phone number, includes voice minutes, and bills on its own 30-day cycle.
       </p>
-      <div className="grid md:grid-cols-3 md:gap-6 gap-4 items-end">
+      <div className="grid md:grid-cols-3 md:gap-6 gap-4 items-start">
         {plans.length === 0 && <div className="text-mute md:col-span-3">Loading plans…</div>}
         {plans.map((p, idx) => {
           const owned = ownedPlanIds.has(p.id);
