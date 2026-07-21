@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FlaskConical, Mic, MessageCircle, ChevronDown, Phone, SlidersHorizontal,
@@ -108,6 +108,22 @@ export default function Playground() {
   const [chatLog, setChatLog] = useState([]);
   const [chatInput, setChatInput] = useState('');
 
+  // Live Conversation transcript — simulated (no live speech-to-text
+  // pipeline wired up yet, same "isn't wired up yet" state as the voice
+  // test itself), but appended progressively like a real conversation so
+  // the panel demos properly.
+  const [transcript, setTranscript] = useState([]);
+  const transcriptScrollRef = useRef(null);
+  const transcriptTimers = useRef([]);
+
+  useEffect(() => () => { transcriptTimers.current.forEach(clearTimeout); }, []);
+
+  useEffect(() => {
+    if (transcriptScrollRef.current) {
+      transcriptScrollRef.current.scrollTop = transcriptScrollRef.current.scrollHeight;
+    }
+  }, [transcript]);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -197,9 +213,26 @@ export default function Playground() {
     }
   };
 
+  const appendTranscript = (from, text) => {
+    setTranscript((t) => [...t, { from, text, time: new Date() }]);
+  };
+
   const startVoiceTest = () => {
     setTesting(true);
     play(draft.voice, selected.language || 'en-US');
+
+    transcriptTimers.current.forEach(clearTimeout);
+    transcriptTimers.current = [];
+    setTranscript([]);
+    transcriptTimers.current.push(setTimeout(() => {
+      appendTranscript('agent', draft.greeting || 'Hello! How can I help you today?');
+    }, 300));
+    transcriptTimers.current.push(setTimeout(() => {
+      appendTranscript('user', "I'd like to book an appointment.");
+    }, 1800));
+    transcriptTimers.current.push(setTimeout(() => {
+      appendTranscript('agent', 'Sure! What date would you prefer?');
+    }, 3200));
   };
 
   const sendChatMessage = () => {
@@ -273,6 +306,42 @@ export default function Playground() {
                   {(selected.agentName || '?')[0].toUpperCase()}
                 </div>
               </div>
+
+              {/* Live Conversation transcript — simulated (no live
+                  speech-to-text pipeline yet), appended progressively so it
+                  reads like a real conversation while the voice sample plays. */}
+              <div className="mt-6 w-full max-w-sm text-left rounded-xl border bg-white overflow-hidden" style={{ borderColor: 'var(--line)' }}>
+                <div className="px-3 py-2 border-b text-xs font-semibold text-slate-900" style={{ borderColor: 'var(--line)' }}>
+                  Live Conversation
+                </div>
+                <div ref={transcriptScrollRef} className="p-3 space-y-3 overflow-y-auto" style={{ maxHeight: 300 }}>
+                  {transcript.length === 0 ? (
+                    <p className="text-xs text-mute">
+                      Your conversation transcript will appear here once the voice test begins.
+                    </p>
+                  ) : (
+                    transcript.map((m, i) => (
+                      <div key={i} className={`animate-fade-up flex ${m.from === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[80%] ${m.from === 'user' ? 'text-right' : 'text-left'}`}>
+                          <div className="text-[10px] text-mute mb-1">
+                            {m.from === 'user' ? 'User' : 'Agent'} · {m.time.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                          </div>
+                          <div
+                            className={`inline-block rounded-xl px-3 py-2 text-sm text-left ${
+                              m.from === 'user'
+                                ? 'bg-slate-100 text-slate-900 rounded-tr-sm'
+                                : 'bg-lime-50 text-slate-900 rounded-tl-sm'
+                            }`}
+                          >
+                            {m.text}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
               <button
                 type="button"
                 className="btn-teal mt-6 inline-flex items-center gap-2"
