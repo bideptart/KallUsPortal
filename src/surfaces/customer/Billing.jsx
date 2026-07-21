@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Wallet, Star, Phone, Calendar, RefreshCw, Lightbulb, Sparkles, Tag, CreditCard } from 'lucide-react';
+import { Wallet, Star, Phone, Calendar, RefreshCw, Lightbulb, Tag, CreditCard } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
 import AddMinutesModal from '../../components/AddMinutesModal.jsx';
@@ -405,11 +405,6 @@ function MyPlansTab({
 
         {numbers.length === 0 ? (
           <div className="space-y-3">
-            <div className="flex items-start">
-              <span className="pill inline-flex items-center gap-1" style={{ background: 'var(--line-2)', color: 'var(--ink-3)' }}>
-                <Sparkles className="w-3 h-3" /> Sample data — connect a database for your real plans
-              </span>
-            </div>
             <ActivePlanCard
               number={DEMO_NUMBER}
               walletBalance={walletBalance}
@@ -1242,14 +1237,6 @@ function AutoRechargeTab({ numbers, cards = [], onSaved, onGoWallet }) {
           <div className="mt-3 text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">⚠ {err}</div>
         )}
 
-        {isDemo && (
-          <div className="mt-3 flex items-start">
-            <span className="pill inline-flex items-center gap-1" style={{ background: 'var(--line-2)', color: 'var(--ink-3)' }}>
-              <Sparkles className="w-3 h-3" /> Sample data — connect a database for your real plans
-            </span>
-          </div>
-        )}
-
         <div className="mt-4 space-y-3">
           {displayNumbers.map((n) => {
             const isOn = pending[n.id] !== undefined ? pending[n.id] : !!n.autoRechargeEnabled;
@@ -1272,11 +1259,6 @@ function AutoRechargeTab({ numbers, cards = [], onSaved, onGoWallet }) {
                         <span className={`pill text-[10px] font-semibold ${isOn ? 'bg-lime-100 text-lime-700' : 'bg-slate-100 text-slate-500'}`}>
                           {isOn ? 'ON' : 'OFF'}
                         </span>
-                        {isDemo && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-semibold">
-                            <Sparkles className="w-2.5 h-2.5" /> Sample
-                          </span>
-                        )}
                       </div>
                       <div className="text-sm font-mono text-blue-600 truncate">{n.value}</div>
                       <div className="text-xs text-mute">

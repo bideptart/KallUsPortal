@@ -223,12 +223,6 @@ export default function Playground() {
         </div>
       </div>
 
-      {demoMode && (
-        <div className="mt-3">
-          <span className="pill" style={{ background: 'var(--line-2)', color: 'var(--ink-3)' }}>Sample data — edits save locally (shared with the Agent editor) until a database is connected</span>
-        </div>
-      )}
-
       <div className="mt-5 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3 flex-wrap">
           <div className="inline-flex items-center gap-1 p-1 rounded-xl" style={{ background: 'var(--surface-2)' }}>

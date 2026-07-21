@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Sparkles, AlarmClock, Zap, Phone, AlertTriangle, LayoutDashboard } from 'lucide-react';
+import { AlarmClock, Zap, Phone, AlertTriangle, LayoutDashboard } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
 
@@ -176,13 +176,6 @@ export default function Overview({ rechargeOn }) {
         </div>
       </div>
 
-      {demoMode && (
-        <div className="mt-4 flex items-start">
-          <span className="pill" style={{ background: 'var(--line-2)', color: 'var(--ink-3)' }}>
-            <Sparkles size={12} /> Sample data — connect a database for live numbers
-          </span>
-        </div>
-      )}
 
       {statsErr && !demoMode && (
         <div className="mt-4 text-xs text-amber-400 inline-flex items-center gap-1"><AlertTriangle size={12} /> Live stats unavailable: {statsErr}</div>

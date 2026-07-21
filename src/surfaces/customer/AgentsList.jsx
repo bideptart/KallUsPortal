@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Sparkles, Phone, MessageCircle, Copy, Check, FileText, ArrowDownLeft, Circle, Search, Filter, ChevronDown,
+  Phone, MessageCircle, Copy, Check, FileText, ArrowDownLeft, Circle, Search, Filter, ChevronDown,
   Mic, LayoutGrid, Bot,
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
@@ -296,14 +296,6 @@ export default function AgentsList() {
       <div className="mt-4">
         <TypeFilterDropdown value={typeFilter} onChange={setTypeFilter} />
       </div>
-
-      {demoMode && (
-        <div className="mt-3">
-          <span className="pill" style={{ background: 'var(--line-2)', color: 'var(--ink-3)' }}>
-            <Sparkles size={12} /> Sample data — connect a database for live agents
-          </span>
-        </div>
-      )}
 
       <div className="mt-4 form-card p-0 overflow-x-auto">
         <table>
