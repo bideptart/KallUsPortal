@@ -1191,11 +1191,15 @@ function AutoRechargeTab({ numbers, cards = [], onSaved, onGoWallet }) {
   const cardById = (id) => cards.find((c) => c.id === id) || null;
 
   // Toggle OFF immediately; toggle ON opens the card chooser (the actual
-  // enable happens once a card is confirmed in the modal).
+  // enable happens once a card is confirmed in the modal). The demo row has
+  // no real DID to PATCH, so it just flips local state instead of hitting
+  // the API — same "interact freely, nothing persists" demo behavior used
+  // elsewhere in the app (Playground, Agent editor).
   const onToggle = async (n, next) => {
     setErr('');
     if (next) { setChooserFor(n); return; }
     setPending((p) => ({ ...p, [n.id]: false }));
+    if (n.id === DEMO_NUMBER.id) return;
     try {
       await api(`/api/numbers/${n.id}`, { method: 'PATCH', body: { autoRechargeEnabled: false } });
       await onSaved?.();
@@ -1207,6 +1211,11 @@ function AutoRechargeTab({ numbers, cards = [], onSaved, onGoWallet }) {
   };
 
   const confirmCard = async (n, pmId) => {
+    if (n.id === DEMO_NUMBER.id) {
+      setPending((p) => ({ ...p, [n.id]: true }));
+      setChooserFor(null);
+      return;
+    }
     await api(`/api/numbers/${n.id}`, {
       method: 'PATCH',
       body: { autoRechargeEnabled: true, autoRechargePmId: pmId },
@@ -1274,15 +1283,16 @@ function AutoRechargeTab({ numbers, cards = [], onSaved, onGoWallet }) {
                     </div>
                   </div>
 
-                  {/* Toggle — disabled on the sample row since there's no
-                      real DID behind it to PATCH. */}
-                  <label className={`inline-flex items-center gap-2 select-none shrink-0 ${isDemo ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`} title={isDemo ? 'Add a real plan from the My Plans tab to enable auto-recharge' : undefined}>
+                  {/* Toggle — flips local-only state on the demo row (no
+                      real DID to PATCH); disabled only while a real PATCH
+                      for a real number is in flight. */}
+                  <label className="inline-flex items-center gap-2 select-none shrink-0 cursor-pointer">
                     <input
                       type="checkbox"
                       className="sr-only peer"
                       checked={isOn}
                       onChange={(e) => onToggle(n, e.target.checked)}
-                      disabled={isDemo || pending[n.id] !== undefined}
+                      disabled={n.id !== DEMO_NUMBER.id && pending[n.id] !== undefined}
                     />
                     <span className="relative w-11 h-6 bg-slate-300 rounded-full transition peer-checked:bg-lime-500 after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:w-5 after:h-5 after:transition peer-checked:after:translate-x-5" />
                     <span className="text-sm font-semibold text-slate-900 w-7">{isOn ? 'On' : 'Off'}</span>
