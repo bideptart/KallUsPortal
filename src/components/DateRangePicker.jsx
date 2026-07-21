@@ -81,7 +81,7 @@ const PRESETS = [
 // is already used (Recordings, Calls); Reports passes accent="green" to match
 // its brand-green (#3a5a0c) accent instead.
 const ACCENTS = {
-  lime: { active: 'bg-lime-100 border-lime-300 text-lime-800', hover: 'hover:border-lime-300 hover:text-lime-700' },
+  lime: { active: 'bg-lime-100 border-lime-300 text-lime-800', hover: 'hover:bg-lime-100 hover:border-lime-300 hover:text-lime-700' },
   green: {
     active: 'bg-[#3a5a0c] border-[#3a5a0c] text-white',
     hover: 'hover:border-[rgba(77,124,15,0.35)] hover:text-[#3a5a0c]',

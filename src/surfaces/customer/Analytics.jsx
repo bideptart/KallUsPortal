@@ -114,6 +114,7 @@ export default function Analytics() {
     }
     return null;
   }, [dateFrom, dateTo]);
+  const [hoveredPresetId, setHoveredPresetId] = useState(null);
 
   const filtered = useMemo(() => {
     const fromTs = dateFrom ? new Date(dateFrom + 'T00:00:00').getTime() : -Infinity;
@@ -202,7 +203,7 @@ export default function Analytics() {
         </div>
         <div className="flex flex-wrap gap-1.5">
           {PRESETS.map((p) => {
-            const active = activePresetId === p.id;
+            const active = activePresetId === p.id || hoveredPresetId === p.id;
             return (
               <button
                 key={p.id}
@@ -211,6 +212,8 @@ export default function Analytics() {
                   ? { background: GREEN_TINT, borderColor: GREEN_BORDER, color: GREEN }
                   : { background: '#fff', borderColor: '#e2e8f0', color: '#475569' }}
                 onClick={() => setRange(p.range())}
+                onMouseEnter={() => setHoveredPresetId(p.id)}
+                onMouseLeave={() => setHoveredPresetId(null)}
               >
                 {p.label}
               </button>
