@@ -155,6 +155,30 @@ h1, h2, h3, h4, h5, h6 {
   .field-help { font-size: 12px; color: var(--ink-3); margin-top: 4px; }
   .field-required::after { content: " *"; color: #ef4444; }
 
+  /* === FLIP CARD ===================================================
+     Two .form-card faces stacked as absolutely-positioned children of
+     .flip-card-inner, rotated 180deg on the X axis (a vertical flip — top
+     edge tips back, bottom edge comes forward) so only one is ever
+     front-facing. The outer .flip-card needs an explicit width/height
+     (set inline per use) since both faces are taken out of flow. */
+  .flip-card { perspective: 1600px; }
+  .flip-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform .6s cubic-bezier(0.4, 0.2, 0.2, 1);
+    transform-style: preserve-3d;
+  }
+  .flip-card-inner.is-flipped { transform: rotateX(180deg); }
+  .flip-card-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    overflow-y: auto;
+  }
+  .flip-card-back { transform: rotateX(180deg); }
+
   .plan-card {
     border: 1px solid var(--line);
     background: #ffffff;
@@ -321,6 +345,8 @@ h1, h2, h3, h4, h5, h6 {
     padding: 18px 20px 8px; letter-spacing: 0.1em; font-weight: 700;
   }
   .nav-group-toggle { justify-content: space-between; }
+  .sidenav .nav-logout { color: #dc2626; }
+  .sidenav .nav-logout:hover:not(.active) { background: rgba(220,38,38,0.08); color: #b91c1c; }
   .nav-group-chevron {
     font-size: 12px; line-height: 1; color: var(--ink-3);
     padding: 4px 6px; border-radius: 6px; cursor: pointer;

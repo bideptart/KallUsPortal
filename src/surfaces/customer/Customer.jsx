@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
   LayoutDashboard, Bot, FlaskConical, BookOpen, TrendingUp, Zap,
-  FileText, CreditCard, Receipt, User, Menu, Wrench, Ticket, LogOut,
+  FileText, CreditCard, Receipt, User, Menu, Wrench, Ticket, DoorOpen,
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import Overview from './Overview.jsx';
@@ -183,8 +183,8 @@ export default function Customer() {
         ))}
 
         <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-          <button type="button" onClick={signoutUser} className="nav-group-toggle">
-            <LogOut size={16} strokeWidth={2} /> Log out
+          <button type="button" onClick={signoutUser} className="nav-group-toggle nav-logout">
+            <DoorOpen size={16} strokeWidth={2} /> Log out
           </button>
         </div>
       </aside>
