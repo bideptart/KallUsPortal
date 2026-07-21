@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Wallet, Star, Phone, Calendar, RefreshCw, Lightbulb, Sparkles, Tag } from 'lucide-react';
+import { Wallet, Star, Phone, Calendar, RefreshCw, Lightbulb, Tag, CreditCard } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
 import AddMinutesModal from '../../components/AddMinutesModal.jsx';
@@ -205,13 +205,18 @@ export default function Billing() {
           including this one, so a second copy here was a duplicate.
           "Active plans" below still has its own in-context copy. */}
       <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Billing &amp; minutes</h1>
-          <p className="text-sm text-mute mt-1">
-            <strong>KallUS</strong> Voice AI — plans per number, instant upgrades, shared wallet.
-          </p>
+        <div className="flex items-center gap-3 animate-fade-up">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
+            <CreditCard className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Billing &amp; minutes</h1>
+            <p className="text-sm text-mute mt-1">
+              <strong>KallUS</strong> Voice AI — plans per number, instant upgrades, shared wallet.
+            </p>
+          </div>
         </div>
-        <Link to="/dashboard/transactions" className="btn-ghost text-sm !rounded-lg">
+        <Link to="/dashboard/transactions" className={`text-sm !rounded-lg px-[22px] py-[11px] text-white font-semibold ${BRAND_GRADIENT} hover:brightness-110`}>
           Transaction history
         </Link>
       </div>
@@ -356,6 +361,15 @@ function MyPlansTab({
 }) {
   const walletBalance = wallet?.walletUsd ?? 0;
 
+  // Wallet-card action swap — same pattern as the per-DID action pills:
+  // whichever button is hovered becomes the solid white "primary" one, the
+  // other falls back to the transparent ghost style. Defaults to Add funds.
+  const [hoveredWalletAction, setHoveredWalletAction] = useState(null);
+  const activeWalletAction = hoveredWalletAction || 'add-funds';
+  const walletSolidPill = 'px-3 py-1.5 rounded-lg bg-white text-slate-900 text-xs font-semibold hover:bg-white/90 transition shadow-sm';
+  const walletGhostPill = 'px-3 py-1.5 rounded-lg bg-white/12 hover:bg-white/20 text-white text-xs font-semibold transition border border-white/20';
+  const walletPillClass = (id) => (activeWalletAction === id ? walletSolidPill : walletGhostPill);
+
   return (
     <div className="mt-6 grid lg:grid-cols-[260px_1fr] gap-6">
       {/* ====== Left sidebar ====== */}
@@ -371,13 +385,17 @@ function MyPlansTab({
           <div className="mt-3 flex items-center gap-2">
             <button
               onClick={onAddFunds}
-              className="px-3 py-1.5 rounded-lg bg-white text-slate-900 text-xs font-semibold hover:bg-white/90 transition shadow-sm"
+              onMouseEnter={() => setHoveredWalletAction('add-funds')}
+              onMouseLeave={() => setHoveredWalletAction(null)}
+              className={walletPillClass('add-funds')}
             >
               + Add funds
             </button>
             <button
               onClick={onGoAutorecharge}
-              className="px-3 py-1.5 rounded-lg bg-white/12 hover:bg-white/20 text-white text-xs font-semibold transition border border-white/20"
+              onMouseEnter={() => setHoveredWalletAction('auto-recharge')}
+              onMouseLeave={() => setHoveredWalletAction(null)}
+              className={walletPillClass('auto-recharge')}
             >
               Auto-recharge
             </button>
@@ -390,21 +408,10 @@ function MyPlansTab({
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold text-slate-900">Active plans</h2>
-          <button
-            onClick={onAddPlan}
-            className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-900 text-xs font-semibold hover:bg-slate-50"
-          >
-            + Add plan / number
-          </button>
         </div>
 
         {numbers.length === 0 ? (
           <div className="space-y-3">
-            <div className="flex items-start">
-              <span className="pill inline-flex items-center gap-1" style={{ background: 'var(--line-2)', color: 'var(--ink-3)' }}>
-                <Sparkles className="w-3 h-3" /> Sample data — connect a database for your real plans
-              </span>
-            </div>
             <ActivePlanCard
               number={DEMO_NUMBER}
               walletBalance={walletBalance}
@@ -461,6 +468,15 @@ function ActivePlanCard({ number: n, walletBalance, usedMinutes, onChangePlan, o
   const daysLeft = renews ? Math.ceil((renews.getTime() - Date.now()) / 86400000) : null;
   const isPrimary = !!n.isPrimary;
 
+  // Action-pill hover swap — whichever pill is hovered becomes the solid
+  // green "primary" one and the rest fall back to plain white, so only one
+  // action ever reads as "the" thing to click. Defaults to Change plan.
+  const [hoveredAction, setHoveredAction] = useState(null);
+  const activeAction = hoveredAction || 'change';
+  const greenPill = `px-4 py-1.5 rounded-full border border-transparent text-white text-xs font-semibold transition-colors ${BRAND_GRADIENT}`;
+  const whitePill = 'btn-ghost text-xs px-4 py-1.5 font-semibold transition-colors';
+  const pillClass = (id) => (activeAction === id ? greenPill : whitePill);
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
       {/* ===== Header band ===== */}
@@ -475,11 +491,6 @@ function ActivePlanCard({ number: n, walletBalance, usedMinutes, onChangePlan, o
           <div className="text-xs sm:text-sm font-mono mt-0.5 opacity-95">{n.value}</div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {demo && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/20 text-white text-xs font-semibold" title="Sample data — connect a database for your real plans">
-              <Sparkles className="w-3 h-3" /> Sample
-            </span>
-          )}
           {n.label && (
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-300 text-amber-900 text-xs font-semibold">
               <Tag className="w-3 h-3" /> {n.label}
@@ -490,7 +501,7 @@ function ActivePlanCard({ number: n, walletBalance, usedMinutes, onChangePlan, o
               On wallet ${planRate}/min
             </span>
           ) : (
-            <span className="px-2.5 py-1 rounded-full bg-green-400 text-emerald-900 text-xs font-semibold">
+            <span className="px-2.5 py-1 rounded-full bg-white text-lime-700 text-xs font-semibold">
               ● Live
             </span>
           )}
@@ -555,12 +566,28 @@ function ActivePlanCard({ number: n, walletBalance, usedMinutes, onChangePlan, o
             <div className="mt-4 flex items-center gap-2 flex-wrap">
               <button
                 onClick={onChangePlan}
-                className={`px-4 py-1.5 rounded-lg text-white text-xs font-semibold ${BRAND_GRADIENT}`}
+                onMouseEnter={() => setHoveredAction('change')}
+                onMouseLeave={() => setHoveredAction(null)}
+                className={pillClass('change')}
               >
                 Change plan
               </button>
-              <button onClick={onRestartPlan} className="btn-ghost text-xs">Restart plan</button>
-              <Link to={demo ? '/dashboard/agents' : `/dashboard/agents?n=${n.id}`} className="btn-ghost text-xs">Edit agent</Link>
+              <button
+                onClick={onRestartPlan}
+                onMouseEnter={() => setHoveredAction('restart')}
+                onMouseLeave={() => setHoveredAction(null)}
+                className={pillClass('restart')}
+              >
+                Restart plan
+              </button>
+              <Link
+                to={demo ? '/dashboard/agents' : `/dashboard/agents?n=${n.id}`}
+                onMouseEnter={() => setHoveredAction('edit')}
+                onMouseLeave={() => setHoveredAction(null)}
+                className={pillClass('edit')}
+              >
+                Edit agent
+              </Link>
               {isPrimary && (
                 <span className="text-xs text-mute ml-1">Primary — cannot release</span>
               )}
@@ -600,61 +627,69 @@ function PlansTab({ plans, numbers, onPickPlan }) {
       <p className="text-sm text-mute mb-4">
         Each plan provisions one phone number, includes voice minutes, and bills on its own 30-day cycle.
       </p>
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-3 md:gap-6 gap-4 items-start">
         {plans.length === 0 && <div className="text-mute md:col-span-3">Loading plans…</div>}
-        {plans.map((p) => {
+        {plans.map((p, idx) => {
           const owned = ownedPlanIds.has(p.id);
           const isMostPopular = p.id === 'growth';
           const isSelected = p.id === selectedPlan;
           return (
             <div
               key={p.id}
-              className={`relative rounded-xl border-2 bg-white p-5 flex flex-col h-full transition ${
-                isSelected ? 'border-lime-500 ring-4 ring-lime-100 shadow-lg' : 'border-slate-200 hover:border-lime-300'
-              }`}
+              className={`relative rounded-xl overflow-visible bg-white border transition h-fit animate-fade-up ${
+                isMostPopular ? 'border-lime-400' : 'border-neutral-200'
+              } ${isSelected ? 'ring-4 ring-lime-200' : ''} ${!isMostPopular && !isSelected ? 'hover:border-lime-300' : ''}`}
+              style={{ animationDelay: `${idx * 90}ms` }}
             >
               {isMostPopular && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-bold uppercase tracking-wider">
-                  Most popular
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 px-3 py-1 rounded-full bg-slate-900 text-white text-[11px] font-semibold shadow-lg shadow-black/20 whitespace-nowrap">
+                  <Star className="w-3 h-3 fill-current" /> Most Popular
                 </span>
               )}
-              {owned && (
-                <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-lime-100 text-lime-700 text-[10px] font-bold uppercase tracking-wider">
-                  Already on it
-                </span>
-              )}
-              <div className="text-lg font-extrabold text-slate-900">{p.label}</div>
-              {p.sub && <div className="text-xs text-mute mt-0.5">{p.sub}</div>}
-              <div className="mt-3 flex items-end gap-1">
-                <span className="text-3xl font-extrabold text-slate-900">{rand(p.amount)}</span>
-                <span className="text-xs text-mute pb-1">/mo</span>
+              <div className="rounded-xl overflow-hidden">
+                <div className={`px-5 py-4 border-b ${isMostPopular ? 'bg-lime-100 border-lime-200' : 'bg-lime-50 border-lime-100'}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-lg font-semibold text-gray-900">{p.label}</h3>
+                    {owned && (
+                      <span className="px-2 py-0.5 rounded-full bg-lime-600 text-white text-[10px] font-bold uppercase tracking-wider">
+                        Already on it
+                      </span>
+                    )}
+                  </div>
+                  {p.sub && <div className="text-xs mt-0.5 text-mute">{p.sub}</div>}
+                  <div className="mt-3 flex items-end gap-1">
+                    <span className="text-4xl font-semibold text-gray-900">{rand(p.amount)}</span>
+                    <span className="text-gray-600">/mo</span>
+                  </div>
+                </div>
+
+                <div className="px-5 pb-5 pt-4 flex flex-col">
+                  <div className="text-[11px] mb-3 text-mute">
+                    {p.min} included min · ${p.rate}/min eff. · {p.agents >= 999 ? 'Unlimited agents' : `${p.agents} agents`}
+                  </div>
+                  <ul className="space-y-2.5 mb-5 flex-1">
+                    {(p.perks || []).map((perk, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                        <span className="shrink-0 mt-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] font-bold bg-lime-100 text-lime-700">
+                          ✓
+                        </span>
+                        <span>{perk}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {/* CTA is hidden entirely for tiers the customer already owns
+                      — the "Already on it" pill already conveys the status;
+                      a button would just invite a duplicate purchase. */}
+                  {!owned && (
+                    <button
+                      onClick={() => { setSelectedPlan(p.id); onPickPlan(p.id); }}
+                      className={`w-full p-3 rounded-xl text-sm font-semibold text-white transition ${BRAND_GRADIENT} hover:brightness-110 shadow-lg shadow-lime-600/30`}
+                    >
+                      {numbers.length > 0 ? 'Upgrade to this plan' : 'Pick this plan'}
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="text-[11px] text-mute mt-1">
-                {p.min} included min · ${p.rate}/min eff. · {p.agents >= 999 ? 'Unlimited agents' : `${p.agents} agents`}
-              </div>
-              <ul className="mt-4 space-y-1.5 text-xs text-slate-700 flex-1">
-                {(p.perks || []).map((perk, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="shrink-0 mt-0.5 w-3.5 h-3.5 rounded-full bg-lime-100 text-lime-700 flex items-center justify-center text-[9px] font-bold">✓</span>
-                    <span>{perk}</span>
-                  </li>
-                ))}
-              </ul>
-              {/* CTA is hidden entirely for tiers the customer already owns
-                  — the "Already on it" pill in the top-right already conveys
-                  the status; a button would just invite a duplicate purchase. */}
-              {!owned && (
-                <button
-                  onClick={() => { setSelectedPlan(p.id); onPickPlan(p.id); }}
-                  className={`mt-4 px-3 py-2 rounded-lg text-sm font-semibold transition ${
-                    isSelected
-                      ? `text-white ${BRAND_GRADIENT} hover:brightness-110 hover:-translate-y-0.5 hover:shadow-lg`
-                      : 'border border-slate-200 text-slate-900 hover:bg-slate-50'
-                  }`}
-                >
-                  {numbers.length > 0 ? 'Upgrade to this plan' : 'Pick this plan'}
-                </button>
-              )}
             </div>
           );
         })}
@@ -1156,11 +1191,15 @@ function AutoRechargeTab({ numbers, cards = [], onSaved, onGoWallet }) {
   const cardById = (id) => cards.find((c) => c.id === id) || null;
 
   // Toggle OFF immediately; toggle ON opens the card chooser (the actual
-  // enable happens once a card is confirmed in the modal).
+  // enable happens once a card is confirmed in the modal). The demo row has
+  // no real DID to PATCH, so it just flips local state instead of hitting
+  // the API — same "interact freely, nothing persists" demo behavior used
+  // elsewhere in the app (Playground, Agent editor).
   const onToggle = async (n, next) => {
     setErr('');
     if (next) { setChooserFor(n); return; }
     setPending((p) => ({ ...p, [n.id]: false }));
+    if (n.id === DEMO_NUMBER.id) return;
     try {
       await api(`/api/numbers/${n.id}`, { method: 'PATCH', body: { autoRechargeEnabled: false } });
       await onSaved?.();
@@ -1172,6 +1211,11 @@ function AutoRechargeTab({ numbers, cards = [], onSaved, onGoWallet }) {
   };
 
   const confirmCard = async (n, pmId) => {
+    if (n.id === DEMO_NUMBER.id) {
+      setPending((p) => ({ ...p, [n.id]: true }));
+      setChooserFor(null);
+      return;
+    }
     await api(`/api/numbers/${n.id}`, {
       method: 'PATCH',
       body: { autoRechargeEnabled: true, autoRechargePmId: pmId },
@@ -1209,14 +1253,6 @@ function AutoRechargeTab({ numbers, cards = [], onSaved, onGoWallet }) {
           <div className="mt-3 text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">⚠ {err}</div>
         )}
 
-        {isDemo && (
-          <div className="mt-3 flex items-start">
-            <span className="pill inline-flex items-center gap-1" style={{ background: 'var(--line-2)', color: 'var(--ink-3)' }}>
-              <Sparkles className="w-3 h-3" /> Sample data — connect a database for your real plans
-            </span>
-          </div>
-        )}
-
         <div className="mt-4 space-y-3">
           {displayNumbers.map((n) => {
             const isOn = pending[n.id] !== undefined ? pending[n.id] : !!n.autoRechargeEnabled;
@@ -1239,11 +1275,6 @@ function AutoRechargeTab({ numbers, cards = [], onSaved, onGoWallet }) {
                         <span className={`pill text-[10px] font-semibold ${isOn ? 'bg-lime-100 text-lime-700' : 'bg-slate-100 text-slate-500'}`}>
                           {isOn ? 'ON' : 'OFF'}
                         </span>
-                        {isDemo && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-semibold">
-                            <Sparkles className="w-2.5 h-2.5" /> Sample
-                          </span>
-                        )}
                       </div>
                       <div className="text-sm font-mono text-blue-600 truncate">{n.value}</div>
                       <div className="text-xs text-mute">
@@ -1252,15 +1283,16 @@ function AutoRechargeTab({ numbers, cards = [], onSaved, onGoWallet }) {
                     </div>
                   </div>
 
-                  {/* Toggle — disabled on the sample row since there's no
-                      real DID behind it to PATCH. */}
-                  <label className={`inline-flex items-center gap-2 select-none shrink-0 ${isDemo ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`} title={isDemo ? 'Add a real plan from the My Plans tab to enable auto-recharge' : undefined}>
+                  {/* Toggle — flips local-only state on the demo row (no
+                      real DID to PATCH); disabled only while a real PATCH
+                      for a real number is in flight. */}
+                  <label className="inline-flex items-center gap-2 select-none shrink-0 cursor-pointer">
                     <input
                       type="checkbox"
                       className="sr-only peer"
                       checked={isOn}
                       onChange={(e) => onToggle(n, e.target.checked)}
-                      disabled={isDemo || pending[n.id] !== undefined}
+                      disabled={n.id !== DEMO_NUMBER.id && pending[n.id] !== undefined}
                     />
                     <span className="relative w-11 h-6 bg-slate-300 rounded-full transition peer-checked:bg-lime-500 after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:w-5 after:h-5 after:transition peer-checked:after:translate-x-5" />
                     <span className="text-sm font-semibold text-slate-900 w-7">{isOn ? 'On' : 'Off'}</span>

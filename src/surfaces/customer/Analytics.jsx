@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { TrendingUp } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
 
@@ -113,6 +114,7 @@ export default function Analytics() {
     }
     return null;
   }, [dateFrom, dateTo]);
+  const [hoveredPresetId, setHoveredPresetId] = useState(null);
 
   const filtered = useMemo(() => {
     const fromTs = dateFrom ? new Date(dateFrom + 'T00:00:00').getTime() : -Infinity;
@@ -164,14 +166,33 @@ export default function Analytics() {
   }, [filtered]);
   const maxVolume = Math.max(1, ...volumeDays.map((d) => d.count));
 
+  // Clicking a Call volume bar drills the Recent activity table down to just
+  // that day; clicking the same bar again clears it back to the full range.
+  const [selectedDay, setSelectedDay] = useState(null);
+  const toggleDay = (d) => setSelectedDay((cur) => (cur && cur.toDateString() === d.toDateString() ? null : d));
+  const dayFiltered = useMemo(() => {
+    if (!selectedDay) return filtered;
+    return filtered.filter((c) => {
+      const t = new Date(c.startTime || 0);
+      return !isNaN(t.getTime()) && t.toDateString() === selectedDay.toDateString();
+    });
+  }, [filtered, selectedDay]);
+
   const failedCalls = filtered.filter((c) => !ANSWERED.has(c.status));
 
   if (!currentUser) return null;
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-slate-900">Analytics</h1>
-      <p className="text-mute">Your call history and activity across all your numbers.</p>
+      <div className="flex items-center gap-3 animate-fade-up">
+        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
+          <TrendingUp className="w-5 h-5" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Analytics</h1>
+          <p className="text-mute">Your call history and activity across all your numbers.</p>
+        </div>
+      </div>
 
       {err && !demoMode && (
         <div className="mt-4 text-sm text-red-500 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">{err}</div>
@@ -194,7 +215,7 @@ export default function Analytics() {
         </div>
         <div className="flex flex-wrap gap-1.5">
           {PRESETS.map((p) => {
-            const active = activePresetId === p.id;
+            const active = activePresetId === p.id || hoveredPresetId === p.id;
             return (
               <button
                 key={p.id}
@@ -203,6 +224,8 @@ export default function Analytics() {
                   ? { background: GREEN_TINT, borderColor: GREEN_BORDER, color: GREEN }
                   : { background: '#fff', borderColor: '#e2e8f0', color: '#475569' }}
                 onClick={() => setRange(p.range())}
+                onMouseEnter={() => setHoveredPresetId(p.id)}
+                onMouseLeave={() => setHoveredPresetId(null)}
               >
                 {p.label}
               </button>
@@ -264,23 +287,47 @@ export default function Analytics() {
         <div className="mt-5 flex items-end gap-2" style={{ height: 90 }}>
           {volumeDays.map((d, i) => {
             const barPx = Math.max(2, Math.round((d.count / maxVolume) * 80));
+            const isSelected = selectedDay && d.date.toDateString() === selectedDay.toDateString();
             return (
-              <div key={i} className="flex-1 flex flex-col items-center gap-1" title={`${d.date.toDateString()}: ${d.count} calls`}>
+              <div
+                key={i}
+                role="button"
+                tabIndex={0}
+                onClick={() => toggleDay(d.date)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggleDay(d.date); }}
+                className="flex-1 flex flex-col items-center gap-1 cursor-pointer"
+                title={`${d.date.toDateString()}: ${d.count} calls`}
+              >
                 <div className="w-full flex items-end" style={{ height: 80 }}>
-                  <div className="w-full rounded-t" style={{ height: barPx, background: VOLUME_BAR_GREEN }} />
+                  <div
+                    className={`w-full rounded-t transition ${isSelected ? 'ring-2 ring-offset-1' : ''}`}
+                    style={{
+                      height: barPx,
+                      background: VOLUME_BAR_GREEN,
+                      ...(isSelected ? { boxShadow: `0 0 0 2px ${GREEN}`, outline: `2px solid ${GREEN}`, outlineOffset: 1 } : {}),
+                    }}
+                  />
                 </div>
-                <div className="text-[9px] text-mute">{d.date.getDate()}</div>
+                <div className={`text-[9px] ${isSelected ? 'font-bold' : 'text-mute'}`} style={isSelected ? { color: GREEN } : undefined}>
+                  {d.date.getDate()}
+                </div>
               </div>
             );
           })}
         </div>
-        <div className="text-xs text-mute mt-2">Tip: click a bar to see that period's calls.</div>
+        <div className="text-xs text-mute mt-2">
+          {selectedDay
+            ? <>Showing <strong className="text-slate-900">{selectedDay.toDateString()}</strong> — <button type="button" className="underline hover:no-underline" style={{ color: GREEN }} onClick={() => setSelectedDay(null)}>clear</button></>
+            : 'Tip: click a bar to see that period\'s calls.'}
+        </div>
       </div>
 
       {/* Recent activity + Failed/no-answer */}
       <div className="mt-6 grid lg:grid-cols-[1fr_200px] gap-4 items-stretch">
         <div className="form-card p-0 overflow-x-auto">
-          <div className="px-4 pt-4 pb-2 text-base font-bold text-slate-900">Recent activity</div>
+          <div className="px-4 pt-4 pb-2 text-base font-bold text-slate-900">
+            Recent activity{selectedDay && <span className="font-normal text-mute"> · {selectedDay.toDateString()}</span>}
+          </div>
           <table className="text-xs">
             <thead>
               <tr>
@@ -294,10 +341,12 @@ export default function Analytics() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} className="text-center text-mute py-8">No calls in this range.</td></tr>
+              {dayFiltered.length === 0 && (
+                <tr><td colSpan={7} className="text-center text-mute py-8">
+                  {selectedDay ? 'No calls on this day.' : 'No calls in this range.'}
+                </td></tr>
               )}
-              {filtered.slice(0, 15).map((c) => {
+              {dayFiltered.slice(0, 15).map((c) => {
                 const isInbound = fmtDirection(c.direction) === 'Inbound';
                 return (
                 <tr key={c.sid}>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Wrench } from 'lucide-react';
 import { api } from '../../api.js';
 
 // =============================================================================
@@ -73,7 +74,6 @@ export default function Tools() {
   const [notifOn, setNotifOn] = useState(false);
   const [notifEmail, setNotifEmail] = useState('');
   const [notifMsg, setNotifMsg] = useState('');
-  const [notifSectionOpen, setNotifSectionOpen] = useState(true);
 
   // Two-step save + propagation countdown (mirrors KbAgent).
   const [pendingSave, setPendingSave] = useState(null);   // { number, label } awaiting confirmation
@@ -179,12 +179,17 @@ export default function Tools() {
 
   return (
     <div>
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Tools</h1>
-        <p className="text-mute mt-1">
-          Pick a plan / number below, then configure its tools — call transfer, booking notifications, more soon.
-          Changes take effect on the next call (no restart needed).
-        </p>
+      <div className="flex items-center gap-3 animate-fade-up">
+        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
+          <Wrench className="w-5 h-5" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Tools</h1>
+          <p className="text-mute mt-1">
+            Pick a plan / number below, then configure its tools — call transfer, booking notifications, more soon.
+            Changes take effect on the next call (no restart needed).
+          </p>
+        </div>
       </div>
 
       <div className="mt-4">
@@ -366,15 +371,7 @@ export default function Tools() {
               </div>
 
               {/* Booking notifications ---------------------------------------- */}
-              <button
-                type="button"
-                onClick={() => setNotifSectionOpen((o) => !o)}
-                className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-mute font-semibold mt-6 mb-2 animate-fade-up transition duration-200 ease-out hover:text-lime-600 dark:hover:text-lime-400"
-              >
-                <span className={`transition-transform duration-200 ease-out ${notifSectionOpen ? 'rotate-90' : ''}`}>▸</span>
-                Booking notifications
-              </button>
-              {notifSectionOpen && (
+              <div className="text-[10px] uppercase tracking-wider text-mute font-semibold mt-6 mb-2 animate-fade-up">Booking notifications</div>
               <div className="form-card animate-fade-up border-lime-200 dark:border-lime-500/30 transition duration-300 ease-out hover:shadow-md">
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -419,7 +416,6 @@ export default function Tools() {
                   </>
                 )}
               </div>
-              )}
             </>
           )}
         </>

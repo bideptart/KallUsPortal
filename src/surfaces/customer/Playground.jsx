@@ -159,7 +159,15 @@ export default function Playground() {
   if (!currentUser || !draft) return null;
 
   const set = (patch) => setDraft((d) => ({ ...d, ...patch }));
-  const dirty = JSON.stringify(draft) !== JSON.stringify(savedDraft);
+  // Was JSON.stringify(draft) !== JSON.stringify(savedDraft) — re-serializing
+  // the whole draft (prompt/company/FAQs can run up to 50,000 chars each) on
+  // every render made every keystroke in those fields laggy. A per-field
+  // comparison is O(1) for the untouched fields instead.
+  const dirty = draft.greeting !== savedDraft.greeting
+    || draft.prompt !== savedDraft.prompt
+    || draft.kbCompany !== savedDraft.kbCompany
+    || draft.kbFaqs !== savedDraft.kbFaqs
+    || draft.voice !== savedDraft.voice;
   const isChatAgent = selected.type === 'chat';
   const isAdminTier = currentUser.userType === 'superadmin' || currentUser.userType === 'admin';
   const basePath = isAdminTier ? '/admin' : '/dashboard';
@@ -214,12 +222,6 @@ export default function Playground() {
           <p className="text-mute mt-0.5 text-sm">Test your agents and tune them right here — no page hopping. Free, no plan minutes used.</p>
         </div>
       </div>
-
-      {demoMode && (
-        <div className="mt-3">
-          <span className="pill" style={{ background: 'var(--line-2)', color: 'var(--ink-3)' }}>Sample data — edits save locally (shared with the Agent editor) until a database is connected</span>
-        </div>
-      )}
 
       <div className="mt-5 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3 flex-wrap">

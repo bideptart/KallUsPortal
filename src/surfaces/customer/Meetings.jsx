@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../../api.js';
+import BookingIcon from '../../components/BookingIcon.jsx';
 
 // =============================================================================
 // Meetings — surfaces every booking the AI agent scheduled via the n8n
@@ -325,7 +326,11 @@ export default function Meetings({
   return (
     <div>
       <div className="flex items-start justify-between flex-wrap gap-3">
-        <div>
+        <div className="flex items-center gap-3 animate-fade-up">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
+            <BookingIcon className="w-5 h-5" maskColor="#5c8a1e" />
+          </div>
+          <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
             {title}
           </h1>
@@ -338,6 +343,7 @@ export default function Meetings({
               <> · <span className="text-lime-600 dark:text-lime-400 font-semibold">{upcomingCount} upcoming</span></>
             )}
           </p>
+          </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <label className="flex items-center gap-2 text-sm text-mute cursor-pointer">

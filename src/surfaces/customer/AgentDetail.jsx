@@ -353,14 +353,6 @@ export default function AgentDetail() {
         <ArrowLeft size={14} /> All agents
       </Link>
 
-      {demoMode && (
-        <div className="mt-3">
-          <span className="pill" style={{ background: 'var(--line-2)', color: 'var(--ink-3)' }}>
-            Sample data — edits save locally (shared with Playground) until a database is connected
-          </span>
-        </div>
-      )}
-
       {/* === Agent header card ======================================= */}
       <div className="mt-4 form-card flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3 min-w-0">

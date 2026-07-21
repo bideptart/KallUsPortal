@@ -1,80 +1,21 @@
 import { useMemo, useState } from 'react';
-import { Search, Clock, RefreshCw, Plus, Phone, User, IdCardLanyard, ChevronRight, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Search, Clock, RefreshCw, Plus, Phone, User, IdCardLanyard, ChevronRight, X, Ticket } from 'lucide-react';
+import { useApp } from '../../AppContext.jsx';
+import { STATUS_META, loadTickets, persistTickets, fmtUpdated, overdueHours } from './ticketsStore.js';
 
 // =============================================================================
 // Tickets — issues the AI agent captured on calls, or filed manually.
 //
 // No backend yet: this renders anonymized sample tickets (clearly fake
 // names/phones) so the page demonstrates its full layout — filter chips,
-// search, SLA/overdue tracking, New ticket form — entirely in local state.
+// search, SLA/overdue tracking, New ticket form. Tickets persist to
+// localStorage (see ticketsStore.js) so a ticket opened as its own page
+// (TicketDetail.jsx, real navigation rather than a modal) can still find it.
 // Wire this up to a real /api/tickets endpoint once one exists; the shape
-// below (status/priority/category/caller/agent/timestamps) is what that
-// endpoint should return.
+// in ticketsStore.js (status/priority/category/caller/agent/timestamps) is
+// what that endpoint should return.
 // =============================================================================
-
-const STATUS_META = {
-  open:        { label: 'Open',        dot: 'bg-amber-400',   pill: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300' },
-  in_progress: { label: 'In progress', dot: 'bg-sky-400',     pill: 'bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300' },
-  resolved:    { label: 'Resolved',    dot: 'bg-emerald-400', pill: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300' },
-  closed:      { label: 'Closed',      dot: 'bg-slate-400',   pill: 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300' },
-};
-
-const hoursAgo = (h) => new Date(Date.now() - h * 60 * 60 * 1000).toISOString();
-
-const DEMO_TICKETS = [
-  {
-    id: 'TKT-2026-0042',
-    subject: 'Request for callback due to service delay',
-    description: 'Caller expressed strong dissatisfaction with the wait time for support.',
-    status: 'open',
-    priority: 'Normal',
-    category: 'Callback request',
-    callerName: '',
-    callerPhone: '+10000000011',
-    agentName: 'Sample Agent',
-    createdAt: hoursAgo(71),
-    updatedAt: hoursAgo(48),
-  },
-  {
-    id: 'TKT-2026-0039',
-    subject: 'Portal link not opening with 401 error',
-    description: 'Caller reports the portal link is not opening, seeing a 401 error.',
-    status: 'open',
-    priority: 'Normal',
-    category: 'Callback request',
-    callerName: 'Sample Caller A',
-    callerPhone: '+10000000012',
-    agentName: 'Sample Agent',
-    createdAt: hoursAgo(173),
-    updatedAt: hoursAgo(24),
-  },
-  {
-    id: 'TKT-2026-0038',
-    subject: 'Issue accessing services',
-    description: '',
-    status: 'resolved',
-    priority: 'Normal',
-    category: '',
-    callerName: 'Sample Caller B',
-    callerPhone: '+10000000013',
-    agentName: 'Sample Agent',
-    createdAt: hoursAgo(220),
-    updatedAt: hoursAgo(216),
-  },
-  {
-    id: 'TKT-2026-0034',
-    subject: 'Pothole complaint on highway ramp',
-    description: 'Reported a road hazard on the highway ramp just before the signal.',
-    status: 'in_progress',
-    priority: 'Normal',
-    category: '',
-    callerName: 'Sample Caller C',
-    callerPhone: '+10000000014',
-    agentName: 'Sample Agent',
-    createdAt: hoursAgo(191),
-    updatedAt: hoursAgo(190),
-  },
-];
 
 const FILTERS = [
   { key: 'all',         label: 'All',          dot: 'bg-slate-400',   text: 'text-slate-900 dark:text-slate-100' },
@@ -85,22 +26,13 @@ const FILTERS = [
   { key: 'overdue',     label: 'Overdue',      dot: 'bg-red-500',     text: 'text-red-600 dark:text-red-400' },
 ];
 
-const fmtUpdated = (iso) => {
-  const d = new Date(iso);
-  const diffH = (Date.now() - d.getTime()) / 3600000;
-  if (diffH < 1) return 'just now';
-  if (diffH < 72) return `${Math.floor(diffH / 24) || 1}d ago`;
-  return d.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
-};
-
-const overdueHours = (t, slaHours) => {
-  if (t.status === 'resolved' || t.status === 'closed') return 0;
-  const ageH = (Date.now() - new Date(t.createdAt).getTime()) / 3600000;
-  return Math.max(0, Math.floor(ageH - slaHours));
-};
-
 export default function Tickets() {
-  const [tickets, setTickets] = useState(DEMO_TICKETS);
+  const navigate = useNavigate();
+  const { currentUser } = useApp();
+  const isAdminTier = currentUser?.userType === 'superadmin' || currentUser?.userType === 'admin';
+  const basePath = isAdminTier ? '/admin' : '/dashboard';
+
+  const [tickets, setTickets] = useState(() => loadTickets());
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [slaHours, setSlaHours] = useState(3);
@@ -146,19 +78,23 @@ export default function Tickets() {
     e.preventDefault();
     if (!form.subject.trim()) return;
     const now = new Date().toISOString();
-    setTickets((prev) => [{
-      id: nextTicketId(),
-      subject: form.subject.trim(),
-      description: form.description.trim(),
-      status: 'open',
-      priority: 'Normal',
-      category: form.category.trim(),
-      callerName: form.callerName.trim(),
-      callerPhone: form.callerPhone.trim(),
-      agentName: '— filed manually —',
-      createdAt: now,
-      updatedAt: now,
-    }, ...prev]);
+    setTickets((prev) => {
+      const next = [{
+        id: nextTicketId(),
+        subject: form.subject.trim(),
+        description: form.description.trim(),
+        status: 'open',
+        priority: 'Normal',
+        category: form.category.trim(),
+        callerName: form.callerName.trim(),
+        callerPhone: form.callerPhone.trim(),
+        agentName: '— filed manually —',
+        createdAt: now,
+        updatedAt: now,
+      }, ...prev];
+      persistTickets(next);
+      return next;
+    });
     setForm({ subject: '', description: '', callerName: '', callerPhone: '', category: '' });
     setNewTicketOpen(false);
     setFilter('all');
@@ -166,14 +102,19 @@ export default function Tickets() {
 
   return (
     <div>
-      <div className="animate-fade-up">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Tickets</h1>
-        <p className="text-mute">
-          Issues your AI agent captured on calls — or filed manually. Resolution target{' '}
-          <button onClick={() => { setSlaDraft(String(slaHours)); setSlaModalOpen(true); }} className="text-lime-600 dark:text-lime-400 font-semibold underline decoration-dotted underline-offset-2 transition-colors duration-200 hover:text-lime-700 dark:hover:text-lime-300">
-            {slaHours}h
-          </button>.
-        </p>
+      <div className="flex items-center gap-3 animate-fade-up">
+        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
+          <Ticket className="w-5 h-5" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Tickets</h1>
+          <p className="text-mute">
+            Issues your AI agent captured on calls — or filed manually. Resolution target{' '}
+            <button onClick={() => { setSlaDraft(String(slaHours)); setSlaModalOpen(true); }} className="text-lime-600 dark:text-lime-400 font-semibold underline decoration-dotted underline-offset-2 transition-colors duration-200 hover:text-lime-700 dark:hover:text-lime-300">
+              {slaHours}h
+            </button>.
+          </p>
+        </div>
       </div>
 
       <div className="mt-4 flex items-center gap-2 flex-wrap animate-fade-up">
@@ -245,7 +186,10 @@ export default function Tickets() {
               return (
                 <tr
                   key={t.id}
-                  onClick={() => setOpenTicket(t)}
+                  onClick={() => {
+                    if (t.status === 'resolved') navigate(`${basePath}/ticket-detail?id=${encodeURIComponent(t.id)}`);
+                    else setOpenTicket(t);
+                  }}
                   className={`cursor-pointer transition-colors duration-150 ease-out hover:bg-slate-50/70 dark:hover:bg-slate-800/40 group ${over > 0 ? 'bg-red-50/40 dark:bg-red-500/5' : ''}`}
                 >
                   <td className="whitespace-nowrap">
@@ -299,7 +243,8 @@ export default function Tickets() {
         </table>
       </div>
 
-      {/* Ticket detail modal */}
+      {/* Ticket detail modal — used for every status except resolved, which
+          opens its own page (see the row onClick above and TicketDetail.jsx). */}
       {openTicket && (() => {
         const over = overdueHours(openTicket, slaHours);
         const meta = STATUS_META[openTicket.status] || STATUS_META.open;
