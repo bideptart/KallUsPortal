@@ -303,15 +303,12 @@ export default function Analytics() {
                     className="w-full rounded-t transition"
                     style={{
                       height: barPx,
-                      background: VOLUME_BAR_GREEN,
-                      ...(isSelected ? {
-                        border: '2px solid #5c8a1e',
-                        boxShadow: '0 0 18px 6px rgba(163,217,79,0.55), 0 0 5px 1px rgba(163,217,79,0.8)',
-                      } : {}),
+                      background: isSelected ? '#6fa524' : VOLUME_BAR_GREEN,
+                      ...(isSelected ? { border: '2px solid #4d7c0f' } : {}),
                     }}
                   />
                 </div>
-                <div className={`text-[9px] ${isSelected ? 'font-bold' : 'text-mute'}`} style={isSelected ? { color: GREEN } : undefined}>
+                <div className={`text-[9px] ${isSelected ? 'font-bold' : 'text-mute'}`} style={isSelected ? { color: '#4d7c0f' } : undefined}>
                   {d.date.getDate()}
                 </div>
               </div>
