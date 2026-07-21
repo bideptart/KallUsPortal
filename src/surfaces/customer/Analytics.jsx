@@ -304,7 +304,10 @@ export default function Analytics() {
                     style={{
                       height: barPx,
                       background: VOLUME_BAR_GREEN,
-                      ...(isSelected ? { boxShadow: '0 0 18px 6px rgba(163,217,79,0.55), 0 0 5px 1px rgba(163,217,79,0.8)' } : {}),
+                      ...(isSelected ? {
+                        border: '2px solid #5c8a1e',
+                        boxShadow: '0 0 18px 6px rgba(163,217,79,0.55), 0 0 5px 1px rgba(163,217,79,0.8)',
+                      } : {}),
                     }}
                   />
                 </div>
