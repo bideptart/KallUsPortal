@@ -51,8 +51,13 @@ const NAV_TABS_AFTER_CALLS = [
   { id: 'reports',      label: 'Reports',           Icon: FileText },
   { id: 'billing',      label: 'Billing & minutes', Icon: CreditCard },
   { id: 'transactions', label: 'Transactions',      Icon: Receipt },
-  { id: 'profile',      label: 'Profile',           Icon: UserCircle },
+  // "Profile" and "Account" used to be two tabs whose labels were swapped
+  // relative to what they rendered (Profile -> <Account />, Account ->
+  // <Settings />). Now Account is the single place for your own profile,
+  // password, and danger zone; the credentials page keeps its own honest
+  // "Settings" label.
   { id: 'account',      label: 'Account',           Icon: User },
+  { id: 'settings',     label: 'Settings',          Icon: UserCircle },
 ];
 const NAV_TABS = [...NAV_TABS_BEFORE_CALLS, ...NAV_TABS_AFTER_CALLS];
 
@@ -84,7 +89,11 @@ const LEGACY_TABS = [
   { id: 'health',       label: 'System health' },
   { id: 'mcp',          label: 'MCP browser' },
   { id: 'plans',        label: 'Plans & pricing' },
-  { id: 'settings',     label: 'Settings (credentials)' },
+  // 'profile' was its own nav tab until Account absorbed it — keep the id
+  // valid so old links/bookmarks land on Account instead of bouncing to
+  // Overview. ('settings' is a real nav tab now, so it's no longer listed
+  // here.)
+  { id: 'profile',      label: 'Account' },
   // Reached by clicking a row on the Agents list — not a nav item itself.
   { id: 'agent-detail',      label: 'Agent' },
   { id: 'agent-detail-chat', label: 'Chat Agent' },
@@ -243,8 +252,10 @@ export default function Admin() {
         {tab === 'health'                                && <Health />}
         {(tab === 'billing' || tab === 'payments')      && <Payments />}
         {tab === 'transactions'                          && <Transactions />}
-        {(tab === 'account' || tab === 'settings')      && <Settings />}
-        {tab === 'profile'                               && <Account />}
+        {tab === 'settings'                              && <Settings />}
+        {/* /admin/profile kept as an alias so old links/bookmarks still land
+            somewhere sensible now that the Profile tab itself is gone. */}
+        {(tab === 'account' || tab === 'profile')       && <Account />}
         {tab === 'resellers'     && <Resellers />}
         {tab === 'numbers'       && <Numbers />}
         {tab === 'plans'         && <Plans />}

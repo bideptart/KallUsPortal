@@ -151,6 +151,47 @@ h1, h2, h3, h4, h5, h6 {
       0 1px 2px rgba(15,23,42,0.04),
       0 10px 30px -16px rgba(15,23,42,0.10);
   }
+  /* Account page badge discs (avatar, section icons, role pill). Idle they
+     are a thin green outline; on hover the ring thickens and a soft green
+     glow blooms outward. `box-shadow` does the thickening rather than
+     `border-width` so nothing reflows/jumps on hover. */
+  .disc-ring {
+    border: 1px solid #4D7C0F;
+    animation: disc-glow 2.6s ease-in-out infinite alternate;
+  }
+  /* A continuous glow that breathes between soft and strong — it never drops
+     to zero, so the ring is always lit. No transform, so no heartbeat "thump".
+     Every disc uses the same duration with no delay and they all mount in the
+     same render, so the four stay in step with each other. */
+  @keyframes disc-glow {
+    from { box-shadow: 0 0 0 2px rgba(77, 124, 15, 0.55), 0 0 10px 3px rgba(77, 124, 15, 0.22); }
+    to   { box-shadow: 0 0 0 3px rgba(77, 124, 15, 1.00), 0 0 22px 7px rgba(77, 124, 15, 0.42); }
+  }
+  /* Hover overrides the loop with a steady, stronger ring. */
+  .disc-ring:hover {
+    animation: none;
+    transform: translateY(-1px);
+    box-shadow:
+      0 0 0 3px #4D7C0F,
+      0 0 0 7px rgba(77, 124, 15, 0.22),
+      0 0 20px 6px rgba(77, 124, 15, 0.30);
+    transition: box-shadow 260ms ease, transform 260ms ease;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .disc-ring { animation: none; }
+    .disc-ring:hover { transform: none; transition: none; }
+  }
+
+  /* Account page form actions — both Cancel and Save changes land on the same
+     brand green on hover. Text/icon go white so the label stays legible once
+     the ghost button fills in. */
+  .btn-hover-green:hover:not(:disabled) {
+    background: #4D7C0F;
+    border-color: #4D7C0F;
+    color: #ffffff;
+  }
+  .btn-hover-green:hover:not(:disabled) svg { color: #ffffff; }
+
   .field-label { display: block; font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 6px; }
   .field-help { font-size: 12px; color: var(--ink-3); margin-top: 4px; }
   .field-required::after { content: " *"; color: #ef4444; }
