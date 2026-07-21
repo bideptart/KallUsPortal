@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Wallet, Star, Phone, Calendar, RefreshCw, Lightbulb, Tag, CreditCard } from 'lucide-react';
+import { Wallet, Star, Phone, Calendar, RefreshCw, Lightbulb, Tag, CreditCard, Clock, Activity, TrendingUp } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
 import AddMinutesModal from '../../components/AddMinutesModal.jsx';
@@ -352,6 +352,184 @@ export default function Billing() {
 }
 
 // =============================================================================
+// UsageAnalyticsCard — compact line chart of AI voice minutes used per day,
+// with a 7-Day/30-Day toggle, 3 KPI tiles, and a summary row underneath.
+// Sample data only (no live usage API yet) — same "placeholder until a
+// database is connected" pattern used by the rest of this page.
+// =============================================================================
+const WEEK_USAGE = [
+  { label: 'Mon', mins: 8 },
+  { label: 'Tue', mins: 15 },
+  { label: 'Wed', mins: 6 },
+  { label: 'Thu', mins: 18 },
+  { label: 'Fri', mins: 12 },
+  { label: 'Sat', mins: 9 },
+  { label: 'Sun', mins: 20 },
+];
+// Deterministic 30-day sample (seeded, not random-per-render) so the
+// 30-Day toggle shows a denser trend without a real usage API behind it.
+const MONTH_USAGE = Array.from({ length: 30 }, (_, i) => {
+  const seed = Math.sin(i * 12.9898) * 43758.5453;
+  const frac = seed - Math.floor(seed);
+  const d = new Date(); d.setDate(d.getDate() - (29 - i));
+  return { label: d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }), mins: 5 + Math.round(frac * 18) };
+});
+
+function UsageAnalyticsCard() {
+  const [range, setRange] = useState('7day');
+  const [hoverIdx, setHoverIdx] = useState(null);
+  const data = range === '7day' ? WEEK_USAGE : MONTH_USAGE;
+
+  const width = 640;
+  const height = 220;
+  const padX = 16;
+  const padY = 18;
+  const maxVal = Math.max(...data.map((d) => d.mins));
+  const stepX = data.length > 1 ? (width - padX * 2) / (data.length - 1) : 0;
+  const points = data.map((d, i) => ({
+    x: padX + i * stepX,
+    y: padY + (height - padY * 2) * (1 - d.mins / maxVal),
+    ...d,
+  }));
+  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+  const areaPath = `${linePath} L ${points[points.length - 1].x} ${height - padY} L ${points[0].x} ${height - padY} Z`;
+
+  const total = data.reduce((s, d) => s + d.mins, 0);
+  const avg = total / data.length;
+  const peak = data.reduce((a, b) => (b.mins > a.mins ? b : a), data[0]);
+  const todayMins = range === '7day' ? 8 : data[data.length - 1].mins;
+
+  // Sparse label set for the 30-day view (all 7 shown for the weekly view) —
+  // positioned by the same x-coordinates as the plotted points so they stay
+  // aligned with the chart, not just evenly spaced across the row.
+  const labelIdx = range === '7day'
+    ? points.map((_, i) => i)
+    : [0, 5, 10, 15, 20, 25, points.length - 1];
+
+  return (
+    <div className="mt-6 form-card">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">Usage Analytics</h2>
+          <p className="text-xs text-mute mt-0.5 max-w-md">
+            Track your AI voice minute consumption to better understand your usage trends.
+          </p>
+        </div>
+        <div className="inline-flex rounded-full border border-slate-200 p-0.5 shrink-0">
+          {['7day', '30day'].map((r) => (
+            <button
+              key={r}
+              type="button"
+              onClick={() => { setRange(r); setHoverIdx(null); }}
+              className={`px-3 py-1 rounded-full text-xs font-semibold transition ${
+                range === r ? `text-white ${BRAND_GRADIENT}` : 'text-slate-600 hover:text-lime-700'
+              }`}
+            >
+              {r === '7day' ? '7-Day' : '30-Day'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* KPI tiles */}
+      <div className="mt-4 grid sm:grid-cols-3 gap-3">
+        <div className="rounded-xl border border-slate-100 bg-lime-50 p-3">
+          <div className="flex items-center gap-1.5 text-mute text-[10px] font-semibold uppercase tracking-wide">
+            <Clock className="w-3.5 h-3.5" /> Today's usage
+          </div>
+          <div className="mt-1 text-xl font-bold text-slate-900">{todayMins} <span className="text-xs font-normal text-mute">mins</span></div>
+        </div>
+        <div className="rounded-xl border border-slate-100 bg-lime-50 p-3">
+          <div className="flex items-center gap-1.5 text-mute text-[10px] font-semibold uppercase tracking-wide">
+            <Activity className="w-3.5 h-3.5" /> {range === '7day' ? 'Weekly total' : 'Monthly total'}
+          </div>
+          <div className="mt-1 text-xl font-bold text-slate-900">{total} <span className="text-xs font-normal text-mute">mins</span></div>
+        </div>
+        <div className="rounded-xl border border-slate-100 bg-lime-50 p-3">
+          <div className="flex items-center gap-1.5 text-mute text-[10px] font-semibold uppercase tracking-wide">
+            <TrendingUp className="w-3.5 h-3.5" /> Average per day
+          </div>
+          <div className="mt-1 text-xl font-bold text-slate-900">{avg.toFixed(1)} <span className="text-xs font-normal text-mute">mins</span></div>
+        </div>
+      </div>
+
+      {/* Chart */}
+      <div className="mt-5 relative" style={{ height: 230 }}>
+        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="usageFillGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#a3d94f" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="#a3d94f" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <path d={areaPath} fill="url(#usageFillGradient)" />
+          <path d={linePath} fill="none" stroke="#4d7c0f" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          {points.map((p, i) => (
+            <g key={i}>
+              <rect
+                x={p.x - stepX / 2} y={0} width={stepX || width} height={height}
+                fill="transparent"
+                onMouseEnter={() => setHoverIdx(i)}
+                onMouseLeave={() => setHoverIdx(null)}
+                style={{ cursor: 'pointer' }}
+              />
+              <circle
+                cx={p.x} cy={p.y}
+                r={hoverIdx === i ? 5 : 3}
+                fill="#4d7c0f"
+                stroke="#fff"
+                strokeWidth={hoverIdx === i ? 2 : 1.5}
+                className="transition-all"
+                style={{ pointerEvents: 'none' }}
+              />
+            </g>
+          ))}
+        </svg>
+        {hoverIdx !== null && (
+          <div
+            className="absolute pointer-events-none bg-slate-900 text-white text-[11px] font-semibold rounded-md px-2 py-1 shadow-lg whitespace-nowrap"
+            style={{
+              left: `${(points[hoverIdx].x / width) * 100}%`,
+              top: `${(points[hoverIdx].y / height) * 100}%`,
+              transform: 'translate(-50%, -130%)',
+            }}
+          >
+            {points[hoverIdx].label}: {points[hoverIdx].mins} min{points[hoverIdx].mins === 1 ? '' : 's'}
+          </div>
+        )}
+        <div className="relative mt-1" style={{ height: 14 }}>
+          {labelIdx.map((idx) => (
+            <span
+              key={idx}
+              className="absolute text-[10px] text-mute -translate-x-1/2"
+              style={{ left: `${(points[idx].x / width) * 100}%` }}
+            >
+              {points[idx].label}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Summary row */}
+      <div className="mt-4 pt-4 border-t border-slate-100 grid sm:grid-cols-3 gap-3 text-sm">
+        <div>
+          <div className="text-mute text-xs">Total Minutes Used</div>
+          <div className="font-semibold text-slate-900">{total} mins</div>
+        </div>
+        <div>
+          <div className="text-mute text-xs">Daily Average</div>
+          <div className="font-semibold text-slate-900">{avg.toFixed(1)} mins</div>
+        </div>
+        <div>
+          <div className="text-mute text-xs">Peak Usage</div>
+          <div className="font-semibold text-slate-900">{peak.label} ({peak.mins} mins)</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =============================================================================
 // MyPlansTab — left: shared-wallet card + "how it works"; right: per-DID
 // cards with progress bars, status pills, and 4 action buttons each.
 // =============================================================================
@@ -437,6 +615,8 @@ function MyPlansTab({
             ))}
           </div>
         )}
+
+        <UsageAnalyticsCard />
       </div>
     </div>
   );
