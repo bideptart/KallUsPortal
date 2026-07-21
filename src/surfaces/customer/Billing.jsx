@@ -361,6 +361,15 @@ function MyPlansTab({
 }) {
   const walletBalance = wallet?.walletUsd ?? 0;
 
+  // Wallet-card action swap — same pattern as the per-DID action pills:
+  // whichever button is hovered becomes the solid white "primary" one, the
+  // other falls back to the transparent ghost style. Defaults to Add funds.
+  const [hoveredWalletAction, setHoveredWalletAction] = useState(null);
+  const activeWalletAction = hoveredWalletAction || 'add-funds';
+  const walletSolidPill = 'px-3 py-1.5 rounded-lg bg-white text-slate-900 text-xs font-semibold hover:bg-white/90 transition shadow-sm';
+  const walletGhostPill = 'px-3 py-1.5 rounded-lg bg-white/12 hover:bg-white/20 text-white text-xs font-semibold transition border border-white/20';
+  const walletPillClass = (id) => (activeWalletAction === id ? walletSolidPill : walletGhostPill);
+
   return (
     <div className="mt-6 grid lg:grid-cols-[260px_1fr] gap-6">
       {/* ====== Left sidebar ====== */}
@@ -376,13 +385,17 @@ function MyPlansTab({
           <div className="mt-3 flex items-center gap-2">
             <button
               onClick={onAddFunds}
-              className="px-3 py-1.5 rounded-lg bg-white text-slate-900 text-xs font-semibold hover:bg-white/90 transition shadow-sm"
+              onMouseEnter={() => setHoveredWalletAction('add-funds')}
+              onMouseLeave={() => setHoveredWalletAction(null)}
+              className={walletPillClass('add-funds')}
             >
               + Add funds
             </button>
             <button
               onClick={onGoAutorecharge}
-              className="px-3 py-1.5 rounded-lg bg-white/12 hover:bg-white/20 text-white text-xs font-semibold transition border border-white/20"
+              onMouseEnter={() => setHoveredWalletAction('auto-recharge')}
+              onMouseLeave={() => setHoveredWalletAction(null)}
+              className={walletPillClass('auto-recharge')}
             >
               Auto-recharge
             </button>
