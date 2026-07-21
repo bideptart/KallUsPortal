@@ -91,7 +91,7 @@ function AgentPicker({ agents, selectedId, onChange }) {
 }
 
 export default function Playground() {
-  const { currentUser } = useApp();
+  const { currentUser, demoAgent, patchDemoAgent } = useApp();
   const navigate = useNavigate();
   const { playingVoice, error: previewError, play } = useVoicePreview();
 
@@ -121,11 +121,11 @@ export default function Playground() {
   }, []);
 
   const demoMode = loaded && numbers.length === 0;
-  const voiceAgents = useMemo(() => (demoMode ? [DEMO_NUMBER] : numbers).map((n) => ({
+  const voiceAgents = useMemo(() => (demoMode ? [{ ...DEMO_NUMBER, ...demoAgent }] : numbers).map((n) => ({
     id: n.id, type: 'voice', agentName: n.agentName || n.label || 'Unnamed agent', value: n.value,
     greeting: n.greeting || '', prompt: n.prompt || '', kbCompany: n.kbCompany || '', kbFaqs: n.kbFaqs || '',
     voice: n.voice || 'Kore', language: n.language || 'en-US',
-  })), [numbers, demoMode]);
+  })), [numbers, demoMode, demoAgent]);
 
   const agents = useMemo(() => [
     ...voiceAgents,
@@ -165,7 +165,14 @@ export default function Playground() {
   const basePath = isAdminTier ? '/admin' : '/dashboard';
 
   const save = async () => {
-    if (isChatAgent || demoMode) return; // no real backend for the chat agent / demo rows
+    if (isChatAgent) return; // no real backend for the chat agent — stays a local preview
+    // No real backend to save to in demo mode — write into the shared
+    // demo-agent record instead, so the Agent editor picks up the same values.
+    if (demoMode) {
+      patchDemoAgent(draft);
+      setSavedDraft(draft);
+      return;
+    }
     setSaving(true);
     try {
       const r = await api(`/api/numbers/${selected.id}`, {
@@ -210,7 +217,7 @@ export default function Playground() {
 
       {demoMode && (
         <div className="mt-3">
-          <span className="pill" style={{ background: 'var(--line-2)', color: 'var(--ink-3)' }}>Sample data — connect a database to test a live agent</span>
+          <span className="pill" style={{ background: 'var(--line-2)', color: 'var(--ink-3)' }}>Sample data — edits save locally (shared with the Agent editor) until a database is connected</span>
         </div>
       )}
 
@@ -386,7 +393,7 @@ export default function Playground() {
               </span>
               <div className="flex items-center gap-2">
                 <button type="button" className="btn-ghost text-sm" disabled={!dirty} onClick={() => setDraft(savedDraft)}>Reset</button>
-                <button type="button" className="btn-teal text-sm" disabled={!dirty || saving || isChatAgent || demoMode} onClick={save}>
+                <button type="button" className="btn-teal text-sm" disabled={!dirty || saving || isChatAgent} onClick={save}>
                   {saving ? 'Saving…' : 'Save'}
                 </button>
               </div>

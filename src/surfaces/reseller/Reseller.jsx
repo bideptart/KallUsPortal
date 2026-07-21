@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
-import { Users, CreditCard, Star, Handshake, Menu } from 'lucide-react';
+import { Users, CreditCard, Star, Handshake, Menu, LogOut } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import Logo from '../../components/Logo.jsx';
 import Footer from '../../components/Footer.jsx';
@@ -25,7 +25,7 @@ const ALL_TABS = [
 // dashboard reads as one product.
 // =============================================================================
 export default function Reseller() {
-  const { currentUser } = useApp();
+  const { currentUser, signoutUser } = useApp();
   const { tab } = useParams();
   const [navOpen, setNavOpen] = useState(false);
   useEffect(() => { setNavOpen(false); }, [tab]);
@@ -79,6 +79,12 @@ export default function Reseller() {
             <t.Icon size={16} strokeWidth={2} /> {t.label}
           </Link>
         ))}
+
+        <div className="mt-2 pt-2 border-t border-slate-100">
+          <button type="button" onClick={signoutUser} className="nav-group-toggle">
+            <LogOut size={16} strokeWidth={2} /> Log out
+          </button>
+        </div>
       </aside>
 
       <div className="dashboard-main">

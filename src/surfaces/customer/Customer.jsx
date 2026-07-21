@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
   LayoutDashboard, Bot, FlaskConical, BookOpen, TrendingUp, Zap,
-  FileText, CreditCard, Receipt, User, Menu, Wrench, Ticket,
+  FileText, CreditCard, Receipt, User, Menu, Wrench, Ticket, LogOut,
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import Overview from './Overview.jsx';
@@ -75,7 +75,7 @@ const LEGACY_TABS = [
 const TABS = [...NAV_TABS, CALL_ACTIVITY, ...CALL_ACTIVITY_CHILDREN, ...LEGACY_TABS];
 
 export default function Customer() {
-  const { currentUser } = useApp();
+  const { currentUser, signoutUser } = useApp();
   const { tab } = useParams();
   const [navOpen, setNavOpen] = useState(false);
   const [showAddPlan, setShowAddPlan] = useState(false);
@@ -173,6 +173,12 @@ export default function Customer() {
             <t.Icon size={16} strokeWidth={2} /> {t.label}
           </Link>
         ))}
+
+        <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <button type="button" onClick={signoutUser} className="nav-group-toggle">
+            <LogOut size={16} strokeWidth={2} /> Log out
+          </button>
+        </div>
       </aside>
 
       <div className="dashboard-main">

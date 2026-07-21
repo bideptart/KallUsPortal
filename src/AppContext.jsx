@@ -21,6 +21,30 @@ export function AppProvider({ children }) {
   const [signup, setSignup] = useState(emptySignup);
   const [authError, setAuthError] = useState('');
 
+  // Shared demo-agent draft — when there's no real number (no DB connected,
+  // like in this sandbox), Playground and the Agent editor both fall back to
+  // the same record instead of two independent hardcoded copies, so a save
+  // on one page shows up on the other without a real backend. Persisted to
+  // localStorage (not just component state) so it also survives a full page
+  // reload / direct navigation between the two pages.
+  const DEMO_AGENT_KEY = '9278.demoAgentDraft';
+  const [demoAgent, setDemoAgent] = useState(() => {
+    const defaults = {
+      greeting: 'Hi, thanks for calling…',
+      prompt: 'You are a helpful customer support assistant. Be concise, friendly, and professional.',
+      kbCompany: '', kbFaqs: '', voice: 'Kore', language: 'en-US',
+    };
+    try {
+      const saved = JSON.parse(localStorage.getItem(DEMO_AGENT_KEY) || 'null');
+      return saved ? { ...defaults, ...saved } : defaults;
+    } catch { return defaults; }
+  });
+  const patchDemoAgent = (patch) => setDemoAgent((d) => {
+    const next = { ...d, ...patch };
+    try { localStorage.setItem(DEMO_AGENT_KEY, JSON.stringify(next)); } catch {}
+    return next;
+  });
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -43,7 +67,14 @@ export function AppProvider({ children }) {
       const t = getToken();
       if (!t) { setBootstrapping(false); return; }
       try {
-        const { user } = await api('/api/auth/me');
+        let user;
+        try {
+          ({ user } = await api('/api/me'));
+          setAuthKind('real');
+        } catch {
+          ({ user } = await api('/api/auth/me'));
+          setAuthKind('demo');
+        }
         if (cancelled) return;
         setCurrentUser(user);
       } catch {
@@ -57,10 +88,20 @@ export function AppProvider({ children }) {
 
   const updateSignup = (patch) => setSignup((s) => ({ ...s, ...patch }));
 
+  // Which auth system issued the current token — 'real' (Postgres-backed
+  // /api/signin + /api/me, real data) or 'demo' (the stateless zero-setup
+  // /api/auth/* accounts, always sample data). Signin tries real first and
+  // falls back to demo; this flag remembers which one won so signout/ping/
+  // session-restore hit the matching endpoint instead of guessing.
+  const AUTH_KIND_KEY = '9278.authKind';
+  const getAuthKind = () => { try { return localStorage.getItem(AUTH_KIND_KEY) || 'demo'; } catch { return 'demo'; } };
+  const setAuthKind = (k) => { try { localStorage.setItem(AUTH_KIND_KEY, k); } catch {} };
+
   // Used by the Stripe checkout success handler to put the user straight
   // into a signed-in state after the payment is verified.
   const establishSession = ({ token, user }) => {
     setToken(token);
+    setAuthKind('real');
     setCurrentUser(user);
     setAuthError('');
   };
@@ -70,26 +111,39 @@ export function AppProvider({ children }) {
   );
 
   const signinUser = async ({ identifier, password }) => {
+    // Try the real, Postgres-backed account first (real data everywhere);
+    // fall back to the zero-setup demo accounts if this identifier isn't a
+    // real row (or the database is unreachable) — same UX either way, the
+    // difference is just which data the signed-in session ends up seeing.
+    let result;
+    let kind;
     try {
-      const { token, user } = await api('/api/auth/signin', {
-        method: 'POST', body: { identifier, password }, auth: false,
-      });
-      setToken(token);
-      setCurrentUser(user);
-      setAuthError('');
-      // Honor ?next= so route guards round-trip correctly.
-      const params = new URLSearchParams(window.location.search);
-      const next = params.get('next');
-      navigate(next && next.startsWith('/') ? next : homeFor(user), { replace: true });
-      return true;
-    } catch (e) {
-      setAuthError(e.message || 'Sign-in failed');
-      return false;
+      result = await api('/api/signin', { method: 'POST', body: { identifier, password }, auth: false });
+      kind = 'real';
+    } catch (realErr) {
+      try {
+        result = await api('/api/auth/signin', { method: 'POST', body: { identifier, password }, auth: false });
+        kind = 'demo';
+      } catch (demoErr) {
+        setAuthError(demoErr.message || realErr.message || 'Sign-in failed');
+        return false;
+      }
     }
+    const { token, user } = result;
+    setToken(token);
+    setAuthKind(kind);
+    setCurrentUser(user);
+    setAuthError('');
+    // Honor ?next= so route guards round-trip correctly.
+    const params = new URLSearchParams(window.location.search);
+    const next = params.get('next');
+    navigate(next && next.startsWith('/') ? next : homeFor(user), { replace: true });
+    return true;
   };
 
   const signoutUser = async () => {
-    try { await api('/api/auth/signout', { method: 'POST' }); } catch {}
+    const path = getAuthKind() === 'real' ? '/api/signout' : '/api/auth/signout';
+    try { await api(path, { method: 'POST' }); } catch {}
     setToken('');
     setCurrentUser(null);
     navigate('/', { replace: true });
@@ -104,7 +158,8 @@ export function AppProvider({ children }) {
   const IDLE_KEY = '9278.lastActivity';
 
   const idleLogout = async () => {
-    try { await api('/api/auth/signout', { method: 'POST' }); } catch {}
+    const path = getAuthKind() === 'real' ? '/api/signout' : '/api/auth/signout';
+    try { await api(path, { method: 'POST' }); } catch {}
     try { localStorage.removeItem(IDLE_KEY); } catch {}
     setToken('');
     setCurrentUser(null);
@@ -125,7 +180,8 @@ export function AppProvider({ children }) {
       // they're only reading (no other API calls). At most once / 5 min.
       if (now - lastPing > 5 * 60 * 1000) {
         lastPing = now;
-        api('/api/auth/session/ping', { method: 'POST' }).catch(() => {});
+        const pingPath = getAuthKind() === 'real' ? '/api/session/ping' : '/api/auth/session/ping';
+        api(pingPath, { method: 'POST' }).catch(() => {});
       }
     };
     const events = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
@@ -183,6 +239,7 @@ export function AppProvider({ children }) {
         currentUser,
         signinUser, signoutUser, updateCurrentUser, changePassword, deleteCurrentAccount,
         authError, setAuthError,
+        demoAgent, patchDemoAgent,
       }}
     >
       {children}

@@ -12,14 +12,28 @@ function Loading() {
   return <main className="px-6 py-24 text-center text-mute text-sm">Loading session…</main>;
 }
 
+// The seeded/legacy admin row can have role='admin' while userType still
+// sits at the users.user_type column's default ('user') if it was never set
+// explicitly on insert — effectiveTier folds that legacy field in so a
+// route's tier check agrees with homeFor() instead of fighting it (that
+// mismatch used to send this exact account into an infinite /admin <->
+// /admin redirect loop).
+const effectiveTier = (user) => {
+  if (!user) return null;
+  if (user.userType === 'superadmin' || user.userType === 'admin') return user.userType;
+  if (user.role === 'admin') return 'admin';
+  return user.userType || 'user';
+};
+
 // Where each tier lands after signin. Source of truth — used by GuestOnly,
 // RequireAuth, and any other "go home" jump.
 const homeFor = (user) => {
   if (!user) return '/signin';
-  if (user.userType === 'superadmin' || user.userType === 'admin' || user.role === 'admin') return '/admin';
+  const tier = effectiveTier(user);
+  if (tier === 'superadmin' || tier === 'admin') return '/admin';
   // Sub-resellers share the same surface as resellers — they see their own
   // customers / purchases / plans, and can on-board further sub-resellers.
-  if (user.userType === 'reseller' || user.userType === 'sub-reseller') return '/reseller';
+  if (tier === 'reseller' || tier === 'sub-reseller') return '/reseller';
   return '/dashboard';
 };
 
@@ -32,7 +46,7 @@ function RequireAuth({ children, allow }) {
   }
   // `allow` is a Set of tiers this route accepts. If the user's tier isn't in
   // it, bounce to their natural home.
-  if (allow && !allow.has(currentUser.userType)) {
+  if (allow && !allow.has(effectiveTier(currentUser))) {
     return <Navigate to={homeFor(currentUser)} replace />;
   }
   return children;

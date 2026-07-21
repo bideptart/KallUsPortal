@@ -163,7 +163,7 @@ function Toggle({ on, onChange, label, desc }) {
 }
 
 export default function AgentDetail() {
-  const { currentUser } = useApp();
+  const { currentUser, demoAgent, patchDemoAgent } = useApp();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { playingVoice, error: previewError, play } = useVoicePreview();
@@ -172,8 +172,13 @@ export default function AgentDetail() {
   const [loaded, setLoaded] = useState(false);
   const [draft, setDraft] = useState(emptyDraft);
   const [savedDraft, setSavedDraft] = useState(emptyDraft());
-  const [activeTab, setActiveTab] = useState('identity');
   const appliedTemplateRef = useRef(false);
+  const identityRef = useRef(null);
+  const voiceRef = useRef(null);
+  const knowledgeRef = useRef(null);
+  const behaviorRef = useRef(null);
+  const sectionRefs = { identity: identityRef, voice: voiceRef, knowledge: knowledgeRef, behavior: behaviorRef };
+  const scrollToSection = (id) => sectionRefs[id]?.current?.scrollIntoView({ block: 'start' });
   const [saving, setSaving] = useState(false);
   const [saveErr, setSaveErr] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
@@ -235,9 +240,9 @@ export default function AgentDetail() {
   const wantId = searchParams.get('n');
   const demoMode = loaded && numbers.length === 0;
   const selected = useMemo(() => {
-    if (demoMode) return DEMO_NUMBER;
+    if (demoMode) return { ...DEMO_NUMBER, ...demoAgent };
     return numbers.find((n) => n.id === wantId) || numbers[0] || null;
-  }, [numbers, wantId, demoMode]);
+  }, [numbers, wantId, demoMode, demoAgent]);
 
   useEffect(() => {
     if (!selected) return;
@@ -268,7 +273,7 @@ export default function AgentDetail() {
     const t = TEMPLATES.find((x) => x.id === templateId);
     if (t) {
       setDraft((d) => ({ ...d, prompt: t.prompt, greeting: t.greeting }));
-      setActiveTab('behavior');
+      setTimeout(() => scrollToSection('behavior'), 0);
     }
     setSearchParams({ n: selected.id }, { replace: true });
   }, [selected, templateId]);
@@ -283,7 +288,14 @@ export default function AgentDetail() {
   const dirty = JSON.stringify(draft) !== JSON.stringify(savedDraft);
 
   const save = async () => {
-    if (!selected || demoMode) return;
+    if (!selected) return;
+    // No real backend to save to in demo mode — write into the shared
+    // demo-agent record instead, so Playground picks up the same values.
+    if (demoMode) {
+      patchDemoAgent(draft);
+      setSavedDraft(draft);
+      return;
+    }
     setSaving(true);
     setSaveErr('');
     try {
@@ -334,7 +346,6 @@ export default function AgentDetail() {
   const initial = (name[0] || '#').toUpperCase();
   const lang = LANGUAGES.find((l) => l.value === draft.language);
   const voiceMeta = VOICES.find((v) => v.value === draft.voice);
-  const tabIndex = TABS.findIndex((t) => t.id === activeTab);
 
   return (
     <div>
@@ -345,7 +356,7 @@ export default function AgentDetail() {
       {demoMode && (
         <div className="mt-3">
           <span className="pill" style={{ background: 'var(--line-2)', color: 'var(--ink-3)' }}>
-            Sample data — connect a database to edit a live agent
+            Sample data — edits save locally (shared with Playground) until a database is connected
           </span>
         </div>
       )}
@@ -400,7 +411,7 @@ export default function AgentDetail() {
                 </Link>
                 <div className="my-1 border-t" style={{ borderColor: 'var(--line-2)' }} />
                 <Link
-                  to={`${basePath}/calls`}
+                  to={`${basePath}/analytics`}
                   className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-[var(--surface-2)]"
                   style={{ color: 'var(--ink-2)' }}
                   onClick={() => setMenuOpen(false)}
@@ -438,7 +449,7 @@ export default function AgentDetail() {
         <button
           type="button"
           className="btn-ghost text-xs inline-flex items-center gap-1 py-1.5 px-3"
-          onClick={() => { setActiveTab('knowledge'); setSourcePicker(true); }}
+          onClick={() => { setSourcePicker(true); }}
         >
           <ChevronRight size={12} /> Import from knowledge base
         </button>
@@ -447,27 +458,28 @@ export default function AgentDetail() {
         )}
       </div>
 
-      {/* === Tabs ====================================================== */}
-      <div className="mt-4 form-card p-0 overflow-hidden">
+      {/* === Jump nav — scrolls to each section on this single page ===== */}
+      <div className="mt-4 form-card p-0 overflow-hidden sticky top-16 z-20">
         <div className="flex border-b" style={{ borderColor: 'var(--line-2)' }}>
           {TABS.map((t) => (
             <button
               key={t.id}
               type="button"
-              onClick={() => setActiveTab(t.id)}
+              onClick={() => scrollToSection(t.id)}
               className="flex-1 inline-flex items-center justify-center gap-1.5 py-3 text-sm font-medium border-b-2"
-              style={activeTab === t.id
-                ? { borderColor: 'var(--primary)', color: 'var(--primary)' }
-                : { borderColor: 'transparent', color: 'var(--ink-3)' }}
+              style={{ borderColor: 'transparent', color: 'var(--ink-3)' }}
             >
               <t.Icon size={14} /> {t.label}
             </button>
           ))}
         </div>
+      </div>
 
-        <div className="p-6">
-          {activeTab === 'identity' && (
-            <div>
+      {/* === All sections stacked on one page (jump nav above just scrolls
+          to them) instead of a multi-step tabbed wizard. ================ */}
+      <div className="mt-4 form-card p-0 overflow-hidden">
+        <div className="p-6 space-y-10">
+          <div ref={identityRef} style={{ scrollMarginTop: 140 }}>
               <div className="text-xs font-mono uppercase tracking-wide" style={{ color: 'var(--primary)' }}>Agent identity</div>
               <p className="text-sm text-mute mt-1">Its display name, language, and the greeting callers hear first.</p>
 
@@ -485,11 +497,9 @@ export default function AgentDetail() {
 
               <label className="field-label mt-4">Greeting (first line on every call)</label>
               <textarea className="input" rows={4} value={draft.greeting} onChange={(e) => set({ greeting: e.target.value })} placeholder="Hi, thanks for calling…" />
-            </div>
-          )}
+          </div>
 
-          {activeTab === 'voice' && (
-            <div>
+          <div ref={voiceRef} className="pt-10 border-t" style={{ borderColor: 'var(--line-2)', scrollMarginTop: 140 }}>
               <div className="text-xs font-mono uppercase tracking-wide inline-flex items-center gap-1.5" style={{ color: 'var(--primary)' }}>
                 <Mic size={12} /> Voice
               </div>
@@ -575,11 +585,9 @@ export default function AgentDetail() {
                   />
                 </div>
               </div>
-            </div>
-          )}
+          </div>
 
-          {activeTab === 'knowledge' && (
-            <div>
+          <div ref={knowledgeRef} className="pt-10 border-t" style={{ borderColor: 'var(--line-2)', scrollMarginTop: 140 }}>
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div>
                   <div className="text-xs font-mono uppercase tracking-wide inline-flex items-center gap-1.5" style={{ color: 'var(--primary)' }}>
@@ -645,11 +653,9 @@ export default function AgentDetail() {
                   </button>
                 </div>
               </div>
-            </div>
-          )}
+          </div>
 
-          {activeTab === 'behavior' && (
-            <div>
+          <div ref={behaviorRef} className="pt-10 border-t" style={{ borderColor: 'var(--line-2)', scrollMarginTop: 140 }}>
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div>
                   <div className="text-xs font-mono uppercase tracking-wide inline-flex items-center gap-1.5" style={{ color: 'var(--primary)' }}>
@@ -707,27 +713,6 @@ export default function AgentDetail() {
                   })}
                 </div>
               </div>
-            </div>
-          )}
-
-          <div className="mt-6 flex items-center justify-between gap-3">
-            {tabIndex > 0 ? (
-              <button type="button" className="btn-ghost text-sm" onClick={() => setActiveTab(TABS[tabIndex - 1].id)}>
-                ← Back
-              </button>
-            ) : <span />}
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-mute">Step {tabIndex + 1} of {TABS.length}</span>
-              {tabIndex < TABS.length - 1 ? (
-                <button type="button" className="btn-teal text-sm" onClick={() => setActiveTab(TABS[tabIndex + 1].id)}>
-                  Next →
-                </button>
-              ) : (
-                <button type="button" className="btn-teal text-sm" disabled={saving || demoMode || !dirty} onClick={save}>
-                  {saving ? 'Saving…' : 'Save and submit'}
-                </button>
-              )}
-            </div>
           </div>
         </div>
       </div>
@@ -745,7 +730,7 @@ export default function AgentDetail() {
         </span>
         <div className="flex items-center gap-2">
           <button type="button" className="btn-ghost text-sm" disabled={!dirty} onClick={discard}>Discard</button>
-          <button type="button" className="btn-teal text-sm" disabled={!dirty || saving || demoMode} onClick={save}>
+          <button type="button" className="btn-teal text-sm" disabled={!dirty || saving} onClick={save}>
             {saving ? 'Saving…' : 'Save'}
           </button>
         </div>

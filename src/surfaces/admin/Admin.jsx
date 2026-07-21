@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
   LayoutDashboard, Bot, FlaskConical, BookOpen, TrendingUp, Zap,
-  FileText, CreditCard, Receipt, User, Menu, Wrench, Ticket,
+  FileText, CreditCard, Receipt, User, UserCircle, Menu, Wrench, Ticket, LogOut,
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
@@ -16,6 +16,7 @@ import Bulk from './Bulk.jsx';
 import Logs from './Logs.jsx';
 import Plans from './Plans.jsx';
 import Settings from './Settings.jsx';
+import Account from '../customer/Account.jsx';
 import Reports from './Reports.jsx';
 import Overview from '../customer/Overview.jsx';
 import AgentsList from '../customer/AgentsList.jsx';
@@ -50,6 +51,7 @@ const NAV_TABS_AFTER_CALLS = [
   { id: 'reports',      label: 'Reports',           Icon: FileText },
   { id: 'billing',      label: 'Billing & minutes', Icon: CreditCard },
   { id: 'transactions', label: 'Transactions',      Icon: Receipt },
+  { id: 'profile',      label: 'Profile',           Icon: UserCircle },
   { id: 'account',      label: 'Account',           Icon: User },
 ];
 const NAV_TABS = [...NAV_TABS_BEFORE_CALLS, ...NAV_TABS_AFTER_CALLS];
@@ -92,7 +94,7 @@ const LEGACY_TABS = [
 const VALID_TABS = new Set([...NAV_TABS, CALL_ACTIVITY, ...CALL_ACTIVITY_CHILDREN, ...LEGACY_TABS].map((t) => t.id));
 
 export default function Admin() {
-  const { currentUser } = useApp();
+  const { currentUser, signoutUser } = useApp();
   const { tab } = useParams();
   const [navOpen, setNavOpen] = useState(false);
   const [showAddPlan, setShowAddPlan] = useState(false);
@@ -163,6 +165,12 @@ export default function Admin() {
         </div>
 
         <Side list={NAV_TABS_AFTER_CALLS} />
+
+        <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <button type="button" onClick={signoutUser} className="nav-group-toggle">
+            <LogOut size={16} strokeWidth={2} /> Log out
+          </button>
+        </div>
       </aside>
 
       <div className="dashboard-main">
@@ -212,6 +220,7 @@ export default function Admin() {
         {(tab === 'billing' || tab === 'payments')      && <Payments />}
         {tab === 'transactions'                          && <Transactions />}
         {(tab === 'account' || tab === 'settings')      && <Settings />}
+        {tab === 'profile'                               && <Account />}
         {tab === 'resellers'     && <Resellers />}
         {tab === 'numbers'       && <Numbers />}
         {tab === 'plans'         && <Plans />}

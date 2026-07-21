@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { User, Lock, AlertTriangle, Save, KeyRound, Trash2 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 
 export default function Account() {
@@ -56,13 +57,15 @@ export default function Account() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Account</h1>
-      <p className="text-mute">Your profile, login, and contact details.</p>
+      <h1 className="text-2xl font-display font-bold">Account</h1>
+      <p className="text-mute mt-1">Your profile, login, and contact details.</p>
 
       <div className="mt-6 grid md:grid-cols-2 gap-4">
         <div className="form-card">
-          <div className="text-xs text-lime-400 uppercase font-semibold mb-3">Profile</div>
-          <label className="field-label">Full name</label>
+          <div className="text-xs font-mono uppercase tracking-wide font-semibold inline-flex items-center gap-1.5" style={{ color: 'var(--primary)' }}>
+            <User size={12} /> Profile
+          </div>
+          <label className="field-label mt-4">Full name</label>
           <input className="input" value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} />
           <label className="field-label mt-3">Company name</label>
           <input className="input" value={profile.company} onChange={(e) => setProfile({ ...profile, company: e.target.value })} />
@@ -70,46 +73,53 @@ export default function Account() {
           <input className="input" type="email" value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })} />
           <label className="field-label mt-3">Username</label>
           <input className="input" value={profile.username} onChange={(e) => setProfile({ ...profile, username: e.target.value })} />
+          <div className="field-help">Your sign-in handle.</div>
           <label className="field-label mt-3">Phone</label>
           <input className="input" placeholder="+1 ..." value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} />
-          <button className="btn-teal mt-4" onClick={saveProfile} disabled={profileBusy}>
-            {profileBusy ? 'Saving…' : 'Save profile'}
+          <button className="btn-teal mt-4 inline-flex items-center gap-1.5" onClick={saveProfile} disabled={profileBusy}>
+            <Save size={14} /> {profileBusy ? 'Saving…' : 'Save profile'}
           </button>
-          {profileMsg && <div className="mt-2 text-xs text-lime-400">{profileMsg}</div>}
+          {profileMsg && <div className="mt-2 text-xs font-semibold text-lime-700">{profileMsg}</div>}
         </div>
 
         <div className="form-card">
-          <div className="text-xs text-lime-400 uppercase font-semibold mb-3">Password</div>
+          <div className="text-xs font-mono uppercase tracking-wide font-semibold inline-flex items-center gap-1.5" style={{ color: 'var(--primary)' }}>
+            <Lock size={12} /> Password
+          </div>
           <form onSubmit={submitPassword}>
-            <label className="field-label">Current password</label>
+            <label className="field-label mt-4">Current password</label>
             <input className="input" type="password" value={pw.current} onChange={(e) => setPw({ ...pw, current: e.target.value })} autoComplete="current-password" />
             <label className="field-label mt-3">New password</label>
             <input className="input" type="password" value={pw.next} onChange={(e) => setPw({ ...pw, next: e.target.value })} autoComplete="new-password" />
             <label className="field-label mt-3">Confirm new password</label>
             <input className="input" type="password" value={pw.confirm} onChange={(e) => setPw({ ...pw, confirm: e.target.value })} autoComplete="new-password" />
-            <button type="submit" className="btn-teal mt-4" disabled={pwBusy}>
-              {pwBusy ? 'Updating…' : 'Change password'}
+            <button type="submit" className="btn-teal mt-4 inline-flex items-center gap-1.5" disabled={pwBusy}>
+              <KeyRound size={14} /> {pwBusy ? 'Updating…' : 'Change password'}
             </button>
-            {pwMsg && <div className="mt-2 text-xs text-lime-400">{pwMsg}</div>}
+            {pwMsg && <div className="mt-2 text-xs font-semibold text-lime-700">{pwMsg}</div>}
           </form>
 
           {authError && (
-            <div className="mt-3 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">
+            <div className="mt-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
               {authError}
             </div>
           )}
 
-          <div className="mt-6 pt-6 border-t border-line">
-            <div className="text-xs text-red-400 uppercase font-semibold mb-2">Danger zone</div>
+          <div className="mt-6 pt-5 border-t" style={{ borderColor: 'var(--line-2)' }}>
+            <div className="text-xs font-mono uppercase tracking-wide font-semibold text-red-600 mb-2 inline-flex items-center gap-1.5">
+              <AlertTriangle size={12} /> Danger zone
+            </div>
             {!confirmDelete ? (
-              <button className="btn-red text-sm" onClick={() => setConfirmDelete(true)}>
-                Delete account &amp; release number
+              <button className="btn-red text-sm inline-flex items-center gap-1.5" onClick={() => setConfirmDelete(true)}>
+                <Trash2 size={14} /> Delete account &amp; release number
               </button>
             ) : (
-              <div className="rounded border border-red-500/40 bg-red-500/5 p-3">
-                <div className="text-sm">Really delete your account? This cannot be undone.</div>
+              <div className="rounded-lg border border-red-200 bg-red-50 p-3">
+                <div className="text-sm text-red-900">Really delete your account? This cannot be undone.</div>
                 <div className="mt-3 flex gap-2">
-                  <button className="btn-red text-sm" onClick={deleteCurrentAccount}>Yes, delete forever</button>
+                  <button className="btn-red text-sm inline-flex items-center gap-1.5" onClick={deleteCurrentAccount}>
+                    <Trash2 size={14} /> Yes, delete forever
+                  </button>
                   <button className="btn-ghost text-sm" onClick={() => setConfirmDelete(false)}>Cancel</button>
                 </div>
               </div>
