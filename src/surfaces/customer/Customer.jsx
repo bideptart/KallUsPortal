@@ -78,6 +78,7 @@ export default function Customer() {
   const { currentUser, signoutUser } = useApp();
   const { tab } = useParams();
   const [navOpen, setNavOpen] = useState(false);
+  const [navCollapsed, setNavCollapsed] = useState(false);   // desktop-only: hides the sidebar entirely
   const [showAddPlan, setShowAddPlan] = useState(false);
   const callActivityActive = tab === CALL_ACTIVITY.id || CALL_ACTIVITY_CHILDREN.some((t) => t.id === tab);
   const [callActivityOpen, setCallActivityOpen] = useState(callActivityActive);
@@ -98,18 +99,25 @@ export default function Customer() {
   const company = currentUser.company || currentUser.name || 'Your account';
 
   return (
-    <div className="dashboard-shell">
+    <div className={`dashboard-shell ${navCollapsed ? 'nav-collapsed' : ''}`}>
       {navOpen && <div className="mobile-nav-backdrop" onClick={() => setNavOpen(false)} />}
 
       <aside className={`sidenav ${navOpen ? 'is-open' : ''}`}>
-        <Link
-          to="/dashboard/overview"
-          className="h-16 flex items-center gap-2 px-4 bg-white sticky top-0 z-30"
-          aria-label="kallus.io home"
-        >
-          <Logo size={44} showWordmark={false} />
-          <span className="font-mono text-sm lowercase text-mute tracking-tight">kallus.io</span>
-        </Link>
+        <div className="h-16 flex items-center gap-1.5 px-3 bg-white sticky top-0 z-30">
+          <Link to="/dashboard/overview" className="flex items-center gap-2 min-w-0" aria-label="kallus.io home">
+            <Logo size={36} showWordmark={false} />
+            <span className="font-mono text-sm lowercase text-mute tracking-tight whitespace-nowrap">kallus.io</span>
+          </Link>
+          <button
+            type="button"
+            className="hidden lg:inline-flex ml-auto shrink-0 w-6 h-6 items-center justify-center rounded-md text-mute hover:bg-slate-100 hover:text-slate-900 text-xs"
+            onClick={() => setNavCollapsed(true)}
+            aria-label="Collapse sidebar"
+            title="Collapse sidebar"
+          >
+            «
+          </button>
+        </div>
 
         {/* Persistent "Welcome back" line — replaces the per-page Overview
             heading so it stays visible across every dashboard tab. */}
@@ -197,6 +205,17 @@ export default function Customer() {
           >
             <Menu size={16} /> Menu
           </button>
+          {navCollapsed && (
+            <button
+              type="button"
+              className="sidenav-expand-btn"
+              onClick={() => setNavCollapsed(false)}
+              aria-label="Expand sidebar"
+              title="Expand sidebar"
+            >
+              »
+            </button>
+          )}
           <div className="lg:hidden flex items-center gap-1.5 text-xs text-mute font-semibold uppercase tracking-wider">
             {active.Icon && <active.Icon size={14} strokeWidth={2} />} {active.label}
           </div>

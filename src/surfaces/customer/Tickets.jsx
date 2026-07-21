@@ -166,41 +166,42 @@ export default function Tickets() {
 
   return (
     <div>
-      <div>
+      <div className="animate-fade-up">
         <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Tickets</h1>
         <p className="text-mute">
           Issues your AI agent captured on calls — or filed manually. Resolution target{' '}
-          <button onClick={() => { setSlaDraft(String(slaHours)); setSlaModalOpen(true); }} className="text-lime-600 dark:text-lime-400 font-semibold underline decoration-dotted underline-offset-2">
+          <button onClick={() => { setSlaDraft(String(slaHours)); setSlaModalOpen(true); }} className="text-lime-600 dark:text-lime-400 font-semibold underline decoration-dotted underline-offset-2 transition-colors duration-200 hover:text-lime-700 dark:hover:text-lime-300">
             {slaHours}h
           </button>.
         </p>
       </div>
 
-      <div className="mt-4 flex items-center gap-2 flex-wrap">
-        <button onClick={() => { setSlaDraft(String(slaHours)); setSlaModalOpen(true); }} className="btn-ghost text-sm inline-flex items-center gap-1.5">
+      <div className="mt-4 flex items-center gap-2 flex-wrap animate-fade-up">
+        <button onClick={() => { setSlaDraft(String(slaHours)); setSlaModalOpen(true); }} className="btn-teal text-sm inline-flex items-center gap-1.5 transition duration-200 ease-out hover:scale-105 active:scale-95">
           <Clock className="w-4 h-4" /> SLA
         </button>
-        <button onClick={refresh} disabled={refreshing} className="btn-ghost text-sm inline-flex items-center gap-1.5">
+        <button onClick={refresh} disabled={refreshing} className="btn-teal text-sm inline-flex items-center gap-1.5 transition duration-200 ease-out hover:scale-105 active:scale-95 disabled:opacity-90">
           <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} /> Refresh
         </button>
-        <button onClick={() => setNewTicketOpen(true)} className="btn-teal text-sm inline-flex items-center gap-1.5">
+        <button onClick={() => setNewTicketOpen(true)} className="btn-teal text-sm inline-flex items-center gap-1.5 transition duration-200 ease-out hover:scale-105 active:scale-95">
           <Plus className="w-4 h-4" /> New ticket
         </button>
       </div>
 
       {/* Status filter chips */}
       <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {FILTERS.map((f) => (
+        {FILTERS.map((f, i) => (
           <button
             key={f.key}
             onClick={() => setFilter(f.key)}
-            className={`form-card text-left relative p-4 transition ${
+            style={{ animationDelay: `${i * 60}ms` }}
+            className={`form-card text-left relative p-4 transition duration-200 ease-out animate-fade-up hover:shadow-md hover:-translate-y-0.5 ${
               filter === f.key
-                ? 'border-sky-400 ring-2 ring-sky-500/25'
+                ? 'border-lime-400 ring-2 ring-lime-500/25'
                 : 'hover:border-slate-300 dark:hover:border-slate-700'
             }`}
           >
-            <span className={`absolute top-3 right-3 w-2 h-2 rounded-full ${f.dot}`} />
+            <span className={`absolute top-3 right-3 w-2 h-2 rounded-full ${f.dot} ${f.key === 'overdue' && counts.overdue > 0 ? 'animate-today-ring' : 'animate-pulse'}`} />
             <div className={`text-2xl font-bold ${f.text}`}>{counts[f.key] ?? 0}</div>
             <div className="text-[10px] uppercase tracking-wider text-mute font-semibold mt-0.5">{f.label}</div>
           </button>
@@ -208,10 +209,10 @@ export default function Tickets() {
       </div>
 
       {/* Search */}
-      <div className="mt-4 relative">
+      <div className="mt-4 relative animate-fade-up">
         <Search className="w-4 h-4 text-mute absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
         <input
-          className="input pl-10"
+          className="input pl-10 transition duration-200 ease-out focus:shadow-md animate-border-glow"
           placeholder="Search ticket #, subject, caller name or phone…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -219,7 +220,7 @@ export default function Tickets() {
       </div>
 
       {/* Ticket table */}
-      <div className="mt-6 form-card p-0 overflow-x-auto">
+      <div className="mt-6 form-card p-0 overflow-x-auto animate-fade-up border-black/30 dark:border-white/25">
         <table>
           <thead>
             <tr>
@@ -245,11 +246,11 @@ export default function Tickets() {
                 <tr
                   key={t.id}
                   onClick={() => setOpenTicket(t)}
-                  className={`cursor-pointer hover:bg-slate-50/70 dark:hover:bg-slate-800/40 ${over > 0 ? 'bg-red-50/40 dark:bg-red-500/5' : ''}`}
+                  className={`cursor-pointer transition-colors duration-150 ease-out hover:bg-slate-50/70 dark:hover:bg-slate-800/40 group ${over > 0 ? 'bg-red-50/40 dark:bg-red-500/5' : ''}`}
                 >
                   <td className="whitespace-nowrap">
                     <div className="flex items-center gap-1.5 font-mono text-xs font-semibold text-slate-900 dark:text-slate-100">
-                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${meta.dot}`} />
+                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 animate-pulse ${meta.dot}`} />
                       {t.id}
                     </div>
                     {over > 0 && (
@@ -264,7 +265,7 @@ export default function Tickets() {
                   </td>
                   <td className="whitespace-nowrap">
                     <span className={`pill text-xs ${meta.pill}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${meta.dot}`} />
+                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 animate-pulse ${meta.dot}`} />
                       {meta.label}
                     </span>
                   </td>
@@ -282,13 +283,15 @@ export default function Tickets() {
                       </div>
                     )}
                   </td>
-                  <td className="text-sm text-indigo-600 dark:text-indigo-400 font-semibold whitespace-nowrap">
+                  <td className="text-sm text-lime-600 dark:text-lime-400 font-semibold whitespace-nowrap">
                     <div className="flex items-center gap-1.5">
                       <IdCardLanyard className="w-4 h-4" /> {t.agentName}
                     </div>
                   </td>
                   <td className="text-xs text-mute whitespace-nowrap">{fmtUpdated(t.updatedAt)}</td>
-                  <td className="text-mute"><ChevronRight className="w-4 h-4" /></td>
+                  <td className="text-mute">
+                    <ChevronRight className="w-4 h-4 transition-transform duration-200 ease-out group-hover:translate-x-1 group-hover:text-lime-600 dark:group-hover:text-lime-400" />
+                  </td>
                 </tr>
               );
             })}
@@ -302,19 +305,19 @@ export default function Tickets() {
         const meta = STATUS_META[openTicket.status] || STATUS_META.open;
         return (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-backdrop-in"
             onClick={() => setOpenTicket(null)}
           >
             <div
-              className="w-full max-w-lg rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl p-6"
+              className="w-full max-w-lg rounded-xl bg-white dark:bg-slate-900 border p-6 animate-modal-in animate-modal-border-shadow"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-1.5 font-mono text-xs font-semibold text-slate-900 dark:text-slate-100">
-                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${meta.dot}`} />
+                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 animate-pulse ${meta.dot}`} />
                   {openTicket.id}
                 </div>
-                <button onClick={() => setOpenTicket(null)} className="text-mute hover:text-slate-900 dark:hover:text-slate-100"><X className="w-4 h-4" /></button>
+                <button onClick={() => setOpenTicket(null)} className="text-mute hover:text-slate-900 dark:hover:text-slate-100 transition duration-200 ease-out hover:scale-110 active:scale-95"><X className="w-4 h-4" /></button>
               </div>
 
               <h2 className="mt-2 text-lg font-bold text-slate-900 dark:text-slate-100">{openTicket.subject}</h2>
@@ -322,7 +325,7 @@ export default function Tickets() {
 
               <div className="mt-4 flex flex-wrap gap-2">
                 <span className={`pill text-xs ${meta.pill}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${meta.dot}`} />
+                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 animate-pulse ${meta.dot}`} />
                   {meta.label}
                 </span>
                 {openTicket.category && (
@@ -354,7 +357,7 @@ export default function Tickets() {
                 </div>
                 <div>
                   <div className="text-[10px] uppercase tracking-wider text-mute font-semibold">Agent</div>
-                  <div className="mt-1 flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-semibold">
+                  <div className="mt-1 flex items-center gap-1.5 text-lime-600 dark:text-lime-400 font-semibold">
                     <IdCardLanyard className="w-4 h-4" /> {openTicket.agentName}
                   </div>
                 </div>
@@ -369,7 +372,7 @@ export default function Tickets() {
               </div>
 
               <div className="mt-5 flex items-center justify-end">
-                <button onClick={() => setOpenTicket(null)} className="btn-ghost text-sm py-2 px-4">Close</button>
+                <button onClick={() => setOpenTicket(null)} className="btn-ghost text-sm py-2 px-4 transition duration-200 ease-out hover:scale-105 active:scale-95">Close</button>
               </div>
             </div>
           </div>
@@ -378,23 +381,23 @@ export default function Tickets() {
 
       {/* SLA modal */}
       {slaModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4">
-          <div className="w-full max-w-sm rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-backdrop-in">
+          <div className="w-full max-w-sm rounded-xl bg-white dark:bg-slate-900 border p-6 animate-modal-in animate-modal-border-shadow">
             <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Resolution target (SLA)</h2>
             <p className="mt-1 text-sm text-mute">Tickets older than this, still open or in progress, are flagged overdue.</p>
             <label className="field-label mt-4">Hours</label>
             <input
-              className="input"
+              className="input transition duration-200 ease-out focus:shadow-md"
               type="number"
               min="1"
               value={slaDraft}
               onChange={(e) => setSlaDraft(e.target.value)}
             />
             <div className="mt-5 flex items-center justify-end gap-2">
-              <button onClick={() => setSlaModalOpen(false)} className="btn-ghost text-sm py-2 px-4">Cancel</button>
+              <button onClick={() => setSlaModalOpen(false)} className="btn-ghost text-sm py-2 px-4 transition duration-200 ease-out hover:scale-105 active:scale-95">Cancel</button>
               <button
                 onClick={() => { setSlaHours(Math.max(1, Number(slaDraft) || 3)); setSlaModalOpen(false); }}
-                className="btn-teal text-sm py-2 px-4"
+                className="btn-teal text-sm py-2 px-4 transition duration-200 ease-out hover:scale-105 active:scale-95"
               >
                 Save
               </button>
@@ -405,34 +408,34 @@ export default function Tickets() {
 
       {/* New ticket modal */}
       {newTicketOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4">
-          <form onSubmit={submitNewTicket} className="w-full max-w-lg rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-backdrop-in">
+          <form onSubmit={submitNewTicket} className="w-full max-w-lg rounded-xl bg-white dark:bg-slate-900 border p-6 animate-modal-in animate-modal-border-shadow">
             <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">New ticket</h2>
             <p className="mt-1 text-sm text-mute">File an issue manually — not tied to a specific call.</p>
 
             <label className="field-label mt-4">Subject *</label>
-            <input className="input" required value={form.subject} onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))} />
+            <input className="input transition duration-200 ease-out focus:shadow-md" required value={form.subject} onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))} />
 
             <label className="field-label mt-3">Description</label>
-            <textarea className="input" rows={3} value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
+            <textarea className="input transition duration-200 ease-out focus:shadow-md" rows={3} value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
 
             <div className="mt-3 grid sm:grid-cols-2 gap-3">
               <div>
                 <label className="field-label">Caller name</label>
-                <input className="input" value={form.callerName} onChange={(e) => setForm((f) => ({ ...f, callerName: e.target.value }))} />
+                <input className="input transition duration-200 ease-out focus:shadow-md" value={form.callerName} onChange={(e) => setForm((f) => ({ ...f, callerName: e.target.value }))} />
               </div>
               <div>
                 <label className="field-label">Caller phone</label>
-                <input className="input" value={form.callerPhone} onChange={(e) => setForm((f) => ({ ...f, callerPhone: e.target.value }))} placeholder="+14018677668" />
+                <input className="input transition duration-200 ease-out focus:shadow-md" value={form.callerPhone} onChange={(e) => setForm((f) => ({ ...f, callerPhone: e.target.value }))} placeholder="+14018677668" />
               </div>
             </div>
 
             <label className="field-label mt-3">Category</label>
-            <input className="input" value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} placeholder="e.g. Callback request" />
+            <input className="input transition duration-200 ease-out focus:shadow-md" value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} placeholder="e.g. Callback request" />
 
             <div className="mt-5 flex items-center justify-end gap-2">
-              <button type="button" onClick={() => setNewTicketOpen(false)} className="btn-ghost text-sm py-2 px-4">Cancel</button>
-              <button type="submit" className="btn-teal text-sm py-2 px-4">Create ticket</button>
+              <button type="button" onClick={() => setNewTicketOpen(false)} className="btn-ghost text-sm py-2 px-4 transition duration-200 ease-out hover:scale-105 active:scale-95">Cancel</button>
+              <button type="submit" className="btn-teal text-sm py-2 px-4 transition duration-200 ease-out hover:scale-105 active:scale-95">Create ticket</button>
             </div>
           </form>
         </div>

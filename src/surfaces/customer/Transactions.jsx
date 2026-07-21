@@ -233,13 +233,13 @@ export default function Transactions() {
         <table className="w-full text-sm table-fixed">
           <thead>
             <tr>
-              <th className="w-[14%]">When</th>
-              <th className="w-[13%]">Kind</th>
-              <th className="w-[27%]">Description</th>
-              <th className="w-[12%] text-right">Amount</th>
-              <th className="w-[11%]">Status</th>
-              <th className="w-[13%]">Provider</th>
-              <th className="w-[10%]">Ref</th>
+              <th className="w-[160px]">When</th>
+              <th className="w-[140px]">Kind</th>
+              <th>Description</th>
+              <th className="w-[90px] text-right">Amount</th>
+              <th className="w-[90px] text-center">Status</th>
+              <th className="w-[100px]">Provider</th>
+              <th className="w-[180px]">Ref</th>
             </tr>
           </thead>
           <tbody>
@@ -258,20 +258,20 @@ export default function Transactions() {
               return (
                 <tr key={t.id} className="border-b border-slate-50 dark:border-slate-800/60 last:border-0">
                   <td className="py-3 px-4 whitespace-nowrap text-slate-700 dark:text-slate-300">{fmtDate(t.date)}</td>
-                  <td className="py-3 px-4">
-                    <span className={`pill text-[10px] uppercase tracking-wider font-semibold ${meta.pill}`}>{meta.label}</span>
+                  <td className="py-3 px-4 whitespace-nowrap">
+                    <span className={`pill text-[10px] uppercase tracking-wider font-semibold whitespace-nowrap ${meta.pill}`}>{meta.label}</span>
                   </td>
-                  <td className="py-3 px-4 text-slate-900 dark:text-slate-100">{t.description}</td>
+                  <td className="py-3 px-4 text-slate-900 dark:text-slate-100 truncate">{t.description}</td>
                   <td className="py-3 px-4 text-right font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">
                     {t.amount ? money(t.amount) : '—'}
                   </td>
-                  <td className="py-3 px-4">
+                  <td className="py-3 px-4 text-center">
                     <span className={`pill text-[10px] uppercase tracking-wider ${STATUS_PILL[String(t.status).toLowerCase()] || 'bg-slate-100 text-slate-700'}`}>
                       {t.status || 'success'}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-mute">{t.method || provider}</td>
-                  <td className="py-3 px-4 text-mute font-mono text-xs break-all">{t.ref || '—'}</td>
+                  <td className="py-3 px-4 text-mute whitespace-nowrap truncate">{t.method || provider}</td>
+                  <td className="py-3 px-4 text-mute font-mono text-xs whitespace-nowrap">{t.ref || '—'}</td>
                 </tr>
               );
             })}

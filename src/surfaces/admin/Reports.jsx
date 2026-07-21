@@ -90,7 +90,7 @@ export default function Reports() {
   const [logsTab, setLogsTab] = useState('call');
   // Within Call Logs: "recording" shows the audio player per row; "transcript"
   // shows the Transcript/Summary buttons.
-  const [viewTab, setViewTab] = useState('transcript');
+  const [viewTab, setViewTab] = useState('recording');
 
   // Per-call lazy-loaded state.
   const [transcripts, setTranscripts] = useState({});
@@ -293,35 +293,36 @@ export default function Reports() {
                 </button>
               )}
             </div>
-
-            {/* Recording / Transcript sub-tabs — call logs only; chat
-                sessions are text-only so there's no recording view. */}
-            {logsTab === 'call' && (
-              <div className="mt-4 flex items-center justify-between flex-wrap gap-2">
-                <div className="inline-flex rounded-full border border-slate-200 overflow-hidden">
-                  <button
-                    className={`px-5 py-2 text-sm font-semibold transition ${
-                      viewTab === 'recording' ? 'bg-[#3a5a0c] text-white' : 'bg-white text-slate-700 hover:bg-slate-50'
-                    }`}
-                    onClick={() => setViewTab('recording')}
-                  >
-                    Recording
-                  </button>
-                  <button
-                    className={`px-5 py-2 text-sm font-semibold transition ${
-                      viewTab === 'transcript' ? 'bg-[#3a5a0c] text-white' : 'bg-white text-slate-700 hover:bg-slate-50'
-                    }`}
-                    onClick={() => setViewTab('transcript')}
-                  >
-                    Transcript
-                  </button>
-                </div>
-                <span className="text-xs text-mute">
-                  {viewTab === 'recording' ? 'Listen back to any recorded call.' : "Open any call's transcript and AI summary."}
-                </span>
-              </div>
-            )}
           </div>
+
+          {/* Recording / Transcript sub-tabs — call logs only; chat sessions
+              are text-only so there's no recording view. Sits outside the
+              filter card as its own row, not nested inside it. */}
+          {logsTab === 'call' && (
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="inline-flex rounded-full border border-slate-200 overflow-hidden">
+                <button
+                  className={`px-5 py-2 text-sm font-semibold transition ${
+                    viewTab === 'recording' ? 'bg-[#3a5a0c] text-white' : 'bg-white text-slate-700 hover:bg-slate-50'
+                  }`}
+                  onClick={() => setViewTab('recording')}
+                >
+                  Recording
+                </button>
+                <button
+                  className={`px-5 py-2 text-sm font-semibold transition ${
+                    viewTab === 'transcript' ? 'bg-[#3a5a0c] text-white' : 'bg-white text-slate-700 hover:bg-slate-50'
+                  }`}
+                  onClick={() => setViewTab('transcript')}
+                >
+                  Transcript
+                </button>
+              </div>
+              <span className="text-xs text-mute">
+                {viewTab === 'recording' ? 'Listen back to any recorded call.' : "Open any call's transcript and AI summary."}
+              </span>
+            </div>
+          )}
 
           {logsTab === 'chat' ? (
             /* Chat list — placeholder rows, see utils/mockChatLogs.js */
@@ -375,17 +376,17 @@ export default function Reports() {
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2 text-xs">
                         <span className="text-mute">{fmtTime(r.startTime)}</span>
-                        <span className="pill bg-slate-100 text-slate-700 text-xs">{fmtDirection(r.direction)}</span>
+                        <span className={`pill text-xs ${fmtDirection(r.direction) === 'Inbound' ? 'bg-blue-50 text-blue-700' : fmtDirection(r.direction) === 'Outbound' ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-700'}`}>{fmtDirection(r.direction)}</span>
                         {r.hasTranscript ? (
                           <span className="pill bg-[#3a5a0c] text-white text-xs">Transcript available</span>
                         ) : (
-                          <span className="pill bg-slate-100 text-slate-500 text-xs">No transcript</span>
+                          <span className="pill bg-[#98FB98] text-black text-xs">No transcript</span>
                         )}
                         {viewTab === 'recording' && (
                           r.audioUrl ? (
                             <span className="pill bg-teal-100 text-teal-700 text-xs ml-auto">recording</span>
                           ) : (
-                            <span className="pill bg-slate-100 text-slate-500 text-xs ml-auto">no recording</span>
+                            <span className="pill bg-orange-50 text-black text-xs ml-auto">no recording</span>
                           )
                         )}
                       </div>

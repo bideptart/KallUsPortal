@@ -1,4 +1,4 @@
-import { MessageSquare } from 'lucide-react';
+import { MessagesSquare } from 'lucide-react';
 
 const fmtDuration = (s) => {
   if (!s) return '—';
@@ -39,8 +39,8 @@ export default function ChatLogRow({ session, open, onToggle }) {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className="text-mute">{fmtTime(s.startTime)}</span>
-              <span className="pill bg-white border border-[#3a5a0c] text-[#3a5a0c] text-xs font-semibold">
-                <MessageSquare className="w-3.5 h-3.5 shrink-0" />
+              <span className="pill bg-white text-[#32CD32] border border-black text-xs font-semibold">
+                <MessagesSquare className="w-3.5 h-3.5 shrink-0" />
                 {s.agentName}
               </span>
               {s.hasTranscript && (
@@ -52,7 +52,7 @@ export default function ChatLogRow({ session, open, onToggle }) {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-sm text-slate-900 font-medium">{fmtDuration(s.duration)}</span>
-          <span className="px-2.5 py-1 rounded-md border border-slate-300 bg-white text-xs font-medium text-slate-700">
+          <span className="px-2.5 py-1 rounded-md border border-black bg-white text-xs font-medium text-slate-700">
             hang up
           </span>
         </div>

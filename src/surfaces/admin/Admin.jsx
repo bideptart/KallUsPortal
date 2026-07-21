@@ -97,6 +97,10 @@ export default function Admin() {
   const { currentUser, signoutUser } = useApp();
   const { tab } = useParams();
   const [navOpen, setNavOpen] = useState(false);
+  // Sidebar collapse — admin-only, per explicit request (superadmin keeps
+  // the sidebar fixed). isAdminTier gates every piece of the feature below.
+  const isAdminTier = currentUser?.userType === 'admin';
+  const [navCollapsed, setNavCollapsed] = useState(false);   // desktop-only: hides the sidebar entirely
   const [showAddPlan, setShowAddPlan] = useState(false);
   const callActivityActive = tab === CALL_ACTIVITY.id || CALL_ACTIVITY_CHILDREN.some((t) => t.id === tab);
   const [callActivityOpen, setCallActivityOpen] = useState(callActivityActive);
@@ -121,18 +125,27 @@ export default function Admin() {
   const ActiveIcon = activeTab?.Icon;
 
   return (
-    <div className="dashboard-shell">
+    <div className={`dashboard-shell ${isAdminTier && navCollapsed ? 'nav-collapsed' : ''}`}>
       {navOpen && <div className="mobile-nav-backdrop" onClick={() => setNavOpen(false)} />}
 
       <aside className={`sidenav ${navOpen ? 'is-open' : ''}`}>
-        <Link
-          to="/admin/overview"
-          className="h-16 flex items-center gap-2 px-4 bg-white sticky top-0 z-30"
-          aria-label="kallus.io home"
-        >
-          <Logo size={44} showWordmark={false} />
-          <span className="font-mono text-sm lowercase text-mute tracking-tight">kallus.io</span>
-        </Link>
+        <div className="h-16 flex items-center gap-1.5 px-3 bg-white sticky top-0 z-30">
+          <Link to="/admin/overview" className="flex items-center gap-2 min-w-0" aria-label="kallus.io home">
+            <Logo size={36} showWordmark={false} />
+            <span className="font-mono text-sm lowercase text-mute tracking-tight whitespace-nowrap">kallus.io</span>
+          </Link>
+          {isAdminTier && (
+            <button
+              type="button"
+              className="hidden lg:inline-flex ml-auto shrink-0 w-6 h-6 items-center justify-center rounded-md text-mute hover:bg-slate-100 hover:text-slate-900 text-xs"
+              onClick={() => setNavCollapsed(true)}
+              aria-label="Collapse sidebar"
+              title="Collapse sidebar"
+            >
+              «
+            </button>
+          )}
+        </div>
         <div className="px-4 pb-3 border-t border-slate-100 pt-3">
           <div className="text-xs text-mute font-semibold uppercase tracking-wider">Admin</div>
           <div className="text-sm font-semibold text-slate-900 mt-1 break-all">{currentUser?.email || ''}</div>
@@ -186,6 +199,17 @@ export default function Admin() {
           >
             <Menu size={16} /> Menu
           </button>
+          {isAdminTier && navCollapsed && (
+            <button
+              type="button"
+              className="sidenav-expand-btn"
+              onClick={() => setNavCollapsed(false)}
+              aria-label="Expand sidebar"
+              title="Expand sidebar"
+            >
+              »
+            </button>
+          )}
           <div className="lg:hidden flex items-center gap-1.5 text-xs text-mute font-semibold uppercase tracking-wider truncate">
             {ActiveIcon && <ActiveIcon size={14} strokeWidth={2} />} {activeLabel}
           </div>

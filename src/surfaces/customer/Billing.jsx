@@ -211,7 +211,7 @@ export default function Billing() {
             <strong>KallUS</strong> Voice AI — plans per number, instant upgrades, shared wallet.
           </p>
         </div>
-        <Link to="/dashboard/transactions" className="btn-ghost text-sm">
+        <Link to="/dashboard/transactions" className="btn-ghost text-sm !rounded-lg">
           Transaction history
         </Link>
       </div>
@@ -587,6 +587,13 @@ function ActivePlanCard({ number: n, walletBalance, usedMinutes, onChangePlan, o
 // =============================================================================
 function PlansTab({ plans, numbers, onPickPlan }) {
   const ownedPlanIds = new Set(numbers.map((n) => n.plan?.id).filter(Boolean));
+  // Single-select card group — Growth is selected by default (it's also the
+  // "Most popular" tier, but that badge is independent of selection and
+  // always stays put; see isMostPopular below). Clicking any plan's CTA
+  // both selects that card AND fires the real pick/upgrade flow — the
+  // selection just persists as the visual "current choice" underneath
+  // whatever modal onPickPlan opens.
+  const [selectedPlan, setSelectedPlan] = useState('growth');
   return (
     <div className="mt-6">
       <h2 className="text-lg font-semibold text-slate-900 mb-1">Available plans</h2>
@@ -597,21 +604,22 @@ function PlansTab({ plans, numbers, onPickPlan }) {
         {plans.length === 0 && <div className="text-mute md:col-span-3">Loading plans…</div>}
         {plans.map((p) => {
           const owned = ownedPlanIds.has(p.id);
-          const isFeatured = p.id === 'growth';
+          const isMostPopular = p.id === 'growth';
+          const isSelected = p.id === selectedPlan;
           return (
             <div
               key={p.id}
-              className={`relative rounded-xl border-2 bg-white p-5 flex flex-col h-full ${
-                isFeatured ? 'border-rose-400 ring-4 ring-rose-100 shadow-lg' : 'border-slate-200'
+              className={`relative rounded-xl border-2 bg-white p-5 flex flex-col h-full transition ${
+                isSelected ? 'border-lime-500 ring-4 ring-lime-100 shadow-lg' : 'border-slate-200 hover:border-lime-300'
               }`}
             >
-              {isFeatured && (
+              {isMostPopular && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-bold uppercase tracking-wider">
                   Most popular
                 </span>
               )}
               {owned && (
-                <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-bold uppercase tracking-wider">
+                <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-lime-100 text-lime-700 text-[10px] font-bold uppercase tracking-wider">
                   Already on it
                 </span>
               )}
@@ -627,7 +635,7 @@ function PlansTab({ plans, numbers, onPickPlan }) {
               <ul className="mt-4 space-y-1.5 text-xs text-slate-700 flex-1">
                 {(p.perks || []).map((perk, i) => (
                   <li key={i} className="flex items-start gap-2">
-                    <span className="shrink-0 mt-0.5 w-3.5 h-3.5 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-[9px] font-bold">✓</span>
+                    <span className="shrink-0 mt-0.5 w-3.5 h-3.5 rounded-full bg-lime-100 text-lime-700 flex items-center justify-center text-[9px] font-bold">✓</span>
                     <span>{perk}</span>
                   </li>
                 ))}
@@ -637,9 +645,11 @@ function PlansTab({ plans, numbers, onPickPlan }) {
                   the status; a button would just invite a duplicate purchase. */}
               {!owned && (
                 <button
-                  onClick={() => onPickPlan(p.id)}
-                  className={`mt-4 px-3 py-2 rounded-lg text-sm font-semibold ${
-                    isFeatured ? `text-white ${BRAND_GRADIENT}` : 'border border-slate-200 text-slate-900 hover:bg-slate-50'
+                  onClick={() => { setSelectedPlan(p.id); onPickPlan(p.id); }}
+                  className={`mt-4 px-3 py-2 rounded-lg text-sm font-semibold transition ${
+                    isSelected
+                      ? `text-white ${BRAND_GRADIENT} hover:brightness-110 hover:-translate-y-0.5 hover:shadow-lg`
+                      : 'border border-slate-200 text-slate-900 hover:bg-slate-50'
                   }`}
                 >
                   {numbers.length > 0 ? 'Upgrade to this plan' : 'Pick this plan'}
