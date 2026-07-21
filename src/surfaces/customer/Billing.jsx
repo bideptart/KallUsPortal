@@ -600,61 +600,69 @@ function PlansTab({ plans, numbers, onPickPlan }) {
       <p className="text-sm text-mute mb-4">
         Each plan provisions one phone number, includes voice minutes, and bills on its own 30-day cycle.
       </p>
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-3 md:gap-6 gap-4 items-end">
         {plans.length === 0 && <div className="text-mute md:col-span-3">Loading plans…</div>}
-        {plans.map((p) => {
+        {plans.map((p, idx) => {
           const owned = ownedPlanIds.has(p.id);
           const isMostPopular = p.id === 'growth';
           const isSelected = p.id === selectedPlan;
           return (
             <div
               key={p.id}
-              className={`relative rounded-xl border-2 bg-white p-5 flex flex-col h-full transition ${
-                isSelected ? 'border-lime-500 ring-4 ring-lime-100 shadow-lg' : 'border-slate-200 hover:border-lime-300'
-              }`}
+              className={`relative rounded-xl overflow-visible bg-white border transition h-fit animate-fade-up ${
+                isMostPopular ? 'border-lime-400' : 'border-neutral-200'
+              } ${isSelected ? 'ring-4 ring-lime-200' : ''} ${!isMostPopular && !isSelected ? 'hover:border-lime-300' : ''}`}
+              style={{ animationDelay: `${idx * 90}ms` }}
             >
               {isMostPopular && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-bold uppercase tracking-wider">
-                  Most popular
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 px-3 py-1 rounded-full bg-slate-900 text-white text-[11px] font-semibold shadow-lg shadow-black/20 whitespace-nowrap">
+                  <Star className="w-3 h-3 fill-current" /> Most Popular
                 </span>
               )}
-              {owned && (
-                <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-lime-100 text-lime-700 text-[10px] font-bold uppercase tracking-wider">
-                  Already on it
-                </span>
-              )}
-              <div className="text-lg font-extrabold text-slate-900">{p.label}</div>
-              {p.sub && <div className="text-xs text-mute mt-0.5">{p.sub}</div>}
-              <div className="mt-3 flex items-end gap-1">
-                <span className="text-3xl font-extrabold text-slate-900">{rand(p.amount)}</span>
-                <span className="text-xs text-mute pb-1">/mo</span>
+              <div className="rounded-xl overflow-hidden">
+                <div className={`px-5 py-4 border-b ${isMostPopular ? 'bg-lime-100 border-lime-200' : 'bg-lime-50 border-lime-100'}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-lg font-semibold text-gray-900">{p.label}</h3>
+                    {owned && (
+                      <span className="px-2 py-0.5 rounded-full bg-lime-600 text-white text-[10px] font-bold uppercase tracking-wider">
+                        Already on it
+                      </span>
+                    )}
+                  </div>
+                  {p.sub && <div className="text-xs mt-0.5 text-mute">{p.sub}</div>}
+                  <div className="mt-3 flex items-end gap-1">
+                    <span className="text-4xl font-semibold text-gray-900">{rand(p.amount)}</span>
+                    <span className="text-gray-600">/mo</span>
+                  </div>
+                </div>
+
+                <div className="px-5 pb-5 pt-4 flex flex-col">
+                  <div className="text-[11px] mb-3 text-mute">
+                    {p.min} included min · ${p.rate}/min eff. · {p.agents >= 999 ? 'Unlimited agents' : `${p.agents} agents`}
+                  </div>
+                  <ul className="space-y-2.5 mb-5 flex-1">
+                    {(p.perks || []).map((perk, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                        <span className="shrink-0 mt-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] font-bold bg-lime-100 text-lime-700">
+                          ✓
+                        </span>
+                        <span>{perk}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {/* CTA is hidden entirely for tiers the customer already owns
+                      — the "Already on it" pill already conveys the status;
+                      a button would just invite a duplicate purchase. */}
+                  {!owned && (
+                    <button
+                      onClick={() => { setSelectedPlan(p.id); onPickPlan(p.id); }}
+                      className={`w-full p-3 rounded-xl text-sm font-semibold text-white transition ${BRAND_GRADIENT} hover:brightness-110 shadow-lg shadow-lime-600/30`}
+                    >
+                      {numbers.length > 0 ? 'Upgrade to this plan' : 'Pick this plan'}
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="text-[11px] text-mute mt-1">
-                {p.min} included min · ${p.rate}/min eff. · {p.agents >= 999 ? 'Unlimited agents' : `${p.agents} agents`}
-              </div>
-              <ul className="mt-4 space-y-1.5 text-xs text-slate-700 flex-1">
-                {(p.perks || []).map((perk, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="shrink-0 mt-0.5 w-3.5 h-3.5 rounded-full bg-lime-100 text-lime-700 flex items-center justify-center text-[9px] font-bold">✓</span>
-                    <span>{perk}</span>
-                  </li>
-                ))}
-              </ul>
-              {/* CTA is hidden entirely for tiers the customer already owns
-                  — the "Already on it" pill in the top-right already conveys
-                  the status; a button would just invite a duplicate purchase. */}
-              {!owned && (
-                <button
-                  onClick={() => { setSelectedPlan(p.id); onPickPlan(p.id); }}
-                  className={`mt-4 px-3 py-2 rounded-lg text-sm font-semibold transition ${
-                    isSelected
-                      ? `text-white ${BRAND_GRADIENT} hover:brightness-110 hover:-translate-y-0.5 hover:shadow-lg`
-                      : 'border border-slate-200 text-slate-900 hover:bg-slate-50'
-                  }`}
-                >
-                  {numbers.length > 0 ? 'Upgrade to this plan' : 'Pick this plan'}
-                </button>
-              )}
             </div>
           );
         })}

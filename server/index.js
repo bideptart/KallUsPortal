@@ -2026,21 +2026,30 @@ app.post('/api/razorpay/verify/new-number-plan', auth, async (req, res) => {
 app.post('/api/signin', async (req, res) => {
   const { identifier, password } = req.body || {};
   if (!identifier || !password) return res.status(400).json({ error: 'Missing credentials' });
-  const r = await q(
-    `SELECT * FROM users WHERE LOWER(email) = LOWER($1) OR LOWER(username) = LOWER($1) LIMIT 1`,
-    [String(identifier).trim()],
-  );
+  let r;
+  try {
+    r = await q(
+      `SELECT * FROM users WHERE LOWER(email) = LOWER($1) OR LOWER(username) = LOWER($1) LIMIT 1`,
+      [String(identifier).trim()],
+    );
+  } catch (e) {
+    return res.status(503).json({ error: 'Database unavailable' });
+  }
   if (!r.rowCount) return res.status(401).json({ error: 'Invalid email/username or password' });
   const user = r.rows[0];
   const ok = await bcrypt.compare(String(password), user.password_hash);
   if (!ok) return res.status(401).json({ error: 'Invalid email/username or password' });
 
   const token = newToken();
-  await q(
-    `INSERT INTO sessions (token, user_id, expires_at)
-     VALUES ($1, $2, NOW() + ($3 || ' days')::INTERVAL)`,
-    [token, user.id, SESSION_DAYS],
-  );
+  try {
+    await q(
+      `INSERT INTO sessions (token, user_id, expires_at)
+       VALUES ($1, $2, NOW() + ($3 || ' days')::INTERVAL)`,
+      [token, user.id, SESSION_DAYS],
+    );
+  } catch (e) {
+    return res.status(503).json({ error: 'Database unavailable' });
+  }
   res.json({ token, user: publicUser(user) });
 });
 

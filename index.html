@@ -14,11 +14,21 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Preconnect to Google Fonts so the stylesheet (imported in
-         src/index.css) starts downloading the woff2 files in parallel with
-         the JS bundle. Shaves ~150ms off first paint. -->
+    <!-- Preconnect to Google Fonts so the stylesheet below starts
+         downloading the woff2 files in parallel with the JS bundle. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Loaded as a real <link>, not a CSS @import, so the browser's preload
+         scanner discovers it immediately instead of waiting for index.css to
+         parse. The media="print" + onload swap keeps it from blocking first
+         paint; noscript covers browsers/crawlers without JS. -->
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&family=Fragment+Mono&display=swap"
+          media="print" onload="this.media='all'" />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&family=Fragment+Mono&display=swap" />
+    </noscript>
 
     <title>KallUS — AI Voice Agents</title>
     <meta name="description" content="KallUS — AI voice agents that answer every call. Pick a number, drop in your knowledge base, choose a voice, and go live in seconds." />

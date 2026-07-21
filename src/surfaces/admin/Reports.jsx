@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Phone, MessageSquare } from 'lucide-react';
+import { Phone, MessageSquare, FileText } from 'lucide-react';
 import { api, getToken } from '../../api.js';
 import DateRangePicker from '../../components/DateRangePicker.jsx';
 import ChatLogRow from '../../components/ChatLogRow.jsx';
@@ -218,11 +218,16 @@ export default function Reports() {
   return (
     <div>
       <div className="flex items-start justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">📑 Reports</h1>
-          <p className="text-mute">
-            Call and chat history across every customer — recordings, transcripts, and AI summaries per record.
-          </p>
+        <div className="flex items-center gap-3 animate-fade-up">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
+            <FileText className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Reports</h1>
+            <p className="text-mute">
+              Call and chat history across every customer — recordings, transcripts, and AI summaries per record.
+            </p>
+          </div>
         </div>
       </div>
 

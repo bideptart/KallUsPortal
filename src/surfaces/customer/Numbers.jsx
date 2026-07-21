@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Star } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
 
@@ -241,54 +242,63 @@ function PlanCard({ plan, isSelected, isCurrent, isFeatured, disabled, onClick }
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`relative text-left rounded-xl border-2 transition p-5 h-full flex flex-col ${
+      className={`relative text-left rounded-xl border overflow-visible transition h-full flex flex-col ${
         isCurrent
           ? 'border-slate-200 bg-slate-50 cursor-not-allowed'
-          : isSelected
-            ? 'border-lime-500 ring-4 ring-lime-100 bg-white shadow-lg'
-            : 'border-slate-200 bg-white hover:border-lime-300 hover:shadow-md'
-      }`}
+          : isFeatured
+            ? 'border-lime-400 bg-white hover:shadow-md'
+            : 'border-neutral-200 bg-white hover:border-lime-300 hover:shadow-md'
+      } ${isSelected && !isCurrent ? 'ring-4 ring-lime-200' : ''}`}
     >
       {isFeatured && !isCurrent && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-bold uppercase tracking-wider">
-          Most popular
-        </span>
-      )}
-      {isCurrent && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-slate-700 text-white text-[10px] font-bold uppercase tracking-wider">
-          Current plan
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 px-3 py-1 rounded-full bg-slate-900 text-white text-[11px] font-semibold shadow-lg shadow-black/20 whitespace-nowrap">
+          <Star className="w-3 h-3 fill-current" /> Most Popular
         </span>
       )}
 
-      {/* Header — label + sub */}
-      <div className="text-lg font-extrabold text-slate-900">{plan.label}</div>
-      {plan.sub && <div className="text-xs text-mute mt-0.5">{plan.sub}</div>}
-
-      {/* Price */}
-      <div className="mt-3 flex items-end gap-1">
-        <span className="text-3xl font-extrabold text-slate-900">${Number(plan.amount).toLocaleString('en-US')}</span>
-        <span className="text-xs text-mute pb-1">/mo</span>
-      </div>
-
-      {/* Quick stats line — mirrors the marketing card's compact summary */}
-      <div className="text-[11px] text-mute mt-1 leading-snug">{subline}</div>
-
-      {/* Perks checklist */}
-      <ul className="mt-4 space-y-1.5 text-xs text-slate-700 flex-1">
-        {(plan.perks || []).map((perk, i) => (
-          <li key={i} className="flex items-start gap-2">
-            <span className="shrink-0 mt-0.5 w-3.5 h-3.5 rounded-full bg-lime-100 text-lime-700 flex items-center justify-center text-[9px] font-bold">✓</span>
-            <span>{perk}</span>
-          </li>
-        ))}
-      </ul>
-
-      {/* Selected indicator pinned to the card foot */}
-      {isSelected && !isCurrent && (
-        <div className="mt-3 pt-3 border-t border-slate-100 text-xs font-semibold text-lime-700 text-center">
-          ✓ Selected
+      <div className="rounded-xl overflow-hidden flex flex-col flex-1">
+        {/* Header — label + sub + price, light lime tint (deeper for the
+            featured tier) so every card reads as part of one family. */}
+        <div className={`px-5 py-4 border-b ${
+          isCurrent ? 'bg-gray-100 border-neutral-300' : isFeatured ? 'bg-lime-100 border-lime-200' : 'bg-lime-50 border-lime-100'
+        }`}>
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-lg font-semibold text-slate-900">{plan.label}</div>
+            {isCurrent && (
+              <span className="px-2 py-0.5 rounded-full bg-slate-700 text-white text-[10px] font-bold uppercase tracking-wider">
+                Current plan
+              </span>
+            )}
+          </div>
+          {plan.sub && <div className="text-xs text-mute mt-0.5">{plan.sub}</div>}
+          <div className="mt-3 flex items-end gap-1">
+            <span className="text-4xl font-semibold text-slate-900">${Number(plan.amount).toLocaleString('en-US')}</span>
+            <span className="text-gray-600">/mo</span>
+          </div>
         </div>
-      )}
+
+        <div className="px-5 pb-5 pt-4 flex flex-col flex-1">
+          {/* Quick stats line — mirrors the marketing card's compact summary */}
+          <div className="text-[11px] text-mute mb-3 leading-snug">{subline}</div>
+
+          {/* Perks checklist */}
+          <ul className="space-y-2.5 flex-1">
+            {(plan.perks || []).map((perk, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
+                <span className="shrink-0 mt-0.5 w-3.5 h-3.5 rounded-full bg-lime-100 text-lime-700 flex items-center justify-center text-[9px] font-bold">✓</span>
+                <span>{perk}</span>
+              </li>
+            ))}
+          </ul>
+
+          {/* Selected indicator pinned to the card foot */}
+          {isSelected && !isCurrent && (
+            <div className="mt-3 pt-3 border-t border-slate-100 text-xs font-semibold text-lime-700 text-center">
+              ✓ Selected
+            </div>
+          )}
+        </div>
+      </div>
     </button>
   );
 }

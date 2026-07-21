@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Phone, MessageSquare } from 'lucide-react';
+import { Phone, MessageSquare, FileText } from 'lucide-react';
 import { api, getToken } from '../../api.js';
 import { useApp } from '../../AppContext.jsx';
 import DateRangePicker from '../../components/DateRangePicker.jsx';
@@ -7,7 +7,6 @@ import ChatLogRow from '../../components/ChatLogRow.jsx';
 import SearchIcon from '../../components/SearchIcon.jsx';
 import { buildMockChatSessions } from '../../utils/mockChatLogs.js';
 import { buildMockCallRecordings } from '../../utils/mockCallLogs.js';
-import { AddNumberModal } from './Numbers.jsx';
 
 const digitsOnly = (s) => String(s || '').replace(/\D+/g, '');
 
@@ -82,7 +81,6 @@ export default function Reports() {
   const [numbers, setNumbers] = useState([]);
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(true);
-  const [showAddPlan, setShowAddPlan] = useState(false);
 
   const [filterNumber, setFilterNumber] = useState('all');
   const [{ from: dateFrom, to: dateTo }, setRange] = useState(() => last7Range());
@@ -229,19 +227,16 @@ export default function Reports() {
 
   return (
     <div>
-      <div className="flex items-start justify-between flex-wrap gap-3">
+      <div className="flex items-center gap-3 animate-fade-up">
+        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
+          <FileText className="w-5 h-5" />
+        </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">📑 Reports</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Reports</h1>
           <p className="text-mute">
             Call and chat history — recordings, transcripts, and AI summaries per record.
           </p>
         </div>
-        <button
-          onClick={() => setShowAddPlan(true)}
-          className="btn-teal text-sm"
-        >
-          + Add plan / number
-        </button>
       </div>
 
       {err && (
@@ -637,14 +632,6 @@ export default function Reports() {
           </div>
         </div>
       </div>
-
-      {showAddPlan && (
-        <AddNumberModal
-          currentUser={currentUser}
-          onClose={() => setShowAddPlan(false)}
-          onAdded={() => setShowAddPlan(false)}
-        />
-      )}
     </div>
   );
 }

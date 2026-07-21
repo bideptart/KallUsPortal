@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Sparkles, AlarmClock, Zap, Phone, AlertTriangle } from 'lucide-react';
+import { Sparkles, AlarmClock, Zap, Phone, AlertTriangle, LayoutDashboard } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
 
@@ -166,8 +166,18 @@ export default function Overview({ rechargeOn }) {
 
   return (
     <div>
+      <div className="flex items-start gap-3 animate-fade-up">
+        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
+          <LayoutDashboard className="w-5 h-5" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Overview</h1>
+          <p className="text-mute mt-0.5">Your numbers, call activity, and quick actions at a glance.</p>
+        </div>
+      </div>
+
       {demoMode && (
-        <div className="flex items-start">
+        <div className="mt-4 flex items-start">
           <span className="pill" style={{ background: 'var(--line-2)', color: 'var(--ink-3)' }}>
             <Sparkles size={12} /> Sample data — connect a database for live numbers
           </span>

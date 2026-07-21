@@ -1,32 +1,39 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
   LayoutDashboard, Bot, FlaskConical, BookOpen, TrendingUp, Zap,
   FileText, CreditCard, Receipt, User, Menu, Wrench, Ticket, DoorOpen,
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
-import Overview from './Overview.jsx';
-import Analytics from './Analytics.jsx';
-import Calls from './Calls.jsx';
-import Recordings from './Recordings.jsx';
-import Reports from './Reports.jsx';
-import Meetings from './Meetings.jsx';
-import AgentsList from './AgentsList.jsx';
-import AgentDetail from './AgentDetail.jsx';
-import ChatAgentDetail from './ChatAgentDetail.jsx';
-import Templates from './Templates.jsx';
-import Playground from './Playground.jsx';
-import KnowledgeBase from './KnowledgeBase.jsx';
+// AddNumberModal is used directly by this file's own "+ Add plan / number"
+// button on every tab, so Numbers.jsx is loaded eagerly either way — no
+// point lazy-wrapping its default export too.
 import Numbers, { AddNumberModal } from './Numbers.jsx';
-import Billing from './Billing.jsx';
-import Transactions from './Transactions.jsx';
-import Tools from './Tools.jsx';
-import BookingHistory from './BookingHistory.jsx';
-import Tickets from './Tickets.jsx';
-import Account from './Account.jsx';
 import Logo from '../../components/Logo.jsx';
 import Footer from '../../components/Footer.jsx';
 import BookingIcon from '../../components/BookingIcon.jsx';
+
+// Every tab body is its own chunk — a visitor on Overview never downloads
+// Billing/Templates/Playground code, and vice versa.
+const Overview = lazy(() => import('./Overview.jsx'));
+const Analytics = lazy(() => import('./Analytics.jsx'));
+const Calls = lazy(() => import('./Calls.jsx'));
+const Recordings = lazy(() => import('./Recordings.jsx'));
+const Reports = lazy(() => import('./Reports.jsx'));
+const Meetings = lazy(() => import('./Meetings.jsx'));
+const AgentsList = lazy(() => import('./AgentsList.jsx'));
+const AgentDetail = lazy(() => import('./AgentDetail.jsx'));
+const ChatAgentDetail = lazy(() => import('./ChatAgentDetail.jsx'));
+const Templates = lazy(() => import('./Templates.jsx'));
+const Playground = lazy(() => import('./Playground.jsx'));
+const KnowledgeBase = lazy(() => import('./KnowledgeBase.jsx'));
+const Billing = lazy(() => import('./Billing.jsx'));
+const Transactions = lazy(() => import('./Transactions.jsx'));
+const Tools = lazy(() => import('./Tools.jsx'));
+const BookingHistory = lazy(() => import('./BookingHistory.jsx'));
+const Tickets = lazy(() => import('./Tickets.jsx'));
+const TicketDetail = lazy(() => import('./TicketDetail.jsx'));
+const Account = lazy(() => import('./Account.jsx'));
 
 // Sidebar nav — unified across Admin/Customer to a common shape. "Agents" is
 // the agents-list/table page; clicking a row goes to the per-agent editor.
@@ -70,6 +77,8 @@ const LEGACY_TABS = [
   { id: 'agent-detail',      label: 'Agent',            Component: AgentDetail },
   { id: 'agent-detail-chat', label: 'Chat Agent',       Component: ChatAgentDetail },
   { id: 'templates',         label: 'Browse Templates', Component: Templates },
+  // Reached by clicking a row on the Tickets list — not a nav item itself.
+  { id: 'ticket-detail',     label: 'Ticket',           Component: TicketDetail },
 ];
 
 const TABS = [...NAV_TABS, CALL_ACTIVITY, ...CALL_ACTIVITY_CHILDREN, ...LEGACY_TABS];
@@ -224,7 +233,9 @@ export default function Customer() {
           </div>
         </div>
 
-        <Component />
+        <Suspense fallback={<div className="text-sm text-mute py-10 text-center">Loading…</div>}>
+          <Component />
+        </Suspense>
 
         {/* Footer wrapper — `margin-top: auto` from .dashboard-main pins
             this to the bottom of the viewport on short pages, and lets it

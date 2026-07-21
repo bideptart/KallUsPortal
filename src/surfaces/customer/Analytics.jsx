@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { TrendingUp } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
 
@@ -170,8 +171,15 @@ export default function Analytics() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-slate-900">Analytics</h1>
-      <p className="text-mute">Your call history and activity across all your numbers.</p>
+      <div className="flex items-center gap-3 animate-fade-up">
+        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
+          <TrendingUp className="w-5 h-5" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Analytics</h1>
+          <p className="text-mute">Your call history and activity across all your numbers.</p>
+        </div>
+      </div>
 
       {err && !demoMode && (
         <div className="mt-4 text-sm text-red-500 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">{err}</div>

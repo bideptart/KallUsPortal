@@ -1,12 +1,17 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './AppContext.jsx';
 import Header from './components/Header.jsx';
 import Signin from './surfaces/Signin.jsx';
 import Terms from './surfaces/Terms.jsx';
 import Privacy from './surfaces/Privacy.jsx';
-import Customer from './surfaces/customer/Customer.jsx';
-import Admin from './surfaces/admin/Admin.jsx';
-import Reseller from './surfaces/reseller/Reseller.jsx';
+
+// Each surface (and everything it pulls in — a few dozen sub-pages apiece)
+// is its own chunk, loaded only once a signed-in user actually lands on it.
+// A visitor never needs Admin's or Reseller's code, and vice versa.
+const Customer = lazy(() => import('./surfaces/customer/Customer.jsx'));
+const Admin = lazy(() => import('./surfaces/admin/Admin.jsx'));
+const Reseller = lazy(() => import('./surfaces/reseller/Reseller.jsx'));
 
 function Loading() {
   return <main className="px-6 py-24 text-center text-mute text-sm">Loading session…</main>;
@@ -63,6 +68,7 @@ function AppRoutes() {
   const { bootstrapping } = useApp();
   if (bootstrapping) return <Loading />;
   return (
+    <Suspense fallback={<Loading />}>
     <Routes>
       {/* Default landing is the signin page. Logged-in users get bounced to
           their dashboard by GuestOnly inside the Signin route. */}
@@ -117,6 +123,7 @@ function AppRoutes() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
   );
 }
 
