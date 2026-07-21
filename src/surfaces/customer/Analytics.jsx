@@ -298,17 +298,22 @@ export default function Analytics() {
                 className="flex-1 flex flex-col items-center gap-1 cursor-pointer"
                 title={`${d.date.toDateString()}: ${d.count} calls`}
               >
-                <div className="w-full flex items-end" style={{ height: 80 }}>
+                <div className="w-full flex items-end justify-center" style={{ height: 80 }}>
                   <div
-                    className={`w-full rounded-t transition ${isSelected ? 'ring-2 ring-offset-1' : ''}`}
+                    className="rounded-t transition"
                     style={{
+                      width: '70%',
+                      maxWidth: 30,
                       height: barPx,
-                      background: VOLUME_BAR_GREEN,
-                      ...(isSelected ? { boxShadow: `0 0 0 2px ${GREEN}`, outline: `2px solid ${GREEN}`, outlineOffset: 1 } : {}),
+                      background: isSelected ? '#6fa524' : VOLUME_BAR_GREEN,
+                      ...(isSelected ? {
+                        border: '2px solid #4d7c0f',
+                        boxShadow: '0 0 16px 5px rgba(163,217,79,0.6), 0 0 4px 1px rgba(163,217,79,0.85)',
+                      } : {}),
                     }}
                   />
                 </div>
-                <div className={`text-[9px] ${isSelected ? 'font-bold' : 'text-mute'}`} style={isSelected ? { color: GREEN } : undefined}>
+                <div className={`text-[9px] ${isSelected ? 'font-bold' : 'text-mute'}`} style={isSelected ? { color: '#4d7c0f' } : undefined}>
                   {d.date.getDate()}
                 </div>
               </div>
