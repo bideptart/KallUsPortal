@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Phone, MessageCircle, Copy, Check, FileText, ArrowDownLeft, Circle, Search, Filter, ChevronDown,
-  Mic, LayoutGrid, Bot,
+  Mic, LayoutGrid, Bot, Zap, TrendingUp,
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
@@ -262,7 +262,10 @@ export default function AgentsList() {
   const demoMode = loaded && numbers.length === 0;
   const voiceAgents = demoMode ? DEMO_NUMBERS : numbers;
 
-  const rows = useMemo(() => {
+  // Unfiltered base list — the summary cards read from this (a stable
+  // account-wide overview) while `rows` below applies the type/search
+  // filters for the table only.
+  const allRows = useMemo(() => {
     const voice = voiceAgents.map((n) => ({
       id: n.id,
       name: n.agentName || n.label || 'Unnamed agent',
@@ -284,14 +287,23 @@ export default function AgentsList() {
       todaysCalls: PREVIEW_CHAT_AGENT.todaysCalls ?? 0,
       preview: true,
     }];
-    return [...voice, ...chat]
+    return [...voice, ...chat];
+  }, [voiceAgents]);
+
+  const rows = useMemo(() => {
+    return allRows
       .filter((r) => typeFilter === 'all' || r.type === typeFilter)
       .filter((r) => {
         if (!query.trim()) return true;
         const q = query.trim().toLowerCase();
         return r.name.toLowerCase().includes(q) || r.agentId.toLowerCase().includes(q) || (r.phone || '').includes(q);
       });
-  }, [voiceAgents, typeFilter, query]);
+  }, [allRows, typeFilter, query]);
+
+  const activeAgentsCount = allRows.filter((r) => r.status !== 'unprovisioned' && r.status !== 'failed').length;
+  const voiceAgentsCount = allRows.filter((r) => r.type === 'inbound').length;
+  const chatAgentsCount = allRows.filter((r) => r.type === 'chat').length;
+  const callsTodayTotal = allRows.reduce((sum, r) => sum + (r.todaysCalls || 0), 0);
 
   return (
     <div>
@@ -319,6 +331,31 @@ export default function AgentsList() {
             onOpenTemplates={() => navigate(`${basePath}/templates`)}
           />
         </div>
+      </div>
+
+      {/* Agent summary cards — account-wide overview, unaffected by the
+          type filter / search below. */}
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {[
+          { key: 'active', icon: Zap,           label: 'Active Agents', value: activeAgentsCount, sub: 'Currently running' },
+          { key: 'voice',  icon: Phone,          label: 'Voice Agents',  value: voiceAgentsCount,  sub: 'Inbound & outbound' },
+          { key: 'chat',   icon: MessageCircle,  label: 'Chat Agents',   value: chatAgentsCount,   sub: 'Website & messaging' },
+          { key: 'calls',  icon: TrendingUp,     label: 'Calls Today',   value: callsTodayTotal,   sub: '+12% vs yesterday' },
+        ].map(({ key, icon: Icon, label, value, sub }) => (
+          <div
+            key={key}
+            className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <div className="flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-lime-100 text-lime-700">
+                <Icon className="w-4 h-4" />
+              </span>
+              <span className="text-xs font-semibold text-mute">{label}</span>
+            </div>
+            <div className="mt-2 text-2xl font-bold text-slate-900">{value}</div>
+            <div className="text-xs text-mute mt-0.5">{sub}</div>
+          </div>
+        ))}
       </div>
 
       <div className="mt-4">
