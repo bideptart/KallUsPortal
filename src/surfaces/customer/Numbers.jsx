@@ -242,7 +242,7 @@ function PlanCard({ plan, isSelected, isCurrent, isFeatured, disabled, onClick }
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`relative text-left rounded-xl border overflow-hidden transition h-full flex flex-col ${
+      className={`relative text-left rounded-xl border overflow-visible transition h-full flex flex-col ${
         isCurrent
           ? 'border-slate-200 bg-slate-50 cursor-not-allowed'
           : isFeatured
@@ -256,46 +256,48 @@ function PlanCard({ plan, isSelected, isCurrent, isFeatured, disabled, onClick }
         </span>
       )}
 
-      {/* Header — label + sub + price, light lime tint (deeper for the
-          featured tier) so every card reads as part of one family. */}
-      <div className={`px-5 py-4 border-b ${
-        isCurrent ? 'bg-gray-100 border-neutral-300' : isFeatured ? 'bg-lime-100 border-lime-200' : 'bg-lime-50 border-lime-100'
-      }`}>
-        <div className="flex items-center justify-between gap-2">
-          <div className="text-lg font-semibold text-slate-900">{plan.label}</div>
-          {isCurrent && (
-            <span className="px-2 py-0.5 rounded-full bg-slate-700 text-white text-[10px] font-bold uppercase tracking-wider">
-              Current plan
-            </span>
+      <div className="rounded-xl overflow-hidden flex flex-col flex-1">
+        {/* Header — label + sub + price, light lime tint (deeper for the
+            featured tier) so every card reads as part of one family. */}
+        <div className={`px-5 py-4 border-b ${
+          isCurrent ? 'bg-gray-100 border-neutral-300' : isFeatured ? 'bg-lime-100 border-lime-200' : 'bg-lime-50 border-lime-100'
+        }`}>
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-lg font-semibold text-slate-900">{plan.label}</div>
+            {isCurrent && (
+              <span className="px-2 py-0.5 rounded-full bg-slate-700 text-white text-[10px] font-bold uppercase tracking-wider">
+                Current plan
+              </span>
+            )}
+          </div>
+          {plan.sub && <div className="text-xs text-mute mt-0.5">{plan.sub}</div>}
+          <div className="mt-3 flex items-end gap-1">
+            <span className="text-4xl font-semibold text-slate-900">${Number(plan.amount).toLocaleString('en-US')}</span>
+            <span className="text-gray-600">/mo</span>
+          </div>
+        </div>
+
+        <div className="px-5 pb-5 pt-4 flex flex-col flex-1">
+          {/* Quick stats line — mirrors the marketing card's compact summary */}
+          <div className="text-[11px] text-mute mb-3 leading-snug">{subline}</div>
+
+          {/* Perks checklist */}
+          <ul className="space-y-2.5 flex-1">
+            {(plan.perks || []).map((perk, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
+                <span className="shrink-0 mt-0.5 w-3.5 h-3.5 rounded-full bg-lime-100 text-lime-700 flex items-center justify-center text-[9px] font-bold">✓</span>
+                <span>{perk}</span>
+              </li>
+            ))}
+          </ul>
+
+          {/* Selected indicator pinned to the card foot */}
+          {isSelected && !isCurrent && (
+            <div className="mt-3 pt-3 border-t border-slate-100 text-xs font-semibold text-lime-700 text-center">
+              ✓ Selected
+            </div>
           )}
         </div>
-        {plan.sub && <div className="text-xs text-mute mt-0.5">{plan.sub}</div>}
-        <div className="mt-3 flex items-end gap-1">
-          <span className="text-4xl font-semibold text-slate-900">${Number(plan.amount).toLocaleString('en-US')}</span>
-          <span className="text-gray-600">/mo</span>
-        </div>
-      </div>
-
-      <div className="px-5 pb-5 pt-4 flex flex-col flex-1">
-        {/* Quick stats line — mirrors the marketing card's compact summary */}
-        <div className="text-[11px] text-mute mb-3 leading-snug">{subline}</div>
-
-        {/* Perks checklist */}
-        <ul className="space-y-2.5 flex-1">
-          {(plan.perks || []).map((perk, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
-              <span className="shrink-0 mt-0.5 w-3.5 h-3.5 rounded-full bg-lime-100 text-lime-700 flex items-center justify-center text-[9px] font-bold">✓</span>
-              <span>{perk}</span>
-            </li>
-          ))}
-        </ul>
-
-        {/* Selected indicator pinned to the card foot */}
-        {isSelected && !isCurrent && (
-          <div className="mt-3 pt-3 border-t border-slate-100 text-xs font-semibold text-lime-700 text-center">
-            ✓ Selected
-          </div>
-        )}
       </div>
     </button>
   );
