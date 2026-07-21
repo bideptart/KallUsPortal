@@ -395,12 +395,6 @@ function MyPlansTab({
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold text-slate-900">Active plans</h2>
-          <button
-            onClick={onAddPlan}
-            className={`px-3 py-1.5 rounded-lg text-white text-xs font-semibold ${BRAND_GRADIENT} hover:brightness-110`}
-          >
-            + Add plan / number
-          </button>
         </div>
 
         {numbers.length === 0 ? (
