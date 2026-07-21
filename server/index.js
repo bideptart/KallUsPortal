@@ -2026,22 +2026,30 @@ app.post('/api/razorpay/verify/new-number-plan', auth, async (req, res) => {
 app.post('/api/signin', async (req, res) => {
   const { identifier, password } = req.body || {};
   if (!identifier || !password) return res.status(400).json({ error: 'Missing credentials' });
-  const r = await q(
-    `SELECT * FROM users WHERE LOWER(email) = LOWER($1) OR LOWER(username) = LOWER($1) LIMIT 1`,
-    [String(identifier).trim()],
-  );
-  if (!r.rowCount) return res.status(401).json({ error: 'Invalid email/username or password' });
-  const user = r.rows[0];
-  const ok = await bcrypt.compare(String(password), user.password_hash);
-  if (!ok) return res.status(401).json({ error: 'Invalid email/username or password' });
+  // Every DB touch below is wrapped: on a machine with no Postgres the pool
+  // rejects with ECONNREFUSED, and an unhandled rejection here takes the whole
+  // process down — which also kills the /api/auth/* demo fallback the frontend
+  // tries next. Answer 503 instead so that fallback can actually run.
+  try {
+    const r = await q(
+      `SELECT * FROM users WHERE LOWER(email) = LOWER($1) OR LOWER(username) = LOWER($1) LIMIT 1`,
+      [String(identifier).trim()],
+    );
+    if (!r.rowCount) return res.status(401).json({ error: 'Invalid email/username or password' });
+    const user = r.rows[0];
+    const ok = await bcrypt.compare(String(password), user.password_hash);
+    if (!ok) return res.status(401).json({ error: 'Invalid email/username or password' });
 
-  const token = newToken();
-  await q(
-    `INSERT INTO sessions (token, user_id, expires_at)
-     VALUES ($1, $2, NOW() + ($3 || ' days')::INTERVAL)`,
-    [token, user.id, SESSION_DAYS],
-  );
-  res.json({ token, user: publicUser(user) });
+    const token = newToken();
+    await q(
+      `INSERT INTO sessions (token, user_id, expires_at)
+       VALUES ($1, $2, NOW() + ($3 || ' days')::INTERVAL)`,
+      [token, user.id, SESSION_DAYS],
+    );
+    res.json({ token, user: publicUser(user) });
+  } catch (e) {
+    res.status(503).json({ error: 'Account database unavailable: ' + (e.message || e) });
+  }
 });
 
 app.post('/api/signout', auth, async (req, res) => {
@@ -5623,6 +5631,14 @@ if (!process.env.VERCEL) {
     } catch (e) {
       console.error('[seed] failed:', e.message);
     }
+    // Most route handlers `await q(...)` without a try/catch, so on a machine
+    // with no Postgres a single request would otherwise reject and terminate
+    // the process — taking the DB-free demo login down with it. Log and stay
+    // up; the client still sees Express's own 500 for that one request.
+    process.on('unhandledRejection', (e) => {
+      console.error('[unhandledRejection]', e?.message || e);
+    });
+
     app.listen(PORT, () => console.log(`[api] listening on http://localhost:${PORT}`));
 
     // Fire the live-agent sweep ~10s after boot — enough time for MCP to wake
