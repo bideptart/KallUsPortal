@@ -7,15 +7,37 @@ import {
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
 
-const fmtDateTime = (iso) => {
-  if (!iso) return '—';
-  try {
-    return new Date(iso).toLocaleString('en-US', {
-      day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit',
-    });
-  } catch {
-    return '—';
+const isSameDay = (a, b) => a.toDateString() === b.toDateString();
+const isYesterday = (a, b) => {
+  const y = new Date(b); y.setDate(y.getDate() - 1);
+  return a.toDateString() === y.toDateString();
+};
+
+// "Last active" — relative time + a status dot (green within 5 min, amber
+// within an hour, otherwise neutral) instead of a raw edit timestamp.
+const lastActiveInfo = (iso) => {
+  if (!iso) return { text: '—', dot: 'bg-slate-300' };
+  const then = new Date(iso);
+  if (isNaN(then.getTime())) return { text: '—', dot: 'bg-slate-300' };
+  const now = new Date();
+  const diffMin = (now - then) / 60000;
+  const dot = diffMin <= 5 ? 'bg-emerald-500' : diffMin <= 60 ? 'bg-amber-400' : 'bg-slate-300';
+
+  let text;
+  if (diffMin < 1) {
+    text = 'Just now';
+  } else if (diffMin < 60) {
+    const m = Math.floor(diffMin);
+    text = `${m} min${m === 1 ? '' : 's'} ago`;
+  } else if (isSameDay(then, now)) {
+    const h = Math.floor(diffMin / 60);
+    text = `${h} hour${h === 1 ? '' : 's'} ago`;
+  } else if (isYesterday(then, now)) {
+    text = 'Yesterday';
+  } else {
+    text = then.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   }
+  return { text, dot };
 };
 
 // Sample voice agent shown only when /api/numbers returns nothing (no DB
@@ -28,6 +50,8 @@ const DEMO_NUMBERS = [
     agentId: 'ce39a935-71e2-4b8a-9c2d-1a7f6e0b3d21',
     status: 'ready',
     provisionedAt: new Date('2026-07-16T13:19:00').toISOString(),
+    lastActive: new Date(Date.now() - 18 * 60 * 1000).toISOString(),
+    todaysCalls: 3,
   },
 ];
 
@@ -40,6 +64,8 @@ const PREVIEW_CHAT_AGENT = {
   agentId: 'a0f48513-2c6d-4f11-8b9a-5e3c1d7f4a09',
   type: 'chat',
   status: 'enabled',
+  lastActive: new Date('2026-07-16T10:42:00').toISOString(),
+  todaysCalls: 0,
 };
 
 function StatusPill({ status }) {
@@ -244,7 +270,8 @@ export default function AgentsList() {
       type: 'inbound',
       status: n.status || 'unprovisioned',
       phone: n.value || '—',
-      lastEdited: n.provisionedAt || n.createdAt || null,
+      lastActive: n.lastActive || n.provisionedAt || n.createdAt || null,
+      todaysCalls: n.todaysCalls ?? 0,
     }));
     const chat = [{
       id: PREVIEW_CHAT_AGENT.id,
@@ -253,7 +280,8 @@ export default function AgentsList() {
       type: 'chat',
       status: PREVIEW_CHAT_AGENT.status,
       phone: null,
-      lastEdited: null,
+      lastActive: PREVIEW_CHAT_AGENT.lastActive || null,
+      todaysCalls: PREVIEW_CHAT_AGENT.todaysCalls ?? 0,
       preview: true,
     }];
     return [...voice, ...chat]
@@ -307,12 +335,13 @@ export default function AgentsList() {
               <th>Type</th>
               <th>Status</th>
               <th>Phone number</th>
-              <th>Last edited</th>
+              <th className="text-right">Today's calls</th>
+              <th>Last active</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 && (
-              <tr><td colSpan={7} className="text-center text-mute py-8">No agents match your search.</td></tr>
+              <tr><td colSpan={8} className="text-center text-mute py-8">No agents match your search.</td></tr>
             )}
             {rows.map((r) => {
               const detailPath = r.type === 'chat' ? 'agent-detail-chat' : 'agent-detail';
@@ -358,7 +387,21 @@ export default function AgentsList() {
                 </td>
                 <td><StatusPill status={r.status} /></td>
                 <td className="font-mono text-xs whitespace-nowrap">{r.phone || '—'}</td>
-                <td className="text-mute text-xs whitespace-nowrap">{r.lastEdited ? fmtDateTime(r.lastEdited) : '—'}</td>
+                <td className="text-right whitespace-nowrap">
+                  <div className="font-bold text-slate-900">{r.todaysCalls}</div>
+                  <div className="text-[10px] text-mute font-normal">Today</div>
+                </td>
+                <td className="whitespace-nowrap">
+                  {(() => {
+                    const { text, dot } = lastActiveInfo(r.lastActive);
+                    return (
+                      <span className="inline-flex items-center gap-1.5 font-medium text-xs text-slate-700">
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
+                        {text}
+                      </span>
+                    );
+                  })()}
+                </td>
               </tr>
               );
             })}
