@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Clock, RefreshCw, Plus, Phone, User, IdCardLanyard, ChevronRight, X, Ticket } from 'lucide-react';
+// Bot, not IdCardLanyard — the agent is the AI voice agent, and Bot is the
+// same icon the Agents nav item and agent pages already use.
+import { Search, Clock, RefreshCw, Plus, Phone, User, Bot, ChevronRight, X, Ticket } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { STATUS_META, loadTickets, persistTickets, fmtUpdated, overdueHours } from './ticketsStore.js';
 
@@ -229,7 +231,7 @@ export default function Tickets() {
                   </td>
                   <td className="text-sm text-lime-600 dark:text-lime-400 font-semibold whitespace-nowrap">
                     <div className="flex items-center gap-1.5">
-                      <IdCardLanyard className="w-4 h-4" /> {t.agentName}
+                      <Bot className="w-4 h-4" /> {t.agentName}
                     </div>
                   </td>
                   <td className="text-xs text-mute whitespace-nowrap">{fmtUpdated(t.updatedAt)}</td>
@@ -303,7 +305,7 @@ export default function Tickets() {
                 <div>
                   <div className="text-[10px] uppercase tracking-wider text-mute font-semibold">Agent</div>
                   <div className="mt-1 flex items-center gap-1.5 text-lime-600 dark:text-lime-400 font-semibold">
-                    <IdCardLanyard className="w-4 h-4" /> {openTicket.agentName}
+                    <Bot className="w-4 h-4" /> {openTicket.agentName}
                   </div>
                 </div>
                 <div>

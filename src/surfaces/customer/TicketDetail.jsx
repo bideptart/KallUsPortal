@@ -1,5 +1,5 @@
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Clock, Phone, User, IdCardLanyard } from 'lucide-react';
+import { ArrowLeft, Clock, Phone, User, Bot } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { STATUS_META, loadTickets, fmtUpdated, overdueHours } from './ticketsStore.js';
 
@@ -90,7 +90,7 @@ export default function TicketDetail() {
           <div>
             <div className="text-[10px] uppercase tracking-wider text-mute font-semibold">Agent</div>
             <div className="mt-1 flex items-center gap-1.5 text-lime-600 dark:text-lime-400 font-semibold">
-              <IdCardLanyard className="w-4 h-4" /> {ticket.agentName}
+              <Bot className="w-4 h-4" /> {ticket.agentName}
             </div>
           </div>
           <div>
