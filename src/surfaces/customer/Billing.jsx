@@ -216,7 +216,7 @@ export default function Billing() {
             </p>
           </div>
         </div>
-        <Link to="/dashboard/transactions" className="btn-ghost text-sm !rounded-lg">
+        <Link to="/dashboard/transactions" className={`text-sm !rounded-lg px-[22px] py-[11px] text-white font-semibold ${BRAND_GRADIENT} hover:brightness-110`}>
           Transaction history
         </Link>
       </div>
@@ -397,7 +397,7 @@ function MyPlansTab({
           <h2 className="text-lg font-semibold text-slate-900">Active plans</h2>
           <button
             onClick={onAddPlan}
-            className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-900 text-xs font-semibold hover:bg-slate-50"
+            className={`px-3 py-1.5 rounded-lg text-white text-xs font-semibold ${BRAND_GRADIENT} hover:brightness-110`}
           >
             + Add plan / number
           </button>
