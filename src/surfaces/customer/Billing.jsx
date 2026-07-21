@@ -560,12 +560,12 @@ function ActivePlanCard({ number: n, walletBalance, usedMinutes, onChangePlan, o
             <div className="mt-4 flex items-center gap-2 flex-wrap">
               <button
                 onClick={onChangePlan}
-                className={`px-4 py-1.5 rounded-full text-white text-xs font-semibold ${BRAND_GRADIENT}`}
+                className={`px-4 py-1.5 rounded-full border border-transparent text-white text-xs font-semibold ${BRAND_GRADIENT}`}
               >
                 Change plan
               </button>
-              <button onClick={onRestartPlan} className="btn-ghost text-xs hover:border-lime-400 hover:bg-lime-50 hover:text-lime-700">Restart plan</button>
-              <Link to={demo ? '/dashboard/agents' : `/dashboard/agents?n=${n.id}`} className="btn-ghost text-xs hover:border-lime-400 hover:bg-lime-50 hover:text-lime-700">Edit agent</Link>
+              <button onClick={onRestartPlan} className="btn-ghost text-xs px-4 py-1.5 font-semibold hover:border-lime-400 hover:bg-lime-50 hover:text-lime-700">Restart plan</button>
+              <Link to={demo ? '/dashboard/agents' : `/dashboard/agents?n=${n.id}`} className="btn-ghost text-xs px-4 py-1.5 font-semibold hover:border-lime-400 hover:bg-lime-50 hover:text-lime-700">Edit agent</Link>
               {isPrimary && (
                 <span className="text-xs text-mute ml-1">Primary — cannot release</span>
               )}
