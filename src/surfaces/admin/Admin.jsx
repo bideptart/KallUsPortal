@@ -162,9 +162,11 @@ export default function Admin() {
           )}
         </div>
         <div className="px-4 pb-3 border-t border-slate-100 pt-3">
-          <div className="text-xs text-mute font-semibold uppercase tracking-wider">Admin</div>
-          <div className="text-sm font-semibold text-slate-900 mt-1 break-all">{currentUser?.email || ''}</div>
-          <span className="pill pill-teal mt-2 inline-block">{currentUser?.role || 'Admin'}</span>
+          {/* The role appeared twice here — a plain "ADMIN" caption above the
+              email and a pill below it. Keep the pill (it carries the actual
+              role, not a hardcoded label) and move it above the email. */}
+          <span className="pill pill-teal inline-block">{currentUser?.role || 'Admin'}</span>
+          <div className="text-sm font-semibold text-slate-900 mt-2 break-all">{currentUser?.email || ''}</div>
         </div>
         <div className="sidenav-section">Manage</div>
         <Side list={NAV_TABS_BEFORE_CALLS} />
