@@ -61,8 +61,15 @@ export default function Account() {
 
   return (
     <div>
-      <h1 className="text-2xl font-display font-bold">Account</h1>
-      <p className="text-mute mt-1">Your profile, login, and contact details.</p>
+      <div className="flex items-center gap-3 animate-fade-up">
+        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
+          <User className="w-5 h-5" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-display font-bold">Account</h1>
+          <p className="text-mute mt-1">Your profile, login, and contact details.</p>
+        </div>
+      </div>
 
       <div className="mt-6 flip-card mx-auto" style={{ maxWidth: 720, height: 460 }}>
         <div className={`flip-card-inner${flipped ? ' is-flipped' : ''}`}>
