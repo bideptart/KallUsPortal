@@ -300,11 +300,11 @@ export default function Analytics() {
               >
                 <div className="w-full flex items-end" style={{ height: 80 }}>
                   <div
-                    className={`w-full rounded-t transition ${isSelected ? 'ring-2 ring-offset-1' : ''}`}
+                    className="w-full rounded-t transition"
                     style={{
                       height: barPx,
                       background: VOLUME_BAR_GREEN,
-                      ...(isSelected ? { boxShadow: `0 0 0 2px ${GREEN}`, outline: `2px solid ${GREEN}`, outlineOffset: 1 } : {}),
+                      ...(isSelected ? { boxShadow: '0 0 14px 4px rgba(58,90,12,0.65), 0 0 3px 1px rgba(58,90,12,0.9)' } : {}),
                     }}
                   />
                 </div>
