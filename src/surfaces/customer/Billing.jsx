@@ -489,11 +489,6 @@ function ActivePlanCard({ number: n, walletBalance, usedMinutes, onChangePlan, o
           <div className="text-xs sm:text-sm font-mono mt-0.5 opacity-95">{n.value}</div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {demo && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/20 text-white text-xs font-semibold" title="Sample data — connect a database for your real plans">
-              <Sparkles className="w-3 h-3" /> Sample
-            </span>
-          )}
           {n.label && (
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-300 text-amber-900 text-xs font-semibold">
               <Tag className="w-3 h-3" /> {n.label}
@@ -504,7 +499,7 @@ function ActivePlanCard({ number: n, walletBalance, usedMinutes, onChangePlan, o
               On wallet ${planRate}/min
             </span>
           ) : (
-            <span className="px-2.5 py-1 rounded-full bg-green-400 text-emerald-900 text-xs font-semibold">
+            <span className="px-2.5 py-1 rounded-full bg-white text-lime-700 text-xs font-semibold">
               ● Live
             </span>
           )}
