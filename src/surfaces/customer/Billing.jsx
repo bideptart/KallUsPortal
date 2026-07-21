@@ -609,8 +609,8 @@ function PlansTab({ plans, numbers, onPickPlan }) {
           return (
             <div
               key={p.id}
-              className={`rounded-xl overflow-hidden bg-white border transition h-fit animate-fade-up ${
-                isMostPopular ? 'border-transparent' : 'border-neutral-200'
+              className={`rounded-xl overflow-hidden border transition h-fit animate-fade-up ${
+                isMostPopular ? 'bg-lime-700 border-transparent' : 'bg-white border-neutral-200'
               } ${isSelected ? 'ring-4 ring-lime-200' : ''} ${!isMostPopular && !isSelected ? 'hover:border-lime-300' : ''}`}
               style={{ animationDelay: `${idx * 90}ms` }}
             >
@@ -645,8 +645,13 @@ function PlansTab({ plans, numbers, onPickPlan }) {
                 </div>
                 <ul className="space-y-2.5 mb-5 flex-1">
                   {(p.perks || []).map((perk, i) => (
-                    <li key={i} className={`text-sm ${isMostPopular ? 'text-white' : 'text-gray-700'}`}>
-                      {perk}
+                    <li key={i} className={`flex items-start gap-2 text-sm ${isMostPopular ? 'text-white' : 'text-gray-700'}`}>
+                      <span className={`shrink-0 mt-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] font-bold ${
+                        isMostPopular ? 'bg-white/20 text-white' : 'bg-lime-100 text-lime-700'
+                      }`}>
+                        ✓
+                      </span>
+                      <span>{perk}</span>
                     </li>
                   ))}
                 </ul>
