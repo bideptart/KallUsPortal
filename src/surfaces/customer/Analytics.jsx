@@ -300,7 +300,7 @@ export default function Analytics() {
               >
                 <div className="w-full flex items-end justify-center" style={{ height: 80 }}>
                   <div
-                    className="rounded-t transition"
+                    className="rounded-t transition border-2 border-transparent animate-border-glow"
                     style={{
                       width: '70%',
                       maxWidth: 30,

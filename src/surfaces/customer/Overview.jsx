@@ -31,7 +31,7 @@ const DEMO_NUMBERS = [
     agentName: 'KallUS Agent',
     label: '',
     autoRechargeEnabled: false,
-    nextRentalAt: new Date(Date.now() + 19 * 24 * 60 * 60 * 1000).toISOString(),
+    nextRentalAt: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
     plan: { min: 250 },
   },
 ];

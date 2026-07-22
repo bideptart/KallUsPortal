@@ -351,7 +351,7 @@ export default function Meetings({
               type="checkbox"
               checked={upcomingOnly}
               onChange={(e) => setUpcomingOnly(e.target.checked)}
-              className="rounded"
+              className="rounded accent-lime-600"
             />
             Upcoming only
           </label>

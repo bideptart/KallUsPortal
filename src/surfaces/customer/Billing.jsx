@@ -22,7 +22,7 @@ const DEMO_NUMBER = {
   isPrimary: true,
   planCycle: 'monthly',
   activatedAt: new Date(Date.now() - 11 * 24 * 60 * 60 * 1000).toISOString(),
-  nextRentalAt: new Date(Date.now() + 19 * 24 * 60 * 60 * 1000).toISOString(),
+  nextRentalAt: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
   plan: { label: 'Starter', amount: 31, min: 250, rate: 0.13 },
 };
 const DEMO_USED_MINUTES = 48;
