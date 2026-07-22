@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Phone, MessageCircle, Copy, Check, FileText, ArrowDownLeft, Circle, Search, Filter, ChevronDown,
+  Phone, MessageCircle, Copy, Check, FileText, ArrowDownLeft, Circle, Search, Filter, ChevronDown, ChevronRight,
   Mic, LayoutGrid, Bot, Zap, TrendingUp,
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
@@ -353,11 +353,12 @@ export default function AgentsList() {
               <th>Phone number</th>
               <th className="text-right">Today's calls</th>
               <th>Last active</th>
+              <th className="w-8" />
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 && (
-              <tr><td colSpan={8} className="text-center text-mute py-8">No agents match your search.</td></tr>
+              <tr><td colSpan={9} className="text-center text-mute py-8">No agents match your search.</td></tr>
             )}
             {rows.map((r) => {
               const detailPath = r.type === 'chat' ? 'agent-detail-chat' : 'agent-detail';
@@ -365,7 +366,7 @@ export default function AgentsList() {
               return (
               <tr
                 key={r.id}
-                className="cursor-pointer"
+                className="cursor-pointer group"
                 tabIndex={0}
                 role="button"
                 onClick={openRow}
@@ -417,6 +418,11 @@ export default function AgentsList() {
                       </span>
                     );
                   })()}
+                </td>
+                <td>
+                  <span className="w-6 h-6 rounded-full flex items-center justify-center bg-slate-100 text-slate-500 transition-all duration-150 group-hover:translate-x-0.5 group-hover:bg-lime-100 group-hover:text-lime-700">
+                    <ChevronRight size={14} strokeWidth={2.5} />
+                  </span>
                 </td>
               </tr>
               );

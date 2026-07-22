@@ -287,7 +287,7 @@ export default function Tools() {
                           className="input font-mono transition duration-200 ease-out focus:shadow-md"
                           value={input}
                           onChange={(e) => { setInput(e.target.value.replace(/[^\d]/g, '')); setMsg(''); setErr(''); }}
-                          placeholder="8171428862"
+                          placeholder="5551234567"
                           disabled={curLoading || busy || propagationLocked}
                         />
                       </div>

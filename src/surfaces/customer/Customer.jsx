@@ -97,6 +97,17 @@ export default function Customer() {
   // Close drawer when route changes
   useEffect(() => { setNavOpen(false); }, [tab]);
 
+  const [scrollPct, setScrollPct] = useState(0);
+  useEffect(() => {
+    const onScroll = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      setScrollPct(max > 0 ? Math.min(100, (window.scrollY / max) * 100) : 0);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [tab]);
+
   // Auto-expand the group whenever navigation lands on it or one of its children.
   useEffect(() => { if (callActivityActive) setCallActivityOpen(true); }, [callActivityActive]);
 
@@ -208,7 +219,7 @@ export default function Customer() {
             widget here anymore (removed on request) — Sign Out, My Profile,
             Change Password, and Add Minutes are no longer reachable from
             the UI; Account settings still work via the Account nav tab. */}
-        <div className="sticky top-0 z-30 bg-white -mt-5 sm:-mt-6 lg:-mt-8 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-3 border-b border-slate-200 mb-6">
+        <div className="relative sticky top-0 z-30 bg-white -mt-5 sm:-mt-6 lg:-mt-8 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-3 border-b border-slate-200 mb-6">
           <button
             className="mobile-nav-toggle lg:hidden"
             onClick={() => setNavOpen(true)}
@@ -251,6 +262,7 @@ export default function Customer() {
           <div className="ml-auto flex items-center gap-3">
             <button type="button" className="btn-teal text-sm whitespace-nowrap" onClick={() => setShowAddPlan(true)}>+ Add plan / number</button>
           </div>
+          <div className="absolute left-0 bottom-0 h-[3px] bg-lime-500 transition-[width] duration-200 ease-linear" style={{ width: `${scrollPct}%` }} />
         </div>
 
         <Suspense fallback={<div className="text-sm text-mute py-10 text-center">Loading…</div>}>

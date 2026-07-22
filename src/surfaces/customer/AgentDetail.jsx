@@ -160,7 +160,40 @@ export default function AgentDetail() {
   const knowledgeRef = useRef(null);
   const behaviorRef = useRef(null);
   const sectionRefs = { identity: identityRef, voice: voiceRef, knowledge: knowledgeRef, behavior: behaviorRef };
-  const scrollToSection = (id) => sectionRefs[id]?.current?.scrollIntoView({ block: 'start' });
+
+  // Scroll-spy — highlights whichever section's top has crossed the sticky
+  // jump nav, so the active tab tracks scroll position instead of staying
+  // permanently unselected (this is a single scrolling page, not a wizard).
+  // Tapping a tab sets activeSection directly (not just scrollIntoView) —
+  // the observer's narrow detection band can miss short/edge sections, so
+  // the tap itself must not depend on it to show the right tab as active.
+  const [activeSection, setActiveSection] = useState('identity');
+  // Suppresses the observer for a moment after a tap so its (slightly
+  // delayed) callback can't overwrite the tab the user just picked with
+  // stale pre-scroll geometry.
+  const manualNavRef = useRef(false);
+  const scrollToSection = (id) => {
+    manualNavRef.current = true;
+    setActiveSection(id);
+    sectionRefs[id]?.current?.scrollIntoView({ block: 'start' });
+    setTimeout(() => { manualNavRef.current = false; }, 700);
+  };
+
+  useEffect(() => {
+    const order = TABS.map((t) => t.id);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (manualNavRef.current) return;
+        const visible = entries.filter((e) => e.isIntersecting).map((e) => e.target.dataset.section);
+        if (visible.length) {
+          setActiveSection(order.filter((id) => visible.includes(id)).pop());
+        }
+      },
+      { rootMargin: '-140px 0px -70% 0px', threshold: 0 }
+    );
+    order.forEach((id) => { if (sectionRefs[id].current) observer.observe(sectionRefs[id].current); });
+    return () => observer.disconnect();
+  }, []);
   const [saving, setSaving] = useState(false);
   const [saveErr, setSaveErr] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
@@ -408,13 +441,17 @@ export default function AgentDetail() {
       {/* === Quick start ============================================== */}
       <div className="mt-4 flex items-center gap-2 flex-wrap">
         <span className="text-xs font-semibold text-mute">Quick start:</span>
-        <button type="button" className="btn-ghost text-xs inline-flex items-center gap-1 py-1.5 px-3" onClick={() => navigate(`${basePath}/templates`)}>
+        <button
+          type="button"
+          className="btn-ghost text-xs inline-flex items-center gap-1 py-1.5 px-3 transition-all duration-150 hover:!bg-[var(--primary)] hover:!text-white hover:!border-[var(--primary)]"
+          onClick={() => navigate(`${basePath}/templates`)}
+        >
           <ChevronRight size={12} /> Start from template
         </button>
         <button
           type="button"
-          className="btn-ghost text-xs inline-flex items-center gap-1 py-1.5 px-3"
-          onClick={() => { setSourcePicker(true); }}
+          className="btn-ghost text-xs inline-flex items-center gap-1 py-1.5 px-3 transition-all duration-150 hover:!bg-[var(--primary)] hover:!text-white hover:!border-[var(--primary)]"
+          onClick={() => setSourcePicker(true)}
         >
           <ChevronRight size={12} /> Import from knowledge base
         </button>
@@ -426,17 +463,24 @@ export default function AgentDetail() {
       {/* === Jump nav — scrolls to each section on this single page ===== */}
       <div className="mt-4 form-card p-0 overflow-hidden sticky top-16 z-20">
         <div className="flex border-b" style={{ borderColor: 'var(--line-2)' }}>
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => scrollToSection(t.id)}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-3 text-sm font-medium border-b-2"
-              style={{ borderColor: 'transparent', color: 'var(--ink-3)' }}
-            >
-              <t.Icon size={14} /> {t.label}
-            </button>
-          ))}
+          {TABS.map((t, i) => {
+            const active = activeSection === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => scrollToSection(t.id)}
+                className={`flex-1 inline-flex items-center justify-center gap-1.5 py-3 text-sm border-b-2 transition-colors duration-150 ${i > 0 ? 'border-l' : ''} ${active ? 'font-semibold' : 'font-medium'}`}
+                style={{
+                  borderLeftColor: 'var(--line-2)',
+                  borderBottomColor: active ? 'var(--primary)' : 'transparent',
+                  color: active ? 'var(--primary)' : 'var(--ink-3)',
+                }}
+              >
+                <t.Icon size={14} /> {t.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -444,7 +488,7 @@ export default function AgentDetail() {
           to them) instead of a multi-step tabbed wizard. ================ */}
       <div className="mt-4 form-card p-0 overflow-hidden">
         <div className="p-6 space-y-10">
-          <div ref={identityRef} style={{ scrollMarginTop: 140 }}>
+          <div ref={identityRef} data-section="identity" style={{ scrollMarginTop: 140 }}>
               <div className="text-xs font-mono uppercase tracking-wide" style={{ color: 'var(--primary)' }}>Agent identity</div>
               <p className="text-sm text-mute mt-1">Its display name, language, and the greeting callers hear first.</p>
 
@@ -464,7 +508,7 @@ export default function AgentDetail() {
               <textarea className="input" rows={4} value={draft.greeting} onChange={(e) => set({ greeting: e.target.value })} placeholder="Hi, thanks for calling…" />
           </div>
 
-          <div ref={voiceRef} className="pt-10 border-t" style={{ borderColor: 'var(--line-2)', scrollMarginTop: 140 }}>
+          <div ref={voiceRef} data-section="voice" className="pt-10 border-t" style={{ borderColor: 'var(--line-2)', scrollMarginTop: 140 }}>
               <div className="text-xs font-mono uppercase tracking-wide inline-flex items-center gap-1.5" style={{ color: 'var(--primary)' }}>
                 <Mic size={12} /> Voice
               </div>
@@ -494,10 +538,14 @@ export default function AgentDetail() {
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); play(v.value, 'en-US'); }}
-                        className="ml-2 w-7 h-7 rounded-full flex items-center justify-center hover:bg-lime-100"
+                        className={`ml-2 w-8 h-8 rounded-full flex items-center justify-center shrink-0 border transition-all duration-150 ${
+                          playing
+                            ? 'bg-lime-600 border-lime-600 text-white shadow-sm'
+                            : 'bg-slate-100 border-slate-200 text-slate-500 hover:bg-lime-600 hover:border-lime-600 hover:text-white hover:scale-105'
+                        }`}
                         title={playing ? 'Stop preview' : 'Play 5-second preview'}
                       >
-                        {playing ? <Square size={12} /> : <Play size={12} />}
+                        {playing ? <Square size={12} fill="currentColor" /> : <Play size={12} fill="currentColor" className="ml-0.5" />}
                       </button>
                     </div>
                   );
@@ -552,7 +600,7 @@ export default function AgentDetail() {
               </div>
           </div>
 
-          <div ref={knowledgeRef} className="pt-10 border-t" style={{ borderColor: 'var(--line-2)', scrollMarginTop: 140 }}>
+          <div ref={knowledgeRef} data-section="knowledge" className="pt-10 border-t" style={{ borderColor: 'var(--line-2)', scrollMarginTop: 140 }}>
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div>
                   <div className="text-xs font-mono uppercase tracking-wide inline-flex items-center gap-1.5" style={{ color: 'var(--primary)' }}>
@@ -620,7 +668,7 @@ export default function AgentDetail() {
               </div>
           </div>
 
-          <div ref={behaviorRef} className="pt-10 border-t" style={{ borderColor: 'var(--line-2)', scrollMarginTop: 140 }}>
+          <div ref={behaviorRef} data-section="behavior" className="pt-10 border-t" style={{ borderColor: 'var(--line-2)', scrollMarginTop: 140 }}>
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div>
                   <div className="text-xs font-mono uppercase tracking-wide inline-flex items-center gap-1.5" style={{ color: 'var(--primary)' }}>

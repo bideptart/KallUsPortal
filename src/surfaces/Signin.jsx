@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../AppContext.jsx';
 import Logo from '../components/Logo.jsx';
+import Footer from '../components/Footer.jsx';
 
 export default function Signin() {
   const { signinUser, authError, setAuthError } = useApp();
@@ -95,6 +96,7 @@ export default function Signin() {
           </p>
         </div>
       </section>
+      <Footer />
     </div>
   );
 }

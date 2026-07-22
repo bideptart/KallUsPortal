@@ -320,10 +320,18 @@ export default function Transactions() {
           Every payment from this account — plan purchases, plan changes, restarts, and wallet top-ups.
         </p>
         <div className="flex items-center gap-2">
-          <button onClick={exportCsv} disabled={!filtered.length} className="btn-teal text-sm transition duration-200 ease-out hover:scale-105 active:scale-95 disabled:opacity-90">
+          <button
+            onClick={exportCsv}
+            disabled={!filtered.length}
+            className="btn-ghost text-sm transition-all duration-150 hover:!bg-[var(--primary)] hover:!text-white hover:!border-[var(--primary)] hover:scale-105 active:scale-95 disabled:opacity-90"
+          >
             Export CSV
           </button>
-          <button onClick={load} disabled={loading} className="btn-teal text-sm transition duration-200 ease-out hover:scale-105 active:scale-95 disabled:opacity-90">
+          <button
+            onClick={load}
+            disabled={loading}
+            className="btn-ghost text-sm transition-all duration-150 hover:!bg-[var(--primary)] hover:!text-white hover:!border-[var(--primary)] hover:scale-105 active:scale-95 disabled:opacity-90"
+          >
             {loading ? 'Loading…' : '↻ Refresh'}
           </button>
         </div>
