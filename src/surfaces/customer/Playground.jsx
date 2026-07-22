@@ -220,15 +220,9 @@ export default function Playground() {
   if (!draft) {
     return (
       <div>
-        <div className="flex items-center gap-3">
-          <span className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--primary)' }}>
-            <FlaskConical size={20} color="#fff" />
-          </span>
-          <div>
-            <h1 className="text-2xl font-display font-bold">Playground</h1>
-            <p className="text-mute mt-0.5 text-sm">Test your agents and tune them right here — no page hopping. Free, no plan minutes used.</p>
-          </div>
-        </div>
+        {/* Icon + "Playground" title now live in the sticky top bar instead of
+            here — matches the main return path below. */}
+        <p className="font-semibold text-base tracking-wide" style={{ color: 'var(--ink-2)' }}>Test your agents and tune them right here — no page hopping. Free, no plan minutes used.</p>
         <div className="mt-8 form-card text-center py-12 text-mute">
           No voice agent yet.
           <div className="mt-3">
