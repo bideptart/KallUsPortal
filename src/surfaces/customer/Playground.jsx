@@ -337,7 +337,10 @@ export default function Playground() {
 
       <div className={`mt-4 grid gap-6 items-start ${configOpen ? 'lg:grid-cols-[1fr_380px]' : ''}`}>
         {/* === Test panel ================================================ */}
-        <div className="form-card">
+        {/* Sticky on desktop so it stays visible while the taller Configure
+            panel next to it scrolls — no need to scroll back up to reach
+            Start voice test / the transcript after editing config. */}
+        <div className="form-card lg:sticky lg:top-20">
           <div className="flex items-center gap-2.5">
             <span
               className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
