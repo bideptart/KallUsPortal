@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { ChevronDown, FileSpreadsheet, FileText, Download } from 'lucide-react';
 import { api } from '../../api.js';
 
 const fmtDate = (iso) => {
@@ -7,7 +8,50 @@ const fmtDate = (iso) => {
   return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-const BRAND_GRADIENT = 'bg-[linear-gradient(135deg,#0ea5e9_0%,#6366f1_55%,#8b5cf6_110%)]';
+const EXPORT_COLUMNS = ['DID', 'Status', 'Owner', 'Source', 'Locality', 'Added Date'];
+
+const toExportRow = (n) => [
+  n.value,
+  n.status === 'busy' ? 'Busy' : 'Free',
+  n.owner ? (n.owner.label || n.owner.email) : '—',
+  n.source === 'env' ? 'ENV' : 'DB',
+  [n.locality, n.region].filter(Boolean).join(' · ') || '—',
+  n.addedAt ? fmtDate(n.addedAt) : '—',
+];
+
+const csvEscape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+
+const triggerDownload = (blob, filename) => {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+};
+
+const buildCsv = (rows) => {
+  const lines = rows.map((r) => r.map(csvEscape).join(','));
+  return [EXPORT_COLUMNS.map(csvEscape).join(','), ...lines].join('\n');
+};
+
+// No xlsx dependency in this project — Excel opens an HTML table saved with
+// a .xls extension just fine, and it's the only way to keep the bold/green
+// header formatting without pulling in a binary-format library for one button.
+const buildExcelHtml = (rows) => {
+  const headerCells = EXPORT_COLUMNS.map((c) => `<th style="background:#4d7c0f;color:#fff;font-weight:bold;padding:6px 10px;border:1px solid #365a0a;text-align:left;">${c}</th>`).join('');
+  const bodyRows = rows.map((r) => `<tr>${r.map((v) => `<td style="padding:6px 10px;border:1px solid #d1d5db;">${String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')}</td>`).join('')}</tr>`).join('');
+  return `<!doctype html><html><head><meta charset="utf-8"></head><body>` +
+    `<table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:12px;"><thead><tr>${headerCells}</tr></thead><tbody>${bodyRows}</tbody></table>` +
+    `</body></html>`;
+};
+
+const dateStamp = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 // =============================================================================
 // Numbers inventory — superadmin's view of every DID in the pool. Shows
@@ -26,6 +70,26 @@ export default function Numbers() {
   const [busy, setBusy] = useState(false);
   const [formErr, setFormErr] = useState('');
   const [okMsg, setOkMsg]     = useState('');
+
+  // Row selection + export
+  const [selected, setSelected] = useState(() => new Set());
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [toast, setToast] = useState('');
+  const exportRef = useRef(null);
+
+  useEffect(() => {
+    if (!exportOpen) return;
+    const onClick = (e) => { if (exportRef.current && !exportRef.current.contains(e.target)) setExportOpen(false); };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [exportOpen]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(''), 3000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   const load = async () => {
     setErr('');
@@ -51,6 +115,38 @@ export default function Numbers() {
     }
     return true;
   });
+
+  const allFilteredSelected = filtered.length > 0 && filtered.every((n) => selected.has(n.value));
+  const toggleSelectAll = () => {
+    setSelected((prev) => {
+      if (allFilteredSelected) return new Set();
+      return new Set(filtered.map((n) => n.value));
+    });
+  };
+  const toggleRow = (value) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(value)) next.delete(value); else next.add(value);
+      return next;
+    });
+  };
+
+  const runExport = (kind) => {
+    setExportOpen(false);
+    const rows = selected.size > 0 ? filtered.filter((n) => selected.has(n.value)) : filtered;
+    if (!rows.length) return;
+    setExporting(true);
+    setTimeout(() => {
+      const exportRows = rows.map(toExportRow);
+      if (kind === 'csv') {
+        triggerDownload(new Blob([buildCsv(exportRows)], { type: 'text/csv;charset=utf-8;' }), `numbers-inventory-${dateStamp()}.csv`);
+      } else {
+        triggerDownload(new Blob([buildExcelHtml(exportRows)], { type: 'application/vnd.ms-excel' }), `numbers-inventory-${dateStamp()}.xls`);
+      }
+      setExporting(false);
+      setToast(`Exported ${rows.length} DID${rows.length === 1 ? '' : 's'} to ${kind === 'csv' ? 'CSV' : 'Excel'}`);
+    }, 400);
+  };
 
   const addNumber = async (e) => {
     e.preventDefault();
@@ -92,12 +188,47 @@ export default function Numbers() {
             Add new DIDs as you receive them from the carrier.
           </p>
         </div>
-        <button
-          onClick={() => { setShowForm((v) => !v); setFormErr(''); }}
-          className={`px-4 py-2 rounded-lg text-white text-sm font-semibold ${BRAND_GRADIENT}`}
-        >
-          {showForm ? '× Cancel' : '+ Add DID'}
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <div ref={exportRef} className="relative inline-block">
+            <button
+              onClick={() => setExportOpen((v) => !v)}
+              disabled={exporting || !filtered.length}
+              className="btn-teal text-sm whitespace-nowrap inline-flex items-center gap-1.5 transition duration-200 ease-out hover:scale-105 active:scale-95 disabled:opacity-60 disabled:hover:scale-100"
+            >
+              {exporting
+                ? <>Exporting…</>
+                : <><Download className="w-4 h-4" /> Export {selected.size > 0 ? `(${selected.size})` : ''} <ChevronDown className="w-3.5 h-3.5" /></>
+              }
+            </button>
+            {exportOpen && (
+              <div className="absolute right-0 top-full mt-1.5 w-56 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-50 p-1.5 animate-modal-in">
+                <div className="px-2.5 pt-1 pb-1.5 text-[10px] uppercase tracking-wider text-mute font-semibold">
+                  {selected.size > 0 ? `${selected.size} selected` : `All ${filtered.length} filtered`}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => runExport('csv')}
+                  className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left text-sm hover:bg-lime-50 transition-colors duration-150"
+                >
+                  <FileText className="w-4 h-4 text-lime-700" /> Export CSV
+                </button>
+                <button
+                  type="button"
+                  onClick={() => runExport('excel')}
+                  className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left text-sm hover:bg-lime-50 transition-colors duration-150"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-lime-700" /> Export Excel
+                </button>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={() => { setShowForm((v) => !v); setFormErr(''); }}
+            className="btn-teal text-sm whitespace-nowrap"
+          >
+            {showForm ? '× Cancel' : '+ Add DID'}
+          </button>
+        </div>
       </div>
 
       {err && (
@@ -136,7 +267,7 @@ export default function Numbers() {
             <button
               type="submit"
               disabled={busy}
-              className={`w-full px-4 py-2 rounded-lg text-white text-sm font-semibold ${BRAND_GRADIENT}`}
+              className="w-full btn-teal text-sm"
             >
               {busy ? 'Adding…' : 'Add to inventory'}
             </button>
@@ -149,17 +280,17 @@ export default function Numbers() {
 
       {/* === KPI cards ============================================== */}
       <div className="mt-6 grid sm:grid-cols-3 gap-3">
-        <div className={`form-card cursor-pointer ${filter === 'all' ? 'ring-2 ring-lime-200' : ''}`} onClick={() => setFilter('all')}>
+        <div className={`form-card cursor-pointer border-2 border-lime-200 ${filter === 'all' ? 'ring-2 ring-lime-300' : ''}`} onClick={() => setFilter('all')}>
           <div className="text-xs text-mute uppercase tracking-wider font-semibold">Total DIDs</div>
           <div className="mt-1 text-2xl font-bold text-slate-900">{totals.total}</div>
         </div>
-        <div className={`form-card cursor-pointer ${filter === 'busy' ? 'ring-2 ring-amber-200' : ''}`} onClick={() => setFilter('busy')}>
+        <div className={`form-card cursor-pointer border-2 border-lime-200 ${filter === 'busy' ? 'ring-2 ring-lime-300' : ''}`} onClick={() => setFilter('busy')}>
           <div className="text-xs text-mute uppercase tracking-wider font-semibold">Busy (assigned)</div>
-          <div className="mt-1 text-2xl font-bold text-amber-600">{totals.busy}</div>
+          <div className="mt-1 text-2xl font-bold text-slate-900">{totals.busy}</div>
         </div>
-        <div className={`form-card cursor-pointer ${filter === 'free' ? 'ring-2 ring-emerald-200' : ''}`} onClick={() => setFilter('free')}>
+        <div className={`form-card cursor-pointer border-2 border-lime-200 ${filter === 'free' ? 'ring-2 ring-lime-300' : ''}`} onClick={() => setFilter('free')}>
           <div className="text-xs text-mute uppercase tracking-wider font-semibold">Free (available)</div>
-          <div className="mt-1 text-2xl font-bold text-emerald-600">{totals.free}</div>
+          <div className="mt-1 text-2xl font-bold text-slate-900">{totals.free}</div>
         </div>
       </div>
 
@@ -180,6 +311,15 @@ export default function Numbers() {
         <table>
           <thead>
             <tr>
+              <th className="w-8">
+                <input
+                  type="checkbox"
+                  className="rounded accent-lime-600"
+                  checked={allFilteredSelected}
+                  onChange={toggleSelectAll}
+                  aria-label="Select all filtered DIDs"
+                />
+              </th>
               <th>DID</th>
               <th>Status</th>
               <th>Owner</th>
@@ -191,13 +331,22 @@ export default function Numbers() {
           </thead>
           <tbody>
             {data === null && (
-              <tr><td colSpan={7} className="text-center text-mute py-6">Loading…</td></tr>
+              <tr><td colSpan={8} className="text-center text-mute py-6">Loading…</td></tr>
             )}
             {data && filtered.length === 0 && (
-              <tr><td colSpan={7} className="text-center text-mute py-6">No DIDs match the current filter.</td></tr>
+              <tr><td colSpan={8} className="text-center text-mute py-6">No DIDs match the current filter.</td></tr>
             )}
             {filtered.map((n) => (
-              <tr key={n.value}>
+              <tr key={n.value} className={selected.has(n.value) ? 'bg-lime-50/60' : ''}>
+                <td className="w-8">
+                  <input
+                    type="checkbox"
+                    className="rounded accent-lime-600"
+                    checked={selected.has(n.value)}
+                    onChange={() => toggleRow(n.value)}
+                    aria-label={`Select ${n.value}`}
+                  />
+                </td>
                 <td className="font-mono text-sm">{n.value}</td>
                 <td>
                   {n.status === 'busy'
@@ -237,6 +386,14 @@ export default function Numbers() {
           </tbody>
         </table>
       </div>
+
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 animate-pop-in">
+          <div className="flex items-center gap-2 bg-white border border-lime-200 shadow-xl rounded-xl px-4 py-3 text-sm font-medium text-slate-900">
+            <span className="text-lime-600">✓</span> {toast}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
