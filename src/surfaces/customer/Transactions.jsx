@@ -13,6 +13,160 @@ import DateRangePicker, { todayRange } from '../../components/DateRangePicker.js
 
 const money = (n) => '$' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+const BRAND_GRADIENT = 'bg-[linear-gradient(135deg,#6fa524_0%,#5c8a1e_50%,#4d7c0f_100%)]';
+
+// Razorpay Checkout loader — same pattern used by Billing.jsx's Wallet tab
+// (each page that needs it loads its own copy rather than sharing a module,
+// matching how Numbers.jsx/AddMinutesModal.jsx already do this).
+let _razorpayLoad;
+function loadRazorpay() {
+  if (window.Razorpay) return Promise.resolve(window.Razorpay);
+  if (_razorpayLoad) return _razorpayLoad;
+  _razorpayLoad = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    s.async = true;
+    s.onload = () => resolve(window.Razorpay);
+    s.onerror = () => reject(new Error('Could not load Razorpay'));
+    document.head.appendChild(s);
+  });
+  return _razorpayLoad;
+}
+
+// =============================================================================
+// AddFundsModal — same wallet top-up flow as Billing.jsx's Wallet tab (pack
+// picker + custom amount + real Razorpay Checkout), but as an in-place modal
+// so "+ Add Funds" on the empty state doesn't have to navigate away.
+// =============================================================================
+function AddFundsModal({ onClose, onSuccess }) {
+  const [packs, setPacks] = useState([]);
+  const [selectedPackId, setSelectedPackId] = useState(null);
+  const [customAmount, setCustomAmount] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await api('/api/wallet/packs', { auth: false });
+        if (cancelled) return;
+        const list = r.packs || [];
+        setPacks(list);
+        const def = list.find((p) => p.amount === 1000) || list[1] || list[0];
+        if (def) setSelectedPackId(def.id);
+      } catch { /* pack grid just stays empty; custom amount still works */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const pickedPack = packs.find((p) => p.id === selectedPackId) || null;
+  const customAmountInt = Math.max(0, Math.floor(Number(customAmount) || 0));
+  const finalAmount = customAmountInt > 0 ? customAmountInt : (pickedPack?.amount || 0);
+
+  const addFunds = async () => {
+    if (!finalAmount) return;
+    setBusy(true); setErr('');
+    try {
+      const body = customAmountInt > 0 ? { customAmount: customAmountInt } : { pack: selectedPackId };
+      const order = await api('/api/razorpay/order/topup', { method: 'POST', body });
+      const Razorpay = await loadRazorpay();
+      const rzp = new Razorpay({
+        key: order.keyId,
+        amount: order.amount,
+        currency: order.currency,
+        name: 'KallUS',
+        description: `Wallet top-up · ${money(order.pack.amount)}`,
+        order_id: order.orderId,
+        prefill: order.prefill,
+        theme: { color: '#4d7c0f' },
+        handler: async (response) => {
+          try {
+            await api('/api/razorpay/verify/topup', {
+              method: 'POST',
+              body: {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                packId: order.pack.id,
+              },
+            });
+            onSuccess?.();
+            onClose();
+          } catch (e) {
+            setErr(e.message || 'Payment succeeded but crediting the wallet failed — contact support.');
+          } finally {
+            setBusy(false);
+          }
+        },
+        modal: { ondismiss: () => setBusy(false) },
+      });
+      rzp.on('payment.failed', (resp) => { setErr(resp.error?.description || 'Payment failed'); setBusy(false); });
+      rzp.open();
+    } catch (e) {
+      setErr(e.message); setBusy(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 animate-backdrop-in" onClick={onClose}>
+      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 animate-modal-in" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="text-lg font-bold text-slate-900">Add funds</div>
+            <div className="text-xs text-mute mt-1">Pay-per-minute backup for when plan minutes run out.</div>
+          </div>
+          <button onClick={onClose} aria-label="Close" className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-500">✕</button>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {packs.map((p) => {
+            const isPicked = !customAmountInt && selectedPackId === p.id;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => { setSelectedPackId(p.id); setCustomAmount(''); }}
+                disabled={busy}
+                className={`rounded-lg border-2 p-3 text-center transition ${
+                  isPicked ? 'border-lime-500 ring-2 ring-lime-100 bg-lime-50/50' : 'border-slate-200 bg-white hover:border-lime-300'
+                } disabled:opacity-60 disabled:cursor-not-allowed`}
+              >
+                <div className="text-lg font-extrabold text-slate-900">{money(p.amount)}</div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mt-3">
+          <input
+            type="number"
+            min={1}
+            step={1}
+            className="input text-sm"
+            placeholder="Custom amount ($)"
+            value={customAmount}
+            onChange={(e) => { setCustomAmount(e.target.value); setSelectedPackId(null); }}
+            disabled={busy}
+          />
+        </div>
+
+        <button
+          onClick={addFunds}
+          disabled={busy || !finalAmount}
+          className={`mt-4 w-full px-4 py-2.5 rounded-lg text-white text-sm font-semibold ${BRAND_GRADIENT} disabled:opacity-60`}
+        >
+          {busy ? 'Opening Razorpay…' : `Add ${money(finalAmount)} to wallet`}
+        </button>
+
+        {err && <div className="mt-2 text-xs text-red-600">⚠ {err}</div>}
+
+        <div className="mt-3 text-[11px] text-mute">Wallet funds never expire and are shared across all your numbers.</div>
+      </div>
+    </div>
+  );
+}
+
 const fmtDate = (d) => {
   const z = new Date(d);
   return isNaN(z.getTime()) ? '—' : z.toLocaleString('en-US', {
@@ -61,6 +215,7 @@ export default function Transactions() {
   const [txns, setTxns]       = useState(null);
   const [err, setErr]         = useState('');
   const [loading, setLoading] = useState(true);
+  const [showAddFunds, setShowAddFunds] = useState(false);
 
   // Filters — default to "Today" so the page lands on a tight, current view
   // (matching the reseller/report surfaces). Users widen with "All time".
@@ -272,7 +427,7 @@ export default function Transactions() {
                       </p>
 
                       <div className="mt-6 flex items-center gap-3 flex-wrap justify-center">
-                        <Link to="/dashboard/billing?tab=wallet" className="btn-teal text-sm">+ Add Funds</Link>
+                        <button type="button" onClick={() => setShowAddFunds(true)} className="btn-teal text-sm">+ Add Funds</button>
                         <Link to="/dashboard/billing?tab=plans" className="btn-ghost text-sm">Browse Plans</Link>
                       </div>
 
@@ -318,6 +473,13 @@ export default function Transactions() {
       <div className="mt-3 text-right text-xs text-mute">
         Showing {filtered.length} of {txns ? txns.length : 0} transactions
       </div>
+
+      {showAddFunds && (
+        <AddFundsModal
+          onClose={() => setShowAddFunds(false)}
+          onSuccess={load}
+        />
+      )}
     </div>
   );
 }
