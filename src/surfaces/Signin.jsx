@@ -2,12 +2,6 @@ import { useState } from 'react';
 import { useApp } from '../AppContext.jsx';
 import Logo from '../components/Logo.jsx';
 
-const DEMO_ACCOUNTS = [
-  { label: 'Superadmin', identifier: 'superadmin@9278.ai', password: 'SuperAdmin1234' },
-  { label: 'Admin',      identifier: 'admin@9278.ai',       password: 'Admin1234' },
-  { label: 'User',       identifier: 'user@9278.ai',        password: 'User1234' },
-];
-
 export default function Signin() {
   const { signinUser, authError, setAuthError } = useApp();
   const [identifier, setIdentifier] = useState('');
@@ -23,12 +17,6 @@ export default function Signin() {
     setBusy(true);
     await signinUser({ identifier, password });
     setBusy(false);
-  };
-
-  const fillDemo = (acc) => {
-    setIdentifier(acc.identifier);
-    setPassword(acc.password);
-    if (authError) setAuthError('');
   };
 
   return (
@@ -53,22 +41,6 @@ export default function Signin() {
               ⏱ You were signed out after 30 minutes of inactivity. Please sign in again.
             </div>
           )}
-
-          <div className="mb-6 rounded-lg border border-lime-200 bg-lime-100/60 px-3 py-2.5">
-            <p className="text-xs font-mono font-semibold uppercase tracking-wide text-lime-800 mb-2">Demo accounts</p>
-            <div className="flex flex-col gap-1">
-              {DEMO_ACCOUNTS.map((acc) => (
-                <button
-                  key={acc.identifier}
-                  type="button"
-                  onClick={() => fillDemo(acc)}
-                  className="text-left text-xs text-[var(--ink-2)] hover:text-lime-700 hover:underline"
-                >
-                  {acc.label}: <span className="font-mono">{acc.identifier}</span> / <span className="font-mono">{acc.password}</span>
-                </button>
-              ))}
-            </div>
-          </div>
 
           <form onSubmit={submit} className="space-y-5">
             <div>
@@ -119,7 +91,7 @@ export default function Signin() {
           </form>
 
           <p className="text-center text-xs text-mute mt-8">
-            🔒 Local demo login · sessions expire after 30 minutes of inactivity
+            🔒 Sessions expire after 30 minutes of inactivity
           </p>
         </div>
       </section>

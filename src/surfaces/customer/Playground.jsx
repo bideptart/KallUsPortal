@@ -9,18 +9,6 @@ import { api } from '../../api.js';
 import { useVoicePreview } from '../../hooks/useVoicePreview.js';
 import { VOICES, gradientFor } from './KbAgent.jsx';
 
-// Sample voice agent shown only when /api/numbers returns nothing — same
-// "never overrides real data" rule as AgentsList/AgentDetail.
-const DEMO_NUMBER = {
-  id: 'demo-1',
-  value: '+27 82 555 0148',
-  agentName: 'KallUS Agent',
-  greeting: 'Hi, thanks for calling…',
-  prompt: 'You are a helpful customer support assistant. Be concise, friendly, and professional.',
-  kbCompany: '', kbFaqs: '',
-  voice: 'Kore', language: 'en-US',
-};
-
 // Same single preview chat agent shown on the Agents list — this account
 // doesn't have a real chat-agent backend, so its config here is local-only
 // (see ChatAgentDetail.jsx for the fuller version of this same honesty note).
@@ -91,7 +79,7 @@ function AgentPicker({ agents, selectedId, onChange }) {
 }
 
 export default function Playground() {
-  const { currentUser, demoAgent, patchDemoAgent } = useApp();
+  const { currentUser } = useApp();
   const navigate = useNavigate();
   const { playingVoice, error: previewError, play } = useVoicePreview();
 
@@ -187,12 +175,11 @@ export default function Playground() {
     return () => { cancelled = true; };
   }, []);
 
-  const demoMode = loaded && numbers.length === 0;
-  const voiceAgents = useMemo(() => (demoMode ? [{ ...DEMO_NUMBER, ...demoAgent }] : numbers).map((n) => ({
+  const voiceAgents = useMemo(() => numbers.map((n) => ({
     id: n.id, type: 'voice', agentName: n.agentName || n.label || 'Unnamed agent', value: n.value,
     greeting: n.greeting || '', prompt: n.prompt || '', kbCompany: n.kbCompany || '', kbFaqs: n.kbFaqs || '',
     voice: n.voice || 'Kore', language: n.language || 'en-US',
-  })), [numbers, demoMode, demoAgent]);
+  })), [numbers]);
 
   const agents = useMemo(() => [
     ...voiceAgents,
@@ -223,7 +210,34 @@ export default function Playground() {
   useEffect(() => { if (!playingVoice) setTesting(false); }, [playingVoice]);
   useEffect(() => { if (previewError) setTesting(false); }, [previewError]);
 
-  if (!currentUser || !draft) return null;
+  if (!currentUser) return null;
+
+  const isAdminTier = currentUser.userType === 'superadmin' || currentUser.userType === 'admin';
+  const basePath = isAdminTier ? '/admin' : '/dashboard';
+
+  // Only the chat preview agent always exists — a brand-new account with no
+  // voice agent yet has nothing to test in voice mode.
+  if (!draft) {
+    return (
+      <div>
+        <div className="flex items-center gap-3">
+          <span className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--primary)' }}>
+            <FlaskConical size={20} color="#fff" />
+          </span>
+          <div>
+            <h1 className="text-2xl font-display font-bold">Playground</h1>
+            <p className="text-mute mt-0.5 text-sm">Test your agents and tune them right here — no page hopping. Free, no plan minutes used.</p>
+          </div>
+        </div>
+        <div className="mt-8 form-card text-center py-12 text-mute">
+          No voice agent yet.
+          <div className="mt-3">
+            <button type="button" className="btn-teal" onClick={() => navigate(`${basePath}/numbers`)}>Add a number</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const set = (patch) => setDraft((d) => ({ ...d, ...patch }));
   // Was JSON.stringify(draft) !== JSON.stringify(savedDraft) — re-serializing
@@ -236,18 +250,9 @@ export default function Playground() {
     || draft.kbFaqs !== savedDraft.kbFaqs
     || draft.voice !== savedDraft.voice;
   const isChatAgent = selected.type === 'chat';
-  const isAdminTier = currentUser.userType === 'superadmin' || currentUser.userType === 'admin';
-  const basePath = isAdminTier ? '/admin' : '/dashboard';
 
   const save = async () => {
     if (isChatAgent) return; // no real backend for the chat agent — stays a local preview
-    // No real backend to save to in demo mode — write into the shared
-    // demo-agent record instead, so the Agent editor picks up the same values.
-    if (demoMode) {
-      patchDemoAgent(draft);
-      setSavedDraft(draft);
-      return;
-    }
     setSaving(true);
     try {
       const r = await api(`/api/numbers/${selected.id}`, {

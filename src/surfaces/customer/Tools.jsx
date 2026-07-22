@@ -25,14 +25,6 @@ import { api } from '../../api.js';
 const PROPAGATION_SECONDS = 120;
 const COUNTRY_CODE = '+1';
 
-// Shown only when the account has no real plans/numbers yet, so the page
-// still demonstrates its card-grid layout instead of sitting empty. Fake
-// name/phone/slug — not a real customer. Its tools work locally (no backend
-// call) since there's no real number id to save against.
-const DEMO_NUMBERS = [
-  { id: 'demo-1', value: '+10000000099', label: '', agentName: 'Sample Agent', agentSlug: 'sample-agent', plan: { label: 'Starter' } },
-];
-
 const stripCountryCode = (fullNumber) => {
   if (!fullNumber) return '';
   return fullNumber.startsWith(COUNTRY_CODE) ? fullNumber.slice(COUNTRY_CODE.length) : fullNumber.replace(/^\+/, '');
@@ -92,15 +84,8 @@ export default function Tools() {
     setLoadingNumbers(true);
     try {
       const r = await api('/api/numbers');
-      const real = r.numbers || [];
-      if (real.length === 0) {
-        setNumbers(DEMO_NUMBERS);
-      } else {
-        setNumbers(real);
-      }
-    } catch (e) {
-      setNumbers(DEMO_NUMBERS);
-    }
+      setNumbers(r.numbers || []);
+    } catch {}
     finally { setLoadingNumbers(false); }
   };
   useEffect(() => { loadNumbers(); }, []);
@@ -113,13 +98,6 @@ export default function Tools() {
     setTransferOn(true);
     setNotifOn(false);
     setNotifEmail('');
-    // Demo card — no real number id to look up. Start blank, entirely local.
-    if (id.startsWith('demo-')) {
-      setCurrent(null);
-      setInput('');
-      setDestLabel('');
-      return;
-    }
     setCurLoading(true);
     try {
       const r = await api(`/api/numbers/${id}/transfer`);
@@ -150,12 +128,6 @@ export default function Tools() {
     const { number, label } = pendingSave;
     setPendingSave(null);
     setErr(''); setMsg('');
-    // Demo card — nothing to save server-side; just reflect it locally.
-    if (selectedId.startsWith('demo-')) {
-      setCurrent({ number, destinationName: label, source: 'sample' });
-      setMsg('✓ Saved locally — connect a real plan/number to apply this to a live agent.');
-      return;
-    }
     setBusy(true);
     try {
       await api(`/api/numbers/${selectedId}/transfer`, { method: 'POST', body: { number, name: label } });

@@ -40,21 +40,6 @@ const lastActiveInfo = (iso) => {
   return { text, dot };
 };
 
-// Sample voice agent shown only when /api/numbers returns nothing (no DB
-// connected yet) — same "never overrides real data" rule as Overview.jsx.
-const DEMO_NUMBERS = [
-  {
-    id: 'demo-1',
-    value: '+27 82 555 0148',
-    agentName: 'KallUS Agent',
-    agentId: 'ce39a935-71e2-4b8a-9c2d-1a7f6e0b3d21',
-    status: 'ready',
-    provisionedAt: new Date('2026-07-16T13:19:00').toISOString(),
-    lastActive: new Date(Date.now() - 18 * 60 * 1000).toISOString(),
-    todaysCalls: 3,
-  },
-];
-
 // This account only ever has one real (voice) agent type today — there is no
 // chat-agent feature in the backend. This single row is an explicit product
 // preview, not live data, and is labeled as such everywhere it appears.
@@ -238,7 +223,6 @@ export default function AgentsList() {
   const { currentUser } = useApp();
   const navigate = useNavigate();
   const [numbers, setNumbers] = useState([]);
-  const [loaded, setLoaded] = useState(false);
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all'); // all | inbound | chat
 
@@ -249,7 +233,6 @@ export default function AgentsList() {
         const r = await api('/api/numbers');
         if (!cancelled) setNumbers(r.numbers || []);
       } catch {}
-      if (!cancelled) setLoaded(true);
     })();
     return () => { cancelled = true; };
   }, []);
@@ -259,8 +242,7 @@ export default function AgentsList() {
   const isAdminTier = currentUser.userType === 'superadmin' || currentUser.userType === 'admin';
   const basePath = isAdminTier ? '/admin' : '/dashboard';
 
-  const demoMode = loaded && numbers.length === 0;
-  const voiceAgents = demoMode ? DEMO_NUMBERS : numbers;
+  const voiceAgents = numbers;
 
   // Unfiltered base list — the summary cards read from this (a stable
   // account-wide overview) while `rows` below applies the type/search
