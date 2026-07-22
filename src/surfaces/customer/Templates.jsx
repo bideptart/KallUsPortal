@@ -110,11 +110,9 @@ export default function Templates() {
         <ArrowLeft size={14} /> All agents
       </Link>
 
+      {/* "Browse Templates" title now lives in the sticky top bar instead of here. */}
       <div className="mt-4 flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-display font-bold">Browse templates</h1>
-          <p className="text-mute mt-1">Start from a saved knowledge base and prompt instead of a blank agent.</p>
-        </div>
+        <p className="font-semibold text-base tracking-wide" style={{ color: 'var(--ink-2)' }}>Start from a saved knowledge base and prompt instead of a blank agent.</p>
         {notice && (
           <span className="pill text-xs" style={{ background: 'var(--ink)', color: '#fff' }}>{notice}</span>
         )}

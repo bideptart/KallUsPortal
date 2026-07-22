@@ -16,26 +16,12 @@ import { loadKbTemplates as loadSaved, persistKbTemplates as persistSaved, qaCou
 //    backend table).
 // =============================================================================
 
-// Shown only when the account has no real numbers yet, so the page still
-// demonstrates the "from your agents" card layout. Fake name/phone/content.
-const DEMO_NUMBERS = [
-  {
-    id: 'demo-1',
-    value: '+10000000099',
-    agentName: 'Sample Agent',
-    prompt: 'I am your technical support assistant. Please provide your organization ID, the exact error code or log output, and a brief description of the workflow that failed so we can help quickly.',
-    kbCompany: 'Sample Co. is a fictional support desk used only to preview this layout, showing how an agent knowledge base looks once real company info, hours, pricing, and policies are filled in. It operates Monday through Friday from nine in the morning until six in the evening, offering technical support, billing help, and general account assistance to.',
-    kbFaqs: Array.from({ length: 10 }, (_, i) => `Q: Sample question ${i + 1}?\nA: Sample answer ${i + 1}.`).join('\n\n'),
-  },
-];
-
 export default function KnowledgeBase() {
   const { currentUser } = useApp();
   const isAdminTier = currentUser?.userType === 'superadmin' || currentUser?.userType === 'admin';
   const basePath = isAdminTier ? '/admin' : '/dashboard';
 
   const [numbers, setNumbers] = useState([]);
-  const [isDemo, setIsDemo] = useState(false);
   const [saved, setSaved] = useState(() => loadSaved());
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ name: '', kbCompany: '', kbFaqs: '' });
@@ -62,12 +48,8 @@ export default function KnowledgeBase() {
     (async () => {
       try {
         const r = await api('/api/numbers');
-        const real = r.numbers || [];
-        if (real.length === 0) { setNumbers(DEMO_NUMBERS); setIsDemo(true); }
-        else { setNumbers(real); setIsDemo(false); }
-      } catch {
-        setNumbers(DEMO_NUMBERS); setIsDemo(true);
-      }
+        setNumbers(r.numbers || []);
+      } catch {}
     })();
   }, []);
 
@@ -168,11 +150,6 @@ export default function KnowledgeBase() {
   const saveAgentEdit = async (e) => {
     e.preventDefault();
     setEditMsg('');
-    if (editingId.startsWith('demo-')) {
-      setNumbers((prev) => prev.map((n) => (n.id === editingId ? { ...n, ...editForm } : n)));
-      setEditMsg('✓ Saved locally — connect a real plan/number to apply this to a live agent.');
-      return;
-    }
     setEditBusy(true);
     try {
       await api(`/api/numbers/${editingId}`, { method: 'PATCH', body: editForm });
@@ -196,15 +173,8 @@ export default function KnowledgeBase() {
 
   return (
     <div>
-      <div className="flex items-start gap-3">
-        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
-          <BookOpen className="w-5 h-5" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Knowledge Base</h1>
-          <p className="text-mute mt-0.5">Reusable templates — a greeting, company info, and behavior you can apply to any agent.</p>
-        </div>
-      </div>
+      {/* Icon + "Knowledge Base" title now live in the sticky top bar instead of here. */}
+      <p className="font-semibold text-base tracking-wide" style={{ color: 'var(--ink-2)' }}>Reusable templates — a greeting, company info, and behavior you can apply to any agent.</p>
 
       <div className="mt-4 rounded-xl border border-lime-200 bg-lime-50 dark:border-lime-500/30 dark:bg-lime-500/10 p-4 flex gap-3">
         <Info className="w-4 h-4 text-lime-600 dark:text-lime-400 shrink-0 mt-0.5" />
@@ -221,6 +191,17 @@ export default function KnowledgeBase() {
       </div>
       <p className="text-sm text-mute mt-0.5">Each agent's live knowledge — click a card to edit it, or save a copy to reuse elsewhere.</p>
 
+      {numbers.length === 0 ? (
+        <div className="mt-4 rounded-xl border-2 border-dashed py-14 px-6 text-center">
+          <div className="mx-auto w-12 h-12 rounded-xl bg-lime-100 dark:bg-lime-500/20 flex items-center justify-center text-lime-600 dark:text-lime-400">
+            <Bot className="w-5 h-5" />
+          </div>
+          <div className="mt-4 font-bold text-slate-900 dark:text-slate-100">No agents yet</div>
+          <p className="mt-1 text-sm text-mute max-w-md mx-auto">
+            Add a plan to get an agent, then its knowledge base shows up here.
+          </p>
+        </div>
+      ) : (
       <div className="mt-4 space-y-3">
         {numbers.map((n, i) => (
           <div
@@ -273,6 +254,7 @@ export default function KnowledgeBase() {
           </div>
         ))}
       </div>
+      )}
 
       <div className="mt-8 flex items-center gap-2">
         <h2 className="font-bold text-slate-900 dark:text-slate-100">Saved knowledge bases</h2>

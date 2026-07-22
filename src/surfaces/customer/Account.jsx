@@ -88,8 +88,8 @@ export default function Account() {
 
   return (
     <div>
-      <h1 className="text-2xl font-display font-bold">Account</h1>
-      <p className="text-mute mt-1">Manage your profile, login, and contact details.</p>
+      {/* "Account" title now lives in the sticky top bar instead of here. */}
+      <p className="font-semibold text-base tracking-wide" style={{ color: 'var(--ink-2)' }}>Manage your profile, login, and contact details.</p>
 
       {/* Summary card on the left, editable form on the right. Only fields the
           API actually returns are shown (see publicUser in server/index.js) —

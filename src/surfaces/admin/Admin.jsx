@@ -2,7 +2,7 @@ import { useEffect, useState, lazy, Suspense } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
   LayoutDashboard, Bot, FlaskConical, BookOpen, TrendingUp, Zap,
-  FileText, CreditCard, Receipt, User, UserCircle, Menu, Wrench, Ticket, DoorOpen,
+  FileText, CreditCard, Receipt, User, UserCircle, Menu, Wrench, Ticket, DoorOpen, Tag,
   List, Terminal, Server, Check, Copy, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
@@ -33,6 +33,7 @@ const Templates = lazy(() => import('../customer/Templates.jsx'));
 const Playground = lazy(() => import('../customer/Playground.jsx'));
 const Analytics = lazy(() => import('../customer/Analytics.jsx'));
 const Transactions = lazy(() => import('../customer/Transactions.jsx'));
+const Pricing = lazy(() => import('../customer/Pricing.jsx'));
 const BookingHistory = lazy(() => import('../customer/BookingHistory.jsx'));
 const Tickets = lazy(() => import('../customer/Tickets.jsx'));
 const TicketDetail = lazy(() => import('../customer/TicketDetail.jsx'));
@@ -55,6 +56,7 @@ const NAV_TABS_BEFORE_CALLS = [
 const NAV_TABS_AFTER_CALLS = [
   { id: 'reports',      label: 'Reports',           Icon: FileText },
   { id: 'billing',      label: 'Billing & minutes', Icon: CreditCard },
+  { id: 'pricing',      label: 'Plans & pricing',   Icon: Tag },
   { id: 'transactions', label: 'Transactions',      Icon: Receipt },
   // "Profile" and "Account" used to be two tabs whose labels were swapped
   // relative to what they rendered (Profile -> <Account />, Account ->
@@ -125,6 +127,17 @@ export default function Admin() {
   const [callActivityOpen, setCallActivityOpen] = useState(callActivityActive);
 
   useEffect(() => { setNavOpen(false); }, [tab]);
+
+  const [scrollPct, setScrollPct] = useState(0);
+  useEffect(() => {
+    const onScroll = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      setScrollPct(max > 0 ? Math.min(100, (window.scrollY / max) * 100) : 0);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [tab]);
   useEffect(() => { if (callActivityActive) setCallActivityOpen(true); }, [callActivityActive]);
 
   if (!VALID_TABS.has(tab)) return <Navigate to="/admin/overview" replace />;
@@ -212,7 +225,7 @@ export default function Admin() {
             the divider line under the sidebar logo continues across the
             entire page width. No user-avatar widget here anymore — Sign Out
             isn't reachable from the UI (see Customer.jsx for the same note). */}
-        <div className="sticky top-0 z-30 bg-white -mt-5 sm:-mt-6 lg:-mt-8 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-3 border-b border-slate-200 mb-6">
+        <div className="relative sticky top-0 z-30 bg-white -mt-5 sm:-mt-6 lg:-mt-8 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-3 border-b border-slate-200 mb-6">
           <button
             className="mobile-nav-toggle lg:hidden"
             onClick={() => setNavOpen(true)}
@@ -231,12 +244,31 @@ export default function Admin() {
               »
             </button>
           )}
-          <div className="lg:hidden flex items-center gap-1.5 text-xs text-mute font-semibold uppercase tracking-wider truncate">
-            {ActiveIcon && <ActiveIcon size={14} strokeWidth={2} />} {activeLabel}
+          {/* Page icon + title, sourced from the same nav-tab lookup that
+              drives the sidebar — was previously duplicated as a big heading
+              inside every page component; lives once, here, for every tab.
+              One <h1> in the DOM at every width (not two elements toggled by
+              visibility — that would leave zero h1s on mobile). Below `lg`
+              the "Menu" button plus the right-side actions leave very little
+              room, so the icon shrinks to inline and the title drops back to
+              the small uppercase label the mobile header always used. */}
+          <div className="lg:flex-1 flex items-center gap-1.5 lg:gap-2.5 lg:min-w-0">
+            {ActiveIcon && (
+              <>
+                <ActiveIcon size={14} strokeWidth={2} className="lg:hidden shrink-0" />
+                <span className="hidden lg:flex w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] items-center justify-center text-white shrink-0">
+                  <ActiveIcon className="w-4 h-4" />
+                </span>
+              </>
+            )}
+            <h1 className="text-xs lg:text-lg font-semibold lg:font-bold uppercase lg:normal-case tracking-wider lg:tracking-normal text-mute lg:text-slate-900 lg:dark:text-slate-100 truncate">
+              {activeLabel}
+            </h1>
           </div>
           <div className="ml-auto flex items-center gap-3">
             <button type="button" className="btn-teal text-sm whitespace-nowrap" onClick={() => setShowAddPlan(true)}>+ Add plan / number</button>
           </div>
+          <div className="absolute left-0 bottom-0 h-[3px] bg-lime-500 transition-[width] duration-200 ease-linear" style={{ width: `${scrollPct}%` }} />
         </div>
 
         {/* New nav ids map onto the closest existing page; legacy ids (kept
@@ -266,6 +298,7 @@ export default function Admin() {
         {tab === 'health'                                && <Health />}
         {(tab === 'billing' || tab === 'payments')      && <Payments />}
         {tab === 'transactions'                          && <Transactions />}
+        {tab === 'pricing'                               && <Pricing />}
         {tab === 'settings'                              && <Settings />}
         {/* /admin/profile kept as an alias so old links/bookmarks still land
             somewhere sensible now that the Profile tab itself is gone. */}

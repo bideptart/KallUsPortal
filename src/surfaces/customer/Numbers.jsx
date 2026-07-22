@@ -104,8 +104,8 @@ export default function Numbers() {
 
   return (
     <div>
-      <div className="flex items-start justify-between flex-wrap gap-3">
-        <h1 className="text-2xl font-bold">📱 Add New Plans</h1>
+      {/* "Plan and Numbers" title now lives in the sticky top bar instead of here. */}
+      <div className="flex items-start justify-end flex-wrap gap-3">
         <button
           className="btn-teal text-sm"
           onClick={() => setShowAdd(true)}

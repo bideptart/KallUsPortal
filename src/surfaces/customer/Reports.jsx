@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Phone, MessageSquare, FileText } from 'lucide-react';
+import { Phone, MessageSquare } from 'lucide-react';
 import { api, getToken } from '../../api.js';
 import { useApp } from '../../AppContext.jsx';
 import DateRangePicker from '../../components/DateRangePicker.jsx';
 import ChatLogRow from '../../components/ChatLogRow.jsx';
 import SearchIcon from '../../components/SearchIcon.jsx';
 import { buildMockChatSessions } from '../../utils/mockChatLogs.js';
-import { buildMockCallRecordings } from '../../utils/mockCallLogs.js';
 
 const digitsOnly = (s) => String(s || '').replace(/\D+/g, '');
 
@@ -105,13 +104,6 @@ export default function Reports() {
   const [chatSessions] = useState(() => buildMockChatSessions());
   const [openChats, setOpenChats] = useState({});
 
-  // Call Logs demo fallback — only shown when the real /api/recordings call
-  // fails (no backend running, expired session, etc.) so there's something
-  // to click through — including a real playable/downloadable recording —
-  // while testing without a live backend. Never shown when the API succeeds
-  // with a genuinely empty list; that's a real "no calls yet" state.
-  const [mockCallRecordings] = useState(() => buildMockCallRecordings());
-
   const load = async ({ force = false } = {}) => {
     setLoading(true); setErr('');
     try {
@@ -131,8 +123,7 @@ export default function Reports() {
 
   useEffect(() => { load(); }, []);
 
-  const usingMockRecordings = !!err && (!recordings || recordings.length === 0);
-  const effectiveRecordings = usingMockRecordings ? mockCallRecordings : (recordings || []);
+  const effectiveRecordings = recordings || [];
 
   const filteredRecordings = useMemo(() => {
     const fromTs = dateFrom ? new Date(dateFrom + 'T00:00:00').getTime() : -Infinity;
@@ -176,14 +167,6 @@ export default function Reports() {
       setTranscripts((t) => ({ ...t, [callId]: { ...existing, open: !existing.open } }));
       return;
     }
-    // Mock demo rows carry their transcript locally — no network call.
-    if (callId.startsWith('mock-call-')) {
-      const mock = mockCallRecordings.find((r) => r.callId === callId);
-      setTranscripts((t) => ({
-        ...t, [callId]: { loading: false, open: true, messages: mock?.transcript || [], fullText: '' },
-      }));
-      return;
-    }
     setTranscripts((t) => ({ ...t, [callId]: { loading: true, open: true } }));
     try {
       const r = await api(`/api/recordings/${encodeURIComponent(callId)}/transcript`);
@@ -204,14 +187,6 @@ export default function Reports() {
       setSummaries((s) => ({ ...s, [callId]: { ...existing, open: !existing.open } }));
       return;
     }
-    // Mock demo rows carry their summary locally — no network call.
-    if (callId.startsWith('mock-call-')) {
-      const mock = mockCallRecordings.find((r) => r.callId === callId);
-      setSummaries((s) => ({
-        ...s, [callId]: { loading: false, open: true, data: { aiSummary: mock?.summary || null } },
-      }));
-      return;
-    }
     setSummaries((s) => ({ ...s, [callId]: { loading: true, open: true } }));
     try {
       const data = await api(`/api/recordings/${encodeURIComponent(callId)}/summary`);
@@ -227,22 +202,14 @@ export default function Reports() {
 
   return (
     <div>
-      <div className="flex items-center gap-3 animate-fade-up">
-        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
-          <FileText className="w-5 h-5" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Reports</h1>
-          <p className="text-mute">
-            Call and chat history — recordings, transcripts, and AI summaries per record.
-          </p>
-        </div>
-      </div>
+      {/* Icon + "Reports" title now live in the sticky top bar instead of here. */}
+      <p className="text-base font-semibold tracking-wide animate-fade-up" style={{ color: 'var(--ink-2)' }}>
+        Call and chat history — recordings, transcripts, and AI summaries per record.
+      </p>
 
       {err && (
         <div className="mt-4 text-sm text-red-500 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">
           {err}
-          {usingMockRecordings && ' — showing demo call data below so you can try the UI.'}
         </div>
       )}
 

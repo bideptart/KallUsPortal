@@ -8,7 +8,6 @@ export default function BookingHistory() {
     <Meetings
       title="Booking History"
       description="Every meeting your AI agent booked through Google Calendar."
-      demoFallback
     />
   );
 }

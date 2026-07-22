@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Phone, MessageCircle, Copy, Check, FileText, ArrowDownLeft, Circle, Search, Filter, ChevronDown,
+  Phone, MessageCircle, Copy, Check, FileText, ArrowDownLeft, Circle, Search, Filter, ChevronDown, ChevronRight,
   Mic, LayoutGrid, Bot, Zap, TrendingUp,
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
@@ -39,21 +39,6 @@ const lastActiveInfo = (iso) => {
   }
   return { text, dot };
 };
-
-// Sample voice agent shown only when /api/numbers returns nothing (no DB
-// connected yet) — same "never overrides real data" rule as Overview.jsx.
-const DEMO_NUMBERS = [
-  {
-    id: 'demo-1',
-    value: '+27 82 555 0148',
-    agentName: 'KallUS Agent',
-    agentId: 'ce39a935-71e2-4b8a-9c2d-1a7f6e0b3d21',
-    status: 'ready',
-    provisionedAt: new Date('2026-07-16T13:19:00').toISOString(),
-    lastActive: new Date(Date.now() - 18 * 60 * 1000).toISOString(),
-    todaysCalls: 3,
-  },
-];
 
 // This account only ever has one real (voice) agent type today — there is no
 // chat-agent feature in the backend. This single row is an explicit product
@@ -238,7 +223,6 @@ export default function AgentsList() {
   const { currentUser } = useApp();
   const navigate = useNavigate();
   const [numbers, setNumbers] = useState([]);
-  const [loaded, setLoaded] = useState(false);
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all'); // all | inbound | chat
 
@@ -249,7 +233,6 @@ export default function AgentsList() {
         const r = await api('/api/numbers');
         if (!cancelled) setNumbers(r.numbers || []);
       } catch {}
-      if (!cancelled) setLoaded(true);
     })();
     return () => { cancelled = true; };
   }, []);
@@ -259,8 +242,7 @@ export default function AgentsList() {
   const isAdminTier = currentUser.userType === 'superadmin' || currentUser.userType === 'admin';
   const basePath = isAdminTier ? '/admin' : '/dashboard';
 
-  const demoMode = loaded && numbers.length === 0;
-  const voiceAgents = demoMode ? DEMO_NUMBERS : numbers;
+  const voiceAgents = numbers;
 
   // Unfiltered base list — the summary cards read from this (a stable
   // account-wide overview) while `rows` below applies the type/search
@@ -307,13 +289,10 @@ export default function AgentsList() {
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3 animate-fade-up">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
-            <Bot className="w-5 h-5" />
-          </div>
-          <h1 className="text-2xl font-display font-bold">My Agents</h1>
-        </div>
+      {/* Icon + "My Agents" title now live in the sticky top bar instead of
+          here. This row keeps just the search + new-agent controls, pinned
+          right since the icon+title sibling that used to balance it is gone. */}
+      <div className="flex items-center justify-end gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-mute pointer-events-none" />
@@ -374,11 +353,12 @@ export default function AgentsList() {
               <th>Phone number</th>
               <th className="text-right">Today's calls</th>
               <th>Last active</th>
+              <th className="w-8" />
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 && (
-              <tr><td colSpan={8} className="text-center text-mute py-8">No agents match your search.</td></tr>
+              <tr><td colSpan={9} className="text-center text-mute py-8">No agents match your search.</td></tr>
             )}
             {rows.map((r) => {
               const detailPath = r.type === 'chat' ? 'agent-detail-chat' : 'agent-detail';
@@ -386,7 +366,7 @@ export default function AgentsList() {
               return (
               <tr
                 key={r.id}
-                className="cursor-pointer"
+                className="cursor-pointer group"
                 tabIndex={0}
                 role="button"
                 onClick={openRow}
@@ -438,6 +418,11 @@ export default function AgentsList() {
                       </span>
                     );
                   })()}
+                </td>
+                <td>
+                  <span className="w-6 h-6 rounded-full flex items-center justify-center bg-slate-100 text-slate-500 transition-all duration-150 group-hover:translate-x-0.5 group-hover:bg-lime-100 group-hover:text-lime-700">
+                    <ChevronRight size={14} strokeWidth={2.5} />
+                  </span>
                 </td>
               </tr>
               );

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../../api.js';
-import BookingIcon from '../../components/BookingIcon.jsx';
 
 // =============================================================================
 // Meetings — surfaces every booking the AI agent scheduled via the n8n
@@ -219,38 +218,16 @@ function MeetingRow({ m }) {
   );
 }
 
-// Anonymized sample rows — shown only when `demoFallback` is on and the real
-// backend has nothing to return (no MCP/Google Calendar wired up yet), so the
-// page still demonstrates its layout instead of sitting empty. All names,
-// emails and phone numbers here are fake placeholders, not real customers.
-const daysAgo = (d, h, m) => {
-  const t = new Date();
-  t.setDate(t.getDate() - d);
-  t.setHours(h, m, 0, 0);
-  return t.toISOString();
-};
-const DEMO_MEETINGS = [
-  { id: 'demo-1', name: 'Sample Customer 1', email: 'sample1@example.com', phone: '+27000000001', start: daysAgo(24, 6, 0), end: daysAgo(24, 6, 30), duration_minutes: 30, status: 'done', call_id: 'demo0001aaaa' },
-  { id: 'demo-2', name: 'Sample Customer 2', email: 'sample2@example.com', phone: '+27000000002', start: daysAgo(9, 17, 0), end: daysAgo(9, 17, 30), duration_minutes: 30, status: 'done', call_id: 'demo0002bbbb' },
-  { id: 'demo-3', name: 'Sample Customer 3', email: 'sample3@example.com', phone: '+27000000003', start: daysAgo(8, 11, 0), end: daysAgo(8, 11, 30), duration_minutes: 30, status: 'done', call_id: 'demo0003cccc' },
-  { id: 'demo-4', name: 'Sample Customer 4', email: 'sample4@example.com', phone: '+27000000004', start: daysAgo(8, 11, 0), end: daysAgo(8, 11, 30), duration_minutes: 30, status: 'done', notes: 'Wants to know about courses.', call_id: 'demo0004dddd' },
-  { id: 'demo-5', name: 'Sample Customer 5', email: 'sample5@example.com', phone: '+27000000005', start: daysAgo(8, 16, 30), end: daysAgo(8, 17, 0), duration_minutes: 30, status: 'done', notes: 'Portal login issue.', call_id: 'demo0005eeee' },
-  { id: 'demo-6', name: 'Sample Customer 6', email: 'sample6@example.com', phone: '+27000000006', start: daysAgo(7, 15, 0), end: daysAgo(7, 15, 30), duration_minutes: 30, status: 'done', call_id: 'demo0006ffff' },
-  { id: 'demo-7', name: 'Sample Customer 7', email: 'sample7@example.com', phone: '+27000000007', start: daysAgo(6, 14, 0), end: daysAgo(6, 14, 30), duration_minutes: 30, status: 'done', call_id: 'demo0007gggg' },
-];
-
 // =============================================================================
 // Main surface.
 // =============================================================================
 export default function Meetings({
   title = '📅 Scheduled meetings',
   description = 'Every meeting your AI agent booked through Google Calendar.',
-  demoFallback = false,
 }) {
   const [meetings, setMeetings] = useState(null);
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(true);
-  const [isDemo, setIsDemo] = useState(false);
   const [upcomingOnly, setUpcomingOnly] = useState(true);
   const [month, setMonth] = useState(() => {
     const n = new Date();
@@ -279,22 +256,10 @@ export default function Meetings({
     setErr('');
     try {
       const r = await api(`/api/scheduled-meetings?upcoming=${upcomingOnly ? 'true' : 'false'}`);
-      const real = r.meetings || [];
-      if (demoFallback && real.length === 0) {
-        setMeetings(DEMO_MEETINGS);
-        setIsDemo(true);
-      } else {
-        setMeetings(real);
-        setIsDemo(false);
-      }
+      setMeetings(r.meetings || []);
     } catch (e) {
-      if (demoFallback) {
-        setMeetings(DEMO_MEETINGS);
-        setIsDemo(true);
-      } else {
-        setErr(e.message || 'Failed to load meetings');
-        setMeetings([]);
-      }
+      setErr(e.message || 'Failed to load meetings');
+      setMeetings([]);
     } finally {
       setLoading(false);
     }
@@ -325,26 +290,18 @@ export default function Meetings({
 
   return (
     <div>
+      {/* Icon + title used to render here — the header (Customer.jsx) already
+          shows one for the "Booking History" nav route this page is reached
+          through. The `title` prop still exists for the legacy /meetings
+          deep link that carries no sidebar entry (and so no header icon). */}
       <div className="flex items-start justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3 animate-fade-up">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
-            <BookingIcon className="w-5 h-5" maskColor="#5c8a1e" />
-          </div>
-          <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-            {title}
-          </h1>
-          <p className="text-mute">
-            {isDemo
-              ? 'No Google Calendar connected yet — showing sample bookings so you can preview the layout.'
-              : description}
-            {upcomingOnly && <> · <span className="font-semibold">Showing upcoming only</span></>}
-            {total > 0 && (
-              <> · <span className="text-lime-600 dark:text-lime-400 font-semibold">{upcomingCount} upcoming</span></>
-            )}
-          </p>
-          </div>
-        </div>
+        <p className="text-base font-semibold tracking-wide animate-fade-up" style={{ color: 'var(--ink-2)' }}>
+          {description}
+          {upcomingOnly && <> · <span className="font-semibold">Showing upcoming only</span></>}
+          {total > 0 && (
+            <> · <span className="text-lime-600 dark:text-lime-400 font-semibold">{upcomingCount} upcoming</span></>
+          )}
+        </p>
         <div className="flex items-center gap-2 flex-wrap">
           <label className="flex items-center gap-2 text-sm text-mute cursor-pointer">
             <input

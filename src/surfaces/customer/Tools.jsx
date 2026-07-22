@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Wrench } from 'lucide-react';
 import { api } from '../../api.js';
 
 // =============================================================================
@@ -24,14 +23,6 @@ import { api } from '../../api.js';
 // =============================================================================
 const PROPAGATION_SECONDS = 120;
 const COUNTRY_CODE = '+1';
-
-// Shown only when the account has no real plans/numbers yet, so the page
-// still demonstrates its card-grid layout instead of sitting empty. Fake
-// name/phone/slug — not a real customer. Its tools work locally (no backend
-// call) since there's no real number id to save against.
-const DEMO_NUMBERS = [
-  { id: 'demo-1', value: '+10000000099', label: '', agentName: 'Sample Agent', agentSlug: 'sample-agent', plan: { label: 'Starter' } },
-];
 
 const stripCountryCode = (fullNumber) => {
   if (!fullNumber) return '';
@@ -92,15 +83,8 @@ export default function Tools() {
     setLoadingNumbers(true);
     try {
       const r = await api('/api/numbers');
-      const real = r.numbers || [];
-      if (real.length === 0) {
-        setNumbers(DEMO_NUMBERS);
-      } else {
-        setNumbers(real);
-      }
-    } catch (e) {
-      setNumbers(DEMO_NUMBERS);
-    }
+      setNumbers(r.numbers || []);
+    } catch {}
     finally { setLoadingNumbers(false); }
   };
   useEffect(() => { loadNumbers(); }, []);
@@ -113,13 +97,6 @@ export default function Tools() {
     setTransferOn(true);
     setNotifOn(false);
     setNotifEmail('');
-    // Demo card — no real number id to look up. Start blank, entirely local.
-    if (id.startsWith('demo-')) {
-      setCurrent(null);
-      setInput('');
-      setDestLabel('');
-      return;
-    }
     setCurLoading(true);
     try {
       const r = await api(`/api/numbers/${id}/transfer`);
@@ -150,12 +127,6 @@ export default function Tools() {
     const { number, label } = pendingSave;
     setPendingSave(null);
     setErr(''); setMsg('');
-    // Demo card — nothing to save server-side; just reflect it locally.
-    if (selectedId.startsWith('demo-')) {
-      setCurrent({ number, destinationName: label, source: 'sample' });
-      setMsg('✓ Saved locally — connect a real plan/number to apply this to a live agent.');
-      return;
-    }
     setBusy(true);
     try {
       await api(`/api/numbers/${selectedId}/transfer`, { method: 'POST', body: { number, name: label } });
@@ -179,18 +150,11 @@ export default function Tools() {
 
   return (
     <div>
-      <div className="flex items-center gap-3 animate-fade-up">
-        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
-          <Wrench className="w-5 h-5" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Tools</h1>
-          <p className="text-mute mt-1">
-            Pick a plan / number below, then configure its tools — call transfer, booking notifications, more soon.
-            Changes take effect on the next call (no restart needed).
-          </p>
-        </div>
-      </div>
+      {/* Icon + "Tools" title now live in the sticky top bar instead of here. */}
+      <p className="text-base font-semibold tracking-wide animate-fade-up" style={{ color: 'var(--ink-2)' }}>
+        Pick a plan / number below, then configure its tools — call transfer, booking notifications, more soon.
+        Changes take effect on the next call (no restart needed).
+      </p>
 
       <div className="mt-4">
         <button onClick={loadNumbers} disabled={loadingNumbers} className="btn-teal text-sm transition duration-200 ease-out hover:scale-105 active:scale-95">
@@ -323,7 +287,7 @@ export default function Tools() {
                           className="input font-mono transition duration-200 ease-out focus:shadow-md"
                           value={input}
                           onChange={(e) => { setInput(e.target.value.replace(/[^\d]/g, '')); setMsg(''); setErr(''); }}
-                          placeholder="8171428862"
+                          placeholder="5551234567"
                           disabled={curLoading || busy || propagationLocked}
                         />
                       </div>

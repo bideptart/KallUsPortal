@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 // Bot, not IdCardLanyard — the agent is the AI voice agent, and Bot is the
 // same icon the Agents nav item and agent pages already use.
 import {
-  Search, Clock, RefreshCw, Plus, Phone, User, Bot, ChevronRight, X, Ticket,
+  Search, Clock, RefreshCw, Plus, Phone, User, Bot, ChevronRight, X,
   Target, CheckCircle2, AlertTriangle, Info,
 } from 'lucide-react';
 import { STATUS_META, loadTickets, persistTickets, fmtUpdated, overdueHours } from './ticketsStore.js';
@@ -106,20 +106,13 @@ export default function Tickets() {
 
   return (
     <div>
-      <div className="flex items-center gap-3 animate-fade-up">
-        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
-          <Ticket className="w-5 h-5" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Tickets</h1>
-          <p className="text-mute">
-            Issues your AI agent captured on calls — or filed manually. Resolution target{' '}
-            <button onClick={() => { setSlaDraft(nearestSlaValue(slaHours)); setSlaModalOpen(true); }} className="text-lime-600 dark:text-lime-400 font-semibold underline decoration-dotted underline-offset-2 transition-colors duration-200 hover:text-lime-700 dark:hover:text-lime-300">
-              {slaHours}h
-            </button>.
-          </p>
-        </div>
-      </div>
+      {/* Icon + "Tickets" title now live in the sticky top bar instead of here. */}
+      <p className="text-base font-semibold tracking-wide animate-fade-up" style={{ color: 'var(--ink-2)' }}>
+        Issues your AI agent captured on calls — or filed manually. Resolution target{' '}
+        <button onClick={() => { setSlaDraft(nearestSlaValue(slaHours)); setSlaModalOpen(true); }} className="text-lime-600 dark:text-lime-400 font-semibold underline decoration-dotted underline-offset-2 transition-colors duration-200 hover:text-lime-700 dark:hover:text-lime-300">
+          {slaHours}h
+        </button>.
+      </p>
 
       <div className="mt-4 flex items-center gap-2 flex-wrap animate-fade-up">
         <button onClick={() => { setSlaDraft(nearestSlaValue(slaHours)); setSlaModalOpen(true); }} className="btn-teal text-sm inline-flex items-center gap-1.5 transition duration-200 ease-out hover:scale-105 active:scale-95">

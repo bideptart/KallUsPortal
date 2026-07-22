@@ -10,23 +10,6 @@ import { ChangePlanModal, AddNumberModal } from './Numbers.jsx';
 
 const rand = (n) => `$${Number(n || 0).toLocaleString('en-US')}`;
 
-// Sample plan shown only when the account has no real DID yet (no DB
-// connected, or a brand-new signup) — never overrides a real plan once
-// /api/numbers returns one. Uses the actual Starter tier pricing from
-// server/plans.js so the numbers shown are realistic, not made up.
-const DEMO_NUMBER = {
-  id: 'demo-plan',
-  value: '+1 555 010 1234',
-  label: '',
-  agentName: 'KallUS Agent',
-  isPrimary: true,
-  planCycle: 'monthly',
-  activatedAt: new Date(Date.now() - 11 * 24 * 60 * 60 * 1000).toISOString(),
-  nextRentalAt: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
-  plan: { label: 'Starter', amount: 31, min: 250, rate: 0.13 },
-};
-const DEMO_USED_MINUTES = 48;
-
 // Solid square-avatar background per plan tier — first-letter badges on the
 // Auto-recharge cards (Starter/Growth/Scale each get their own accent).
 const planAvatarClass = (label) => {
@@ -208,18 +191,13 @@ export default function Billing() {
           bar (Customer.jsx) already shows one on every dashboard page,
           including this one, so a second copy here was a duplicate.
           "Active plans" below still has its own in-context copy. */}
+      {/* Icon + "Billing & minutes" title now live in the sticky top bar
+          instead of here — this row keeps just the subtitle + the transaction
+          history link. */}
       <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3 animate-fade-up">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
-            <CreditCard className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">Billing &amp; minutes</h1>
-            <p className="text-sm text-mute mt-1">
-              <strong>KallUS</strong> Voice AI — plans per number, instant upgrades, shared wallet.
-            </p>
-          </div>
-        </div>
+        <p className="text-base font-semibold tracking-wide animate-fade-up" style={{ color: 'var(--ink-2)' }}>
+          <strong>KallUS</strong> Voice AI — plans per number, instant upgrades, shared wallet.
+        </p>
         <Link to="/dashboard/transactions" className={`text-sm !rounded-lg px-[22px] py-[11px] text-white font-semibold ${BRAND_GRADIENT} hover:brightness-110`}>
           Transaction history
         </Link>
@@ -415,16 +393,9 @@ function MyPlansTab({
         </div>
 
         {numbers.length === 0 ? (
-          <div className="space-y-3">
-            <ActivePlanCard
-              number={DEMO_NUMBER}
-              walletBalance={walletBalance}
-              usedMinutes={DEMO_USED_MINUTES}
-              onChangePlan={onAddPlan}
-              onRestartPlan={onAddPlan}
-              onTopUp={onAddPlan}
-              demo
-            />
+          <div className="form-card text-center py-10">
+            <p className="text-mute">No active plan yet.</p>
+            <button className="btn-teal mt-3" onClick={onAddPlan}>Add a plan</button>
           </div>
         ) : (
           <div className="space-y-4">
@@ -450,7 +421,7 @@ function MyPlansTab({
 // ActivePlanCard — a single per-DID card with gradient header, label pill,
 // status pill, phone number, minutes progress bar, dates, and action buttons.
 // =============================================================================
-function ActivePlanCard({ number: n, walletBalance, usedMinutes, onChangePlan, onRestartPlan, onTopUp, demo = false }) {
+function ActivePlanCard({ number: n, walletBalance, usedMinutes, onChangePlan, onRestartPlan, onTopUp }) {
   const planMin = Number(n.plan?.min) || 0;
   // Wallet rate for THIS number = the rate from THIS number's plan tier.
   // (Starter $12/min, Growth $11/min, Scale $10/min — never a flat $4.)
@@ -593,7 +564,7 @@ function ActivePlanCard({ number: n, walletBalance, usedMinutes, onChangePlan, o
                 Restart plan
               </button>
               <Link
-                to={demo ? '/dashboard/agents' : `/dashboard/agents?n=${n.id}`}
+                to={`/dashboard/agents?n=${n.id}`}
                 onMouseEnter={() => setHoveredAction('edit')}
                 onMouseLeave={() => setHoveredAction(null)}
                 className={pillClass('edit')}
@@ -1203,15 +1174,11 @@ function AutoRechargeTab({ numbers, cards = [], onSaved, onGoWallet }) {
   const cardById = (id) => cards.find((c) => c.id === id) || null;
 
   // Toggle OFF immediately; toggle ON opens the card chooser (the actual
-  // enable happens once a card is confirmed in the modal). The demo row has
-  // no real DID to PATCH, so it just flips local state instead of hitting
-  // the API — same "interact freely, nothing persists" demo behavior used
-  // elsewhere in the app (Playground, Agent editor).
+  // enable happens once a card is confirmed in the modal).
   const onToggle = async (n, next) => {
     setErr('');
     if (next) { setChooserFor(n); return; }
     setPending((p) => ({ ...p, [n.id]: false }));
-    if (n.id === DEMO_NUMBER.id) return;
     try {
       await api(`/api/numbers/${n.id}`, { method: 'PATCH', body: { autoRechargeEnabled: false } });
       await onSaved?.();
@@ -1223,11 +1190,6 @@ function AutoRechargeTab({ numbers, cards = [], onSaved, onGoWallet }) {
   };
 
   const confirmCard = async (n, pmId) => {
-    if (n.id === DEMO_NUMBER.id) {
-      setPending((p) => ({ ...p, [n.id]: true }));
-      setChooserFor(null);
-      return;
-    }
     await api(`/api/numbers/${n.id}`, {
       method: 'PATCH',
       body: { autoRechargeEnabled: true, autoRechargePmId: pmId },
@@ -1236,12 +1198,7 @@ function AutoRechargeTab({ numbers, cards = [], onSaved, onGoWallet }) {
     await onSaved?.();
   };
 
-  // Sample plan shown only when the account has no real DID yet — same
-  // reasoning and same demo row as the My Plans tab (DEMO_NUMBER), so the
-  // page always shows what auto-recharge looks like instead of a bare
-  // empty state. Never overrides real data once /api/numbers returns one.
-  const isDemo = numbers.length === 0;
-  const displayNumbers = isDemo ? [DEMO_NUMBER] : numbers;
+  const displayNumbers = numbers;
   const offCount = displayNumbers.filter((n) => {
     const isOn = pending[n.id] !== undefined ? pending[n.id] : !!n.autoRechargeEnabled;
     return !isOn;
@@ -1266,6 +1223,9 @@ function AutoRechargeTab({ numbers, cards = [], onSaved, onGoWallet }) {
         )}
 
         <div className="mt-4 space-y-3">
+          {displayNumbers.length === 0 && (
+            <div className="form-card text-center py-8 text-mute">No plans yet.</div>
+          )}
           {displayNumbers.map((n) => {
             const isOn = pending[n.id] !== undefined ? pending[n.id] : !!n.autoRechargeEnabled;
             const planLabel = n.plan?.label || 'Starter';
@@ -1295,16 +1255,14 @@ function AutoRechargeTab({ numbers, cards = [], onSaved, onGoWallet }) {
                     </div>
                   </div>
 
-                  {/* Toggle — flips local-only state on the demo row (no
-                      real DID to PATCH); disabled only while a real PATCH
-                      for a real number is in flight. */}
+                  {/* Toggle — disabled only while its PATCH is in flight. */}
                   <label className="inline-flex items-center gap-2 select-none shrink-0 cursor-pointer">
                     <input
                       type="checkbox"
                       className="sr-only peer"
                       checked={isOn}
                       onChange={(e) => onToggle(n, e.target.checked)}
-                      disabled={n.id !== DEMO_NUMBER.id && pending[n.id] !== undefined}
+                      disabled={pending[n.id] !== undefined}
                     />
                     <span className="relative w-11 h-6 bg-slate-300 rounded-full transition peer-checked:bg-lime-500 after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:w-5 after:h-5 after:transition peer-checked:after:translate-x-5" />
                     <span className="text-sm font-semibold text-slate-900 w-7">{isOn ? 'On' : 'Off'}</span>

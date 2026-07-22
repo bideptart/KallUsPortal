@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { TrendingUp } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
 
@@ -53,30 +52,6 @@ const PRESETS = [
   { id: 'alltime', label: 'All time', range: () => ({ from: '', to: '' }) },
 ];
 
-// Placeholder rows shown only when there's no real call/sentiment data (no
-// DB/MCP connected), same "never overrides real data" rule as Overview.jsx's
-// DEMO_* constants. Sentiment is baked in for a few rows since a live
-// per-call sentiment lookup isn't cheap to bulk-fetch for a table.
-const DEMO_CALLS = Array.from({ length: 15 }, (_, i) => {
-  const rand = (seed) => { const x = Math.sin(seed) * 10000; return x - Math.floor(x); };
-  const inbound = i % 5 !== 3;
-  const start = new Date(Date.now() - (i * 9 + Math.floor(rand(i) * 6)) * 3600 * 1000);
-  const duration = 5 + Math.floor(rand(i * 7) * 115);
-  // Every row carries a sentiment so the placeholder table reads as fully
-  // populated (no "—" gaps) rather than partially filled.
-  const sentiments = ['neutral', 'positive', 'neutral', 'negative', 'neutral', 'positive', 'neutral', 'negative'];
-  return {
-    sid: `demo-${i}`,
-    startTime: start.toISOString(),
-    direction: inbound ? 'inbound' : 'outbound-api',
-    from: inbound ? `9${100000000 + Math.floor(rand(i * 3) * 899999999)}` : '918037683048',
-    to: inbound ? '918037683048' : `9${100000000 + Math.floor(rand(i * 11) * 899999999)}`,
-    duration,
-    status: 'completed',
-    sentiment: sentiments[i % sentiments.length],
-  };
-});
-
 export default function Analytics() {
   const { currentUser } = useApp();
   const [calls, setCalls] = useState(null);
@@ -104,8 +79,7 @@ export default function Analytics() {
     return () => { cancelled = true; };
   }, []);
 
-  const demoMode = !calls || calls.length === 0;
-  const rawCalls = demoMode ? DEMO_CALLS : calls;
+  const rawCalls = calls || [];
 
   const activePresetId = useMemo(() => {
     for (const p of PRESETS) {
@@ -184,17 +158,10 @@ export default function Analytics() {
 
   return (
     <div>
-      <div className="flex items-center gap-3 animate-fade-up">
-        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
-          <TrendingUp className="w-5 h-5" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Analytics</h1>
-          <p className="text-mute">Your call history and activity across all your numbers.</p>
-        </div>
-      </div>
+      {/* Icon + "Analytics" title now live in the sticky top bar instead of here. */}
+      <p className="font-semibold text-base tracking-wide animate-fade-up" style={{ color: 'var(--ink-2)' }}>Your call history and activity across all your numbers.</p>
 
-      {err && !demoMode && (
+      {err && (
         <div className="mt-4 text-sm text-red-500 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">{err}</div>
       )}
 
