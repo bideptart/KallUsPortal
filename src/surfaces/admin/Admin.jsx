@@ -130,9 +130,15 @@ export default function Admin() {
 
   const [scrollPct, setScrollPct] = useState(0);
   useEffect(() => {
+    let ticking = false;
     const onScroll = () => {
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      setScrollPct(max > 0 ? Math.min(100, (window.scrollY / max) * 100) : 0);
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        setScrollPct(max > 0 ? Math.min(100, (window.scrollY / max) * 100) : 0);
+        ticking = false;
+      });
     };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });

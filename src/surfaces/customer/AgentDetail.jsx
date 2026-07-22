@@ -336,7 +336,17 @@ export default function AgentDetail() {
 
   const set = (patch) => setDraft((d) => ({ ...d, ...patch }));
 
-  const dirty = JSON.stringify(draft) !== JSON.stringify(savedDraft);
+  // Field-by-field, not JSON.stringify(draft) !== JSON.stringify(savedDraft) —
+  // prompt/kbFaqs can run to thousands of characters, so re-serializing the
+  // whole draft on every render made every keystroke in those fields laggy.
+  const dirty = draft.label !== savedDraft.label
+    || draft.agentName !== savedDraft.agentName
+    || draft.greeting !== savedDraft.greeting
+    || draft.prompt !== savedDraft.prompt
+    || draft.voice !== savedDraft.voice
+    || draft.language !== savedDraft.language
+    || draft.kbCompany !== savedDraft.kbCompany
+    || draft.kbFaqs !== savedDraft.kbFaqs;
 
   const save = async () => {
     if (!selected) return;
