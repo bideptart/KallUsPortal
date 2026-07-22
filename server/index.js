@@ -37,7 +37,7 @@ const require = createRequire(import.meta.url);
 // Loaded lazily (only when a PDF is actually uploaded) and wrapped in
 // try/catch so a missing/broken optional native dependency (e.g.
 // @napi-rs/canvas) can't crash the whole server at cold start and take
-// down unrelated routes such as /api/auth/signin.
+// down unrelated routes such as /api/signin.
 let _pdfParse = null;
 function getPdfParse() {
     if (_pdfParse === null) {
@@ -75,7 +75,6 @@ import { createReadStream } from 'fs';
 import { stat } from 'fs/promises';
 import twilioPkg from 'twilio';
 const { twiml: TwilioTwiml } = twilioPkg;
-import { sqliteAuthRouter } from './demoAuth.js';
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
@@ -108,10 +107,6 @@ app.use(express.json({
   verify: (req, _res, buf) => { req.rawBody = buf; },
 }));
 app.use(express.urlencoded({ extended: false }));
-
-// Zero-setup SQLite-backed demo login (superadmin/admin/user), independent
-// of the Postgres `users`/`sessions` tables used below. See server/demoAuth.js.
-app.use('/api/auth', sqliteAuthRouter);
 
 const SESSION_DAYS = 30;
 // Idle timeout — a session with no authenticated activity for this many

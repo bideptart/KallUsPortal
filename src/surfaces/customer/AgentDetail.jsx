@@ -74,24 +74,6 @@ function LanguageSelect({ value, onChange }) {
   );
 }
 
-// Sample agent shown only when there's no real number to load (no DB
-// connected, or the id in ?n= doesn't match anything) — same "never
-// overrides real data" rule as Overview.jsx / AgentsList.jsx.
-const DEMO_NUMBER = {
-  id: 'demo-1',
-  value: '+27 82 555 0148',
-  label: 'KallUS Agent',
-  agentName: 'KallUS Agent',
-  status: 'ready',
-  plan: { label: 'Starter' },
-  voice: 'Leda',
-  language: 'hi-IN',
-  greeting: 'I am your technical support assistant. Please provide your organization ID, the exact error code or log output, and a brief description of the workflow that failed so we can begin debugging.',
-  prompt: '',
-  kbCompany: '',
-  kbFaqs: '',
-};
-
 const emptyDraft = () => ({
   label: '', agentName: '', greeting: '', prompt: '',
   voice: 'Kore', language: 'en-US', kbCompany: '', kbFaqs: '',
@@ -163,7 +145,7 @@ function Toggle({ on, onChange, label, desc }) {
 }
 
 export default function AgentDetail() {
-  const { currentUser, demoAgent, patchDemoAgent } = useApp();
+  const { currentUser } = useApp();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { playingVoice, error: previewError, play } = useVoicePreview();
@@ -238,11 +220,9 @@ export default function AgentDetail() {
   }, [menuOpen]);
 
   const wantId = searchParams.get('n');
-  const demoMode = loaded && numbers.length === 0;
   const selected = useMemo(() => {
-    if (demoMode) return { ...DEMO_NUMBER, ...demoAgent };
     return numbers.find((n) => n.id === wantId) || numbers[0] || null;
-  }, [numbers, wantId, demoMode, demoAgent]);
+  }, [numbers, wantId]);
 
   useEffect(() => {
     if (!selected) return;
@@ -289,13 +269,6 @@ export default function AgentDetail() {
 
   const save = async () => {
     if (!selected) return;
-    // No real backend to save to in demo mode — write into the shared
-    // demo-agent record instead, so Playground picks up the same values.
-    if (demoMode) {
-      patchDemoAgent(draft);
-      setSavedDraft(draft);
-      return;
-    }
     setSaving(true);
     setSaveErr('');
     try {
@@ -327,7 +300,7 @@ export default function AgentDetail() {
       .finally(() => setImportBusy(false));
   };
 
-  if (loaded && !demoMode && !selected) {
+  if (loaded && !selected) {
     return (
       <div>
         <Link to={`${basePath}/agents`} className="inline-flex items-center gap-1.5 text-sm text-lime-700 hover:underline">

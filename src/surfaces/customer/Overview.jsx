@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AlarmClock, Zap, Phone, AlertTriangle } from 'lucide-react';
+import { AlarmClock, Zap, Phone, AlertTriangle, LayoutDashboard, RefreshCw, TrendingUp } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
 
@@ -18,39 +18,6 @@ const fmtDate = (iso) => {
   } catch {
     return '—';
   }
-};
-
-// Sample data shown only when the real API returns nothing (no DB/MCP
-// connected yet, like in this sandbox) — never overrides real data, and the
-// page always labels it "Sample data" so it can't be mistaken for the real
-// thing once a database is actually connected.
-const DEMO_NUMBERS = [
-  {
-    id: 'demo-1',
-    value: '+27 82 555 0148',
-    agentName: 'KallUS Agent',
-    label: '',
-    autoRechargeEnabled: false,
-    nextRentalAt: new Date(Date.now() + 19 * 24 * 60 * 60 * 1000).toISOString(),
-    plan: { min: 250 },
-  },
-];
-const DEMO_STATS = {
-  callsToday: 0,
-  callsThisMonth: 59,
-  callsAllTime: 64,
-  avgDurationSec: 49,
-  minutesUsedThisMonth: 47.6,
-  minutesUsedAllTime: 49,
-  allTimeSpendInr: 577,
-};
-const DEMO_CALL_STATS = { total_calls: 64, answer_rate: 100, total_minutes: 51.6, avg_duration_seconds: 48 };
-const DEMO_SENTIMENT = { sentiment_percentages: { positive: 0, neutral: 86, negative: 14 }, total_calls: 7, needFollowUp: 1 };
-const DEMO_VOLUME = {
-  daily_breakdown: [0, 0, 1, 3, 5, 4, 1, 0, 2, 0, 0, 0, 3, 0].map((count, i) => ({
-    date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000).toISOString(),
-    count,
-  })),
 };
 
 export default function Overview({ rechargeOn }) {
@@ -106,9 +73,7 @@ export default function Overview({ rechargeOn }) {
         setCallStats(cs?.data || null);
         setSentiment(sent?.data || null);
         setVolume(vol?.data || null);
-      } catch {
-        // Falls back to sample data in render — nothing to surface here.
-      }
+      } catch {}
     })();
     return () => { cancelled = true; };
   }, [currentUser?.role]);
@@ -129,27 +94,32 @@ export default function Overview({ rechargeOn }) {
 
   if (!currentUser) return null;
 
-  // No live number/stats data at all (no DB/MCP connected) → fall back to
-  // sample data so the page shows what it looks like populated, rather than
-  // an all-empty page. Never hides real data — the moment either endpoint
-  // returns something, that takes over.
-  const demoMode = numbers.length === 0 && !stats;
-  const displayNumbers   = demoMode ? DEMO_NUMBERS   : numbers;
-  const displayStats     = demoMode ? DEMO_STATS     : stats;
-  const displayCallStats = !callStats && !sentiment && !volume ? DEMO_CALL_STATS : callStats;
-  const displaySentiment = !callStats && !sentiment && !volume ? DEMO_SENTIMENT : sentiment;
-  const displayVolume    = !callStats && !sentiment && !volume ? DEMO_VOLUME    : volume;
+  const displayNumbers   = numbers;
+  const displayStats     = stats;
+  const displayCallStats = callStats;
+  const displaySentiment = sentiment;
+  const displayVolume    = volume;
 
-  const planMin = demoMode ? (DEMO_NUMBERS[0].plan.min) : (currentUser.plan?.min || 0);
+  const planMin = currentUser.plan?.min || 0;
   const minUsedAllTime = displayStats?.minutesUsedAllTime ?? Number(currentUser.minutesUsed) ?? 0;
   const minUsedMonth   = displayStats?.minutesUsedThisMonth ?? 0;
   const planLeft = Math.max(0, planMin - minUsedAllTime);
-  const walletMin = demoMode ? 0 : (wallet?.walletMinutes ?? currentUser.walletMinutes ?? 0);
+  const walletMin = wallet?.walletMinutes ?? currentUser.walletMinutes ?? 0;
   const minLeft = Math.max(0, planLeft + walletMin);
   const minTotal = planMin + walletMin;
   const lowThreshold = wallet?.lowBalanceThreshold ?? currentUser.lowBalanceThreshold ?? 20;
-  const isLow = !demoMode && minLeft <= lowThreshold;
+  const isLow = displayNumbers.length > 0 && minLeft <= lowThreshold;
   const autoTopupOn = wallet?.autoTopupEnabled ?? currentUser.autoTopupEnabled;
+
+  // Proactive "renews soon" nudge — only meaningful for a single-number
+  // account (a multi-number account has staggered renewal dates, so one
+  // countdown wouldn't represent all of them). Shown in demo mode too since
+  // it's purely navigational (no charge risk), unlike the low-minutes banner.
+  const nextRenewal = displayNumbers[0]?.nextRentalAt ? new Date(displayNumbers[0].nextRentalAt) : null;
+  const daysUntilRenewal = nextRenewal && !isNaN(nextRenewal.getTime())
+    ? Math.ceil((nextRenewal.getTime() - Date.now()) / 86400000)
+    : null;
+  const renewalSoon = displayNumbers.length === 1 && daysUntilRenewal != null && daysUntilRenewal <= 7;
 
   // Per-row usage breakdown is only exact when the customer has a single DID
   // — /api/twilio/stats aggregates across every number, so with more than
@@ -170,7 +140,7 @@ export default function Overview({ rechargeOn }) {
           / Admin.jsx) instead of here — same for every page in the app. */}
       <p className="font-semibold text-base tracking-wide animate-fade-up" style={{ color: 'var(--ink-2)' }}>Your numbers, call activity, and quick actions at a glance.</p>
 
-      {statsErr && !demoMode && (
+      {statsErr && (
         <div className="mt-4 text-xs text-amber-400 inline-flex items-center gap-1"><AlertTriangle size={12} /> Live stats unavailable: {statsErr}</div>
       )}
 
@@ -195,6 +165,26 @@ export default function Overview({ rechargeOn }) {
               )}
               <Link to={`${basePath}/billing`} className="btn-ghost text-sm">Manage wallet →</Link>
               {topupMsg && <span className="text-xs text-mute ml-2">{topupMsg}</span>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {renewalSoon && (
+        <div className="mt-6 rounded-lg border-2 border-lime-500/60 bg-lime-500/10 p-4 flex items-start gap-3">
+          <RefreshCw size={22} className="text-lime-600 flex-shrink-0" />
+          <div className="flex-1">
+            <div className="font-semibold text-lime-700">
+              {daysUntilRenewal <= 0 ? 'Plan renewal is due' : `Plan renews in ${daysUntilRenewal} day${daysUntilRenewal === 1 ? '' : 's'}`}
+            </div>
+            <p className="text-sm text-mute mt-1">
+              Your {displayNumbers[0]?.plan?.label || 'current'} plan renews on {fmtDate(nextRenewal)}. Upgrade now to lock in more minutes before it resets.
+            </p>
+            <div className="mt-3 flex gap-2 items-center">
+              <Link to={`${basePath}/billing?tab=plans`} className="btn-teal text-sm inline-flex items-center gap-1.5">
+                <TrendingUp size={14} /> Upgrade plan
+              </Link>
+              <Link to={`${basePath}/billing`} className="btn-ghost text-sm">Manage plan →</Link>
             </div>
           </div>
         </div>
