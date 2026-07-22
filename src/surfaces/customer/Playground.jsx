@@ -335,7 +335,12 @@ export default function Playground() {
         </button>
       </div>
 
-      <div className={`mt-4 grid gap-6 items-start ${configOpen ? 'lg:grid-cols-[1fr_380px]' : ''}`}>
+      {/* lg:min-h ensures the grid row is always taller than the test panel
+          (which can otherwise end up taller than a short Configure tab like
+          Behavior), since a sticky item can only stay pinned while there's
+          leftover room in its own row — without this, sticky silently does
+          nothing whenever the left column happens to be the taller one. */}
+      <div className={`mt-4 grid gap-6 items-start ${configOpen ? 'lg:grid-cols-[1fr_380px] lg:min-h-[820px]' : ''}`}>
         {/* === Test panel ================================================ */}
         {/* Sticky on desktop so it stays visible while the taller Configure
             panel next to it scrolls — no need to scroll back up to reach
@@ -446,7 +451,13 @@ export default function Playground() {
               <p className="mt-2 text-xs text-mute max-w-xs">
                 Plays a sample of {draft.voice}'s voice — live two-way voice testing from your browser isn't wired up yet.
               </p>
-              {previewError && <p className="mt-1 text-xs text-red-600">{previewError}</p>}
+              {/* Space is always reserved (not just when an error exists) so
+                  the panel's total height stays constant whether or not
+                  this line is showing — an error appearing/disappearing
+                  used to change the panel's height, which (since both grid
+                  columns share one row) could make it taller than the
+                  Configure panel and eliminate the room sticky needs. */}
+              <p className="mt-1 text-xs text-red-600 min-h-[1em]">{previewError || ' '}</p>
             </div>
           ) : (
             <div className="mt-5">
