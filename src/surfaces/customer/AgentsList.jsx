@@ -318,7 +318,7 @@ export default function AgentsList() {
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-mute pointer-events-none" />
             <input
-              className="input"
+              className="input transition duration-200 ease-out focus:shadow-md animate-border-glow"
               style={{ width: 260, paddingLeft: 32 }}
               placeholder="Search by name, ID, or number"
               value={query}
