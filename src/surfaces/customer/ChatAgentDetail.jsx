@@ -235,33 +235,36 @@ export default function ChatAgentDetail() {
           {/* === Live preview ============================================ */}
           <div className="lg:sticky lg:top-20">
             <div className="text-xs font-mono uppercase tracking-wide font-semibold" style={{ color: 'var(--primary)' }}>Live preview</div>
-            <div className="mt-3 rounded-2xl border shadow-lg overflow-hidden" style={{ borderColor: 'var(--line)', background: cfg.theme === 'dark' ? '#1a2030' : '#fff' }}>
-              <div className="px-4 py-3" style={{ background: cfg.accentColor }}>
-                <div className="text-white font-semibold text-sm">{cfg.widgetTitle || 'Chat with us'}</div>
+            <div
+              className="mt-3 rounded-2xl border shadow-lg overflow-hidden transition-all duration-200 ease-out"
+              style={{ borderColor: 'var(--line)', background: cfg.theme === 'dark' ? '#1a2030' : '#fff', width: cfg.size === 'large' ? 360 : 300 }}
+            >
+              <div className={cfg.size === 'large' ? 'px-5 py-4' : 'px-4 py-3'} style={{ background: cfg.accentColor }}>
+                <div className={`text-white font-semibold ${cfg.size === 'large' ? 'text-base' : 'text-sm'}`}>{cfg.widgetTitle || 'Chat with us'}</div>
                 <div className="text-white/80 text-xs flex items-center gap-1 mt-0.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-lime-300 inline-block" /> Online
                 </div>
               </div>
-              <div className="p-3 space-y-2 min-h-[160px]" style={{ background: cfg.theme === 'dark' ? '#232a3d' : '#f6f8f1' }}>
+              <div className={`space-y-2 ${cfg.size === 'large' ? 'p-4 min-h-[220px]' : 'p-3 min-h-[160px]'}`} style={{ background: cfg.theme === 'dark' ? '#232a3d' : '#f6f8f1' }}>
                 <div
-                  className="max-w-[85%] rounded-xl rounded-tl-sm px-3 py-2 text-sm"
+                  className={`max-w-[85%] rounded-xl rounded-tl-sm ${cfg.size === 'large' ? 'px-4 py-2.5 text-[15px]' : 'px-3 py-2 text-sm'}`}
                   style={{ background: cfg.theme === 'dark' ? '#333d57' : '#fff', color: cfg.theme === 'dark' ? '#e5e9f5' : 'var(--ink)' }}
                 >
                   {cfg.welcome || 'Hi! How can I help you today?'}
                 </div>
                 <div
-                  className="max-w-[85%] ml-auto rounded-xl rounded-tr-sm px-3 py-2 text-sm text-white"
+                  className={`max-w-[85%] ml-auto rounded-xl rounded-tr-sm text-white ${cfg.size === 'large' ? 'px-4 py-2.5 text-[15px]' : 'px-3 py-2 text-sm'}`}
                   style={{ background: cfg.accentColor }}
                 >
                   Hi, I have a question
                 </div>
               </div>
-              <div className="p-2.5 border-t flex items-center gap-2" style={{ borderColor: 'var(--line-2)', background: cfg.theme === 'dark' ? '#1a2030' : '#fff' }}>
-                <div className="flex-1 rounded-full px-3 py-2 text-xs" style={{ background: 'var(--surface-2)', color: 'var(--ink-3)' }}>
+              <div className={`border-t flex items-center gap-2 ${cfg.size === 'large' ? 'p-3' : 'p-2.5'}`} style={{ borderColor: 'var(--line-2)', background: cfg.theme === 'dark' ? '#1a2030' : '#fff' }}>
+                <div className={`flex-1 rounded-full ${cfg.size === 'large' ? 'px-4 py-2.5 text-sm' : 'px-3 py-2 text-xs'}`} style={{ background: 'var(--surface-2)', color: 'var(--ink-3)' }}>
                   Type a message…
                 </div>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: cfg.accentColor }}>
-                  <Send size={13} color="#fff" />
+                <div className={`rounded-full flex items-center justify-center flex-shrink-0 ${cfg.size === 'large' ? 'w-9 h-9' : 'w-8 h-8'}`} style={{ background: cfg.accentColor }}>
+                  <Send size={cfg.size === 'large' ? 15 : 13} color="#fff" />
                 </div>
               </div>
               {cfg.showBranding && (
@@ -271,7 +274,7 @@ export default function ChatAgentDetail() {
               )}
             </div>
             <p className="mt-2 text-xs text-mute">
-              {cfg.mode === 'popup' ? 'Popup' : 'Inline'} — a bubble in the {cfg.position.replace('-', ' ')} corner.
+              {cfg.mode === 'popup' ? 'Popup' : 'Inline'} — a bubble in the {cfg.position.replace('-', ' ')} corner ({cfg.size}).
             </p>
           </div>
         </div>
