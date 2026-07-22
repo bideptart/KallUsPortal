@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Wallet, Star, Phone, Calendar, RefreshCw, Lightbulb, Tag, CreditCard } from 'lucide-react';
+import { Wallet, Star, Phone, Calendar, RefreshCw, Lightbulb, Tag } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
 import AddMinutesModal from '../../components/AddMinutesModal.jsx';
@@ -204,18 +204,13 @@ export default function Billing() {
           bar (Customer.jsx) already shows one on every dashboard page,
           including this one, so a second copy here was a duplicate.
           "Active plans" below still has its own in-context copy. */}
+      {/* Icon + "Billing & minutes" title now live in the sticky top bar
+          instead of here — this row keeps just the subtitle + the transaction
+          history link. */}
       <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3 animate-fade-up">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
-            <CreditCard className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">Billing &amp; minutes</h1>
-            <p className="text-sm text-mute mt-1">
-              <strong>KallUS</strong> Voice AI — plans per number, instant upgrades, shared wallet.
-            </p>
-          </div>
-        </div>
+        <p className="text-base font-semibold tracking-wide animate-fade-up" style={{ color: 'var(--ink-2)' }}>
+          <strong>KallUS</strong> Voice AI — plans per number, instant upgrades, shared wallet.
+        </p>
         <Link to="/dashboard/transactions" className={`text-sm !rounded-lg px-[22px] py-[11px] text-white font-semibold ${BRAND_GRADIENT} hover:brightness-110`}>
           Transaction history
         </Link>

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CreditCard } from 'lucide-react';
 import { api } from '../../api.js';
 
 const fmtCurrency = (n) => `$${Number(n || 0).toLocaleString('en-US')}`;
@@ -67,16 +66,9 @@ export default function Payments() {
 
   return (
     <div>
+      {/* Icon + "Billing & minutes" title now live in the sticky top bar instead of here. */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 animate-fade-up">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
-            <CreditCard className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">Billing &amp; minutes</h1>
-            <p className="text-mute">Recurring revenue across every plan a customer is on — one row per DID.</p>
-          </div>
-        </div>
+        <p className="text-base font-semibold tracking-wide animate-fade-up" style={{ color: 'var(--ink-2)' }}>Recurring revenue across every plan a customer is on — one row per DID.</p>
         <button className="btn-teal text-sm transition duration-200 ease-out hover:scale-105 active:scale-95" onClick={load}>↻ Refresh</button>
       </div>
 

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Receipt } from 'lucide-react';
 import { api } from '../../api.js';
 import { useApp } from '../../AppContext.jsx';
 import DateRangePicker, { todayRange } from '../../components/DateRangePicker.jsx';
@@ -158,19 +157,11 @@ export default function Transactions() {
 
   return (
     <div>
-      {/* Header */}
+      {/* Icon + "Transactions" title now live in the sticky top bar instead of here. */}
       <div className="flex items-start justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3 animate-fade-up">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
-            <Receipt className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Transactions</h1>
-            <p className="text-mute text-sm mt-1">
-              Every payment from this account — plan purchases, plan changes, restarts, and wallet top-ups.
-            </p>
-          </div>
-        </div>
+        <p className="text-base font-semibold tracking-wide animate-fade-up" style={{ color: 'var(--ink-2)' }}>
+          Every payment from this account — plan purchases, plan changes, restarts, and wallet top-ups.
+        </p>
         <div className="flex items-center gap-2">
           <button onClick={exportCsv} disabled={!filtered.length} className="btn-teal text-sm transition duration-200 ease-out hover:scale-105 active:scale-95 disabled:opacity-90">
             Export CSV

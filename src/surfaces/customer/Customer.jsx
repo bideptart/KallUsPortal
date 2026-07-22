@@ -2,7 +2,7 @@ import { useEffect, useState, lazy, Suspense } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
   LayoutDashboard, Bot, FlaskConical, BookOpen, TrendingUp, Zap,
-  FileText, CreditCard, Receipt, User, Menu, Wrench, Ticket, DoorOpen,
+  FileText, CreditCard, Receipt, User, Menu, Wrench, Ticket, DoorOpen, Tag,
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 // AddNumberModal is used directly by this file's own "+ Add plan / number"
@@ -28,6 +28,7 @@ const Templates = lazy(() => import('./Templates.jsx'));
 const Playground = lazy(() => import('./Playground.jsx'));
 const KnowledgeBase = lazy(() => import('./KnowledgeBase.jsx'));
 const Billing = lazy(() => import('./Billing.jsx'));
+const Pricing = lazy(() => import('./Pricing.jsx'));
 const Transactions = lazy(() => import('./Transactions.jsx'));
 const Tools = lazy(() => import('./Tools.jsx'));
 const BookingHistory = lazy(() => import('./BookingHistory.jsx'));
@@ -52,6 +53,7 @@ const NAV_TABS_BEFORE_CALLS = [
 const NAV_TABS_AFTER_CALLS = [
   { id: 'reports',      label: 'Reports',           Icon: FileText,   Component: Reports },
   { id: 'billing',      label: 'Billing & minutes', Icon: CreditCard, Component: Billing },
+  { id: 'pricing',      label: 'Plans & pricing',   Icon: Tag,        Component: Pricing },
   { id: 'transactions', label: 'Transactions',      Icon: Receipt,    Component: Transactions },
   { id: 'account',      label: 'Account',           Icon: User,       Component: Account },
 ];
@@ -225,8 +227,26 @@ export default function Customer() {
               »
             </button>
           )}
-          <div className="lg:hidden flex items-center gap-1.5 text-xs text-mute font-semibold uppercase tracking-wider">
-            {active.Icon && <active.Icon size={14} strokeWidth={2} />} {active.label}
+          {/* Page icon + title, sourced from the same TABS entry that drives
+              the sidebar — was previously duplicated as a big heading inside
+              every page component; lives once, here, for every tab now.
+              One <h1> in the DOM at every width (not two elements toggled by
+              visibility — that would leave zero h1s on mobile). Below `lg`
+              the "Menu" button plus the right-side actions leave very little
+              room, so the icon shrinks to inline and the title drops back to
+              the small uppercase label the mobile header always used. */}
+          <div className="lg:flex-1 flex items-center gap-1.5 lg:gap-2.5 lg:min-w-0">
+            {active.Icon && (
+              <>
+                <active.Icon size={14} strokeWidth={2} className="lg:hidden shrink-0" />
+                <span className="hidden lg:flex w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] items-center justify-center text-white shrink-0">
+                  <active.Icon className="w-4 h-4" />
+                </span>
+              </>
+            )}
+            <h1 className="text-xs lg:text-lg font-semibold lg:font-bold uppercase lg:normal-case tracking-wider lg:tracking-normal text-mute lg:text-slate-900 lg:dark:text-slate-100 truncate">
+              {active.label}
+            </h1>
           </div>
           <div className="ml-auto flex items-center gap-3">
             <button type="button" className="btn-teal text-sm whitespace-nowrap" onClick={() => setShowAddPlan(true)}>+ Add plan / number</button>

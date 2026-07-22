@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Phone, MessageSquare, FileText } from 'lucide-react';
+import { Phone, MessageSquare } from 'lucide-react';
 import { api, getToken } from '../../api.js';
 import DateRangePicker from '../../components/DateRangePicker.jsx';
 import ChatLogRow from '../../components/ChatLogRow.jsx';
@@ -217,19 +217,10 @@ export default function Reports() {
 
   return (
     <div>
-      <div className="flex items-start justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3 animate-fade-up">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
-            <FileText className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">Reports</h1>
-            <p className="text-mute">
-              Call and chat history across every customer — recordings, transcripts, and AI summaries per record.
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* Icon + "Reports" title now live in the sticky top bar instead of here. */}
+      <p className="text-base font-semibold tracking-wide animate-fade-up" style={{ color: 'var(--ink-2)' }}>
+        Call and chat history across every customer — recordings, transcripts, and AI summaries per record.
+      </p>
 
       {err && (
         <div className="mt-4 text-sm text-red-500 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">

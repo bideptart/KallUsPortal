@@ -49,11 +49,11 @@ export default function Logs() {
 
   return (
     <div>
+      {/* "Call Activity" title now lives in the sticky top bar instead of here —
+          the more specific "Provisioning & activity logs" name moved into this
+          subtitle so it's not lost. */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Provisioning &amp; activity logs</h1>
-          <p className="text-mute">Live signup events and Twilio call activity.</p>
-        </div>
+        <p className="font-semibold text-base tracking-wide" style={{ color: 'var(--ink-2)' }}>Provisioning &amp; activity logs — live signup events and Twilio call activity.</p>
         <button className="btn-ghost text-sm" onClick={load}>↻ Refresh</button>
       </div>
 

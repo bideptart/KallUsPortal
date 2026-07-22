@@ -206,15 +206,8 @@ export default function KnowledgeBase() {
 
   return (
     <div>
-      <div className="flex items-start gap-3">
-        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
-          <BookOpen className="w-5 h-5" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Knowledge Base</h1>
-          <p className="text-mute mt-0.5">Reusable templates — a greeting, company info, and behavior you can apply to any agent.</p>
-        </div>
-      </div>
+      {/* Icon + "Knowledge Base" title now live in the sticky top bar instead of here. */}
+      <p className="font-semibold text-base tracking-wide" style={{ color: 'var(--ink-2)' }}>Reusable templates — a greeting, company info, and behavior you can apply to any agent.</p>
 
       <div className="mt-4 rounded-xl border border-lime-200 bg-lime-50 dark:border-lime-500/30 dark:bg-lime-500/10 p-4 flex gap-3">
         <Info className="w-4 h-4 text-lime-600 dark:text-lime-400 shrink-0 mt-0.5" />

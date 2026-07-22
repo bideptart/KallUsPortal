@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Wrench } from 'lucide-react';
 import { api } from '../../api.js';
 
 // =============================================================================
@@ -179,18 +178,11 @@ export default function Tools() {
 
   return (
     <div>
-      <div className="flex items-center gap-3 animate-fade-up">
-        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
-          <Wrench className="w-5 h-5" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Tools</h1>
-          <p className="text-mute mt-1">
-            Pick a plan / number below, then configure its tools — call transfer, booking notifications, more soon.
-            Changes take effect on the next call (no restart needed).
-          </p>
-        </div>
-      </div>
+      {/* Icon + "Tools" title now live in the sticky top bar instead of here. */}
+      <p className="text-base font-semibold tracking-wide animate-fade-up" style={{ color: 'var(--ink-2)' }}>
+        Pick a plan / number below, then configure its tools — call transfer, booking notifications, more soon.
+        Changes take effect on the next call (no restart needed).
+      </p>
 
       <div className="mt-4">
         <button onClick={loadNumbers} disabled={loadingNumbers} className="btn-teal text-sm transition duration-200 ease-out hover:scale-105 active:scale-95">

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Phone, MessageCircle, Copy, Check, FileText, ArrowDownLeft, Circle, Search, Filter, ChevronDown,
-  Mic, LayoutGrid, Bot,
+  Mic, LayoutGrid,
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
@@ -267,13 +267,10 @@ export default function AgentsList() {
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3 animate-fade-up">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
-            <Bot className="w-5 h-5" />
-          </div>
-          <h1 className="text-2xl font-display font-bold">My Agents</h1>
-        </div>
+      {/* Icon + "My Agents" title now live in the sticky top bar instead of
+          here. This row keeps just the search + new-agent controls, pinned
+          right since the icon+title sibling that used to balance it is gone. */}
+      <div className="flex items-center justify-end gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-mute pointer-events-none" />

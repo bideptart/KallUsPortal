@@ -144,18 +144,16 @@ export default function Calls() {
 
   return (
     <div>
+      {/* "Call Activity" title now lives in the sticky top bar instead of here. */}
       <div className="flex items-start justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Call history</h1>
-          <p className="text-mute">
-            Live inbound calls
-            {numbers.length > 1
-              ? <> · across <span className="font-semibold text-lime-600">{numbers.length} numbers</span></>
-              : currentUser?.number?.value
-                ? <> · for <span className="font-mono text-lime-600">{currentUser.number.value}</span></>
-                : null}
-          </p>
-        </div>
+        <p className="text-base font-semibold tracking-wide" style={{ color: 'var(--ink-2)' }}>
+          Live inbound calls
+          {numbers.length > 1
+            ? <> · across <span className="font-semibold text-lime-600">{numbers.length} numbers</span></>
+            : currentUser?.number?.value
+              ? <> · for <span className="font-mono text-lime-600">{currentUser.number.value}</span></>
+              : null}
+        </p>
         <div className="flex items-center gap-2">
           {numbers.length > 1 && (
             <select

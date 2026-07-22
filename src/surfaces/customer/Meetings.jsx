@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../../api.js';
-import BookingIcon from '../../components/BookingIcon.jsx';
 
 // =============================================================================
 // Meetings — surfaces every booking the AI agent scheduled via the n8n
@@ -325,26 +324,20 @@ export default function Meetings({
 
   return (
     <div>
+      {/* Icon + title used to render here — the header (Customer.jsx) already
+          shows one for the "Booking History" nav route this page is reached
+          through. The `title` prop still exists for the legacy /meetings
+          deep link that carries no sidebar entry (and so no header icon). */}
       <div className="flex items-start justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3 animate-fade-up">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center text-white shrink-0">
-            <BookingIcon className="w-5 h-5" maskColor="#5c8a1e" />
-          </div>
-          <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-            {title}
-          </h1>
-          <p className="text-mute">
-            {isDemo
-              ? 'No Google Calendar connected yet — showing sample bookings so you can preview the layout.'
-              : description}
-            {upcomingOnly && <> · <span className="font-semibold">Showing upcoming only</span></>}
-            {total > 0 && (
-              <> · <span className="text-lime-600 dark:text-lime-400 font-semibold">{upcomingCount} upcoming</span></>
-            )}
-          </p>
-          </div>
-        </div>
+        <p className="text-base font-semibold tracking-wide animate-fade-up" style={{ color: 'var(--ink-2)' }}>
+          {isDemo
+            ? 'No Google Calendar connected yet — showing sample bookings so you can preview the layout.'
+            : description}
+          {upcomingOnly && <> · <span className="font-semibold">Showing upcoming only</span></>}
+          {total > 0 && (
+            <> · <span className="text-lime-600 dark:text-lime-400 font-semibold">{upcomingCount} upcoming</span></>
+          )}
+        </p>
         <div className="flex items-center gap-2 flex-wrap">
           <label className="flex items-center gap-2 text-sm text-mute cursor-pointer">
             <input

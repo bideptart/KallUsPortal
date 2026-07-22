@@ -157,14 +157,15 @@ export default function Settings() {
 
   return (
     <div>
+      {/* "Settings" title now lives in the sticky top bar instead of here —
+          the "· credentials" distinction moved into this subtitle so it's
+          not lost. */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Settings · credentials</h1>
-          <p className="text-mute">
-            Edit secrets and external-service URLs. Values you save here are stored encrypted in the
-            database and override <code>.env</code>. Clearing a field falls back to the env value.
-          </p>
-        </div>
+        <p className="text-base font-semibold tracking-wide" style={{ color: 'var(--ink-2)' }}>
+          Credentials — edit secrets and external-service URLs. Values you save here are stored
+          encrypted in the database and override <code>.env</code>. Clearing a field falls back to
+          the env value.
+        </p>
         <button className="btn-ghost text-sm" onClick={load}>↻ Refresh</button>
       </div>
 
