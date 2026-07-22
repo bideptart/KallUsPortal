@@ -407,7 +407,7 @@ export default function Playground() {
                 <div className="px-3 py-1.5 border-b text-xs font-semibold text-slate-900" style={{ borderColor: 'var(--line)' }}>
                   Live Conversation
                 </div>
-                <div ref={transcriptScrollRef} className="p-2.5 space-y-2 overflow-y-auto" style={{ maxHeight: 160 }}>
+                <div ref={transcriptScrollRef} className="p-2.5 space-y-2 overflow-y-auto" style={{ height: 160 }}>
                   {transcript.length === 0 ? (
                     <p className="text-xs text-mute">
                       Your conversation transcript will appear here once the voice test begins.
