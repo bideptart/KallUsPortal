@@ -3,6 +3,7 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import {
   LayoutDashboard, Bot, FlaskConical, BookOpen, TrendingUp, Zap,
   FileText, CreditCard, Receipt, User, UserCircle, Menu, Wrench, Ticket, DoorOpen,
+  List, Terminal,
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
@@ -61,6 +62,11 @@ const NAV_TABS_AFTER_CALLS = [
   // password, and danger zone; the credentials page keeps its own honest
   // "Settings" label.
   { id: 'account',      label: 'Account',           Icon: User },
+  // Platform-wide ops tools — previously legacy-only (URL-reachable but not
+  // in the visible nav); promoted back per explicit request since they were
+  // the two things missing that this tier actually needs day to day.
+  { id: 'numbers',      label: 'Numbers Inventory', Icon: List },
+  { id: 'mcp',          label: 'MCP Browser',       Icon: Terminal },
   { id: 'settings',     label: 'Settings',          Icon: UserCircle },
 ];
 const NAV_TABS = [...NAV_TABS_BEFORE_CALLS, ...NAV_TABS_AFTER_CALLS];
@@ -85,13 +91,11 @@ const LEGACY_TABS = [
   { id: 'signups',      label: 'Signups' },
   { id: 'customers',    label: 'Customers' },
   { id: 'resellers',    label: 'Resellers' },
-  { id: 'numbers',      label: 'Numbers inventory' },
   { id: 'payments',     label: 'Payments & revenue' },
   { id: 'bulk',         label: 'Bulk import' },
   { id: 'logs',         label: 'Activity logs' },
   { id: 'usage',        label: 'Usage analytics' },
   { id: 'health',       label: 'System health' },
-  { id: 'mcp',          label: 'MCP browser' },
   { id: 'plans',        label: 'Plans & pricing' },
   // 'profile' was its own nav tab until Account absorbed it — keep the id
   // valid so old links/bookmarks land on Account instead of bouncing to
@@ -237,8 +241,9 @@ export default function Admin() {
 
         {/* New nav ids map onto the closest existing page; legacy ids (kept
             valid so old links still work) render the same pages they always
-            did. Resellers / Numbers inventory / Plans & pricing have no home
-            in the main nav — still reachable at their legacy URLs.
+            did. Resellers / Plans & pricing still have no home in the main
+            nav — still reachable at their legacy URLs (Numbers Inventory and
+            MCP Browser were promoted back into the visible nav above).
             'overview' reuses the same Overview component as the Customer
             dashboard (per explicit request — same page for every tier); it
             renders mostly empty states for admin accounts since they don't
