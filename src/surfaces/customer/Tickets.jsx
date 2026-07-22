@@ -1,10 +1,18 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 // Bot, not IdCardLanyard — the agent is the AI voice agent, and Bot is the
 // same icon the Agents nav item and agent pages already use.
-import { Search, Clock, RefreshCw, Plus, Phone, User, Bot, ChevronRight, X, Ticket } from 'lucide-react';
-import { useApp } from '../../AppContext.jsx';
+import {
+  Search, Clock, RefreshCw, Plus, Phone, User, Bot, ChevronRight, X, Ticket,
+  Target, CheckCircle2, AlertTriangle, Info,
+} from 'lucide-react';
 import { STATUS_META, loadTickets, persistTickets, fmtUpdated, overdueHours } from './ticketsStore.js';
+
+// Snap points for the SLA slider + quick-preset chips — deliberately a fixed
+// small set (not a free-text field) so "overdue" always means one of these
+// well-understood windows.
+const SLA_VALUES = [1, 3, 6, 12, 24];
+const nearestSlaValue = (h) => SLA_VALUES.reduce((best, v) => Math.abs(v - h) < Math.abs(best - h) ? v : best, SLA_VALUES[0]);
+const fmtSlaLabel = (h) => `${h} Hour${h === 1 ? '' : 's'}`;
 
 // =============================================================================
 // Tickets — issues the AI agent captured on calls, or filed manually.
@@ -12,8 +20,7 @@ import { STATUS_META, loadTickets, persistTickets, fmtUpdated, overdueHours } fr
 // No backend yet: this renders anonymized sample tickets (clearly fake
 // names/phones) so the page demonstrates its full layout — filter chips,
 // search, SLA/overdue tracking, New ticket form. Tickets persist to
-// localStorage (see ticketsStore.js) so a ticket opened as its own page
-// (TicketDetail.jsx, real navigation rather than a modal) can still find it.
+// localStorage (see ticketsStore.js).
 // Wire this up to a real /api/tickets endpoint once one exists; the shape
 // in ticketsStore.js (status/priority/category/caller/agent/timestamps) is
 // what that endpoint should return.
@@ -29,17 +36,12 @@ const FILTERS = [
 ];
 
 export default function Tickets() {
-  const navigate = useNavigate();
-  const { currentUser } = useApp();
-  const isAdminTier = currentUser?.userType === 'superadmin' || currentUser?.userType === 'admin';
-  const basePath = isAdminTier ? '/admin' : '/dashboard';
-
   const [tickets, setTickets] = useState(() => loadTickets());
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [slaHours, setSlaHours] = useState(3);
   const [slaModalOpen, setSlaModalOpen] = useState(false);
-  const [slaDraft, setSlaDraft] = useState(String(slaHours));
+  const [slaDraft, setSlaDraft] = useState(slaHours);
   const [newTicketOpen, setNewTicketOpen] = useState(false);
   const [form, setForm] = useState({ subject: '', description: '', callerName: '', callerPhone: '', category: '' });
   const [refreshing, setRefreshing] = useState(false);
@@ -112,7 +114,7 @@ export default function Tickets() {
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Tickets</h1>
           <p className="text-mute">
             Issues your AI agent captured on calls — or filed manually. Resolution target{' '}
-            <button onClick={() => { setSlaDraft(String(slaHours)); setSlaModalOpen(true); }} className="text-lime-600 dark:text-lime-400 font-semibold underline decoration-dotted underline-offset-2 transition-colors duration-200 hover:text-lime-700 dark:hover:text-lime-300">
+            <button onClick={() => { setSlaDraft(nearestSlaValue(slaHours)); setSlaModalOpen(true); }} className="text-lime-600 dark:text-lime-400 font-semibold underline decoration-dotted underline-offset-2 transition-colors duration-200 hover:text-lime-700 dark:hover:text-lime-300">
               {slaHours}h
             </button>.
           </p>
@@ -120,7 +122,7 @@ export default function Tickets() {
       </div>
 
       <div className="mt-4 flex items-center gap-2 flex-wrap animate-fade-up">
-        <button onClick={() => { setSlaDraft(String(slaHours)); setSlaModalOpen(true); }} className="btn-teal text-sm inline-flex items-center gap-1.5 transition duration-200 ease-out hover:scale-105 active:scale-95">
+        <button onClick={() => { setSlaDraft(nearestSlaValue(slaHours)); setSlaModalOpen(true); }} className="btn-teal text-sm inline-flex items-center gap-1.5 transition duration-200 ease-out hover:scale-105 active:scale-95">
           <Clock className="w-4 h-4" /> SLA
         </button>
         <button onClick={refresh} disabled={refreshing} className="btn-teal text-sm inline-flex items-center gap-1.5 transition duration-200 ease-out hover:scale-105 active:scale-95 disabled:opacity-90">
@@ -188,10 +190,7 @@ export default function Tickets() {
               return (
                 <tr
                   key={t.id}
-                  onClick={() => {
-                    if (t.status === 'resolved') navigate(`${basePath}/ticket-detail?id=${encodeURIComponent(t.id)}`);
-                    else setOpenTicket(t);
-                  }}
+                  onClick={() => setOpenTicket(t)}
                   className={`cursor-pointer transition-colors duration-150 ease-out hover:bg-slate-50/70 dark:hover:bg-slate-800/40 group ${over > 0 ? 'bg-red-50/40 dark:bg-red-500/5' : ''}`}
                 >
                   <td className="whitespace-nowrap">
@@ -245,8 +244,7 @@ export default function Tickets() {
         </table>
       </div>
 
-      {/* Ticket detail modal — used for every status except resolved, which
-          opens its own page (see the row onClick above and TicketDetail.jsx). */}
+      {/* Ticket detail modal — used for every ticket row. */}
       {openTicket && (() => {
         const over = overdueHours(openTicket, slaHours);
         const meta = STATUS_META[openTicket.status] || STATUS_META.open;
@@ -329,24 +327,94 @@ export default function Tickets() {
       {/* SLA modal */}
       {slaModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-backdrop-in">
-          <div className="w-full max-w-sm rounded-xl bg-white dark:bg-slate-900 border p-6 animate-modal-in animate-modal-border-shadow">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Resolution target (SLA)</h2>
-            <p className="mt-1 text-sm text-mute">Tickets older than this, still open or in progress, are flagged overdue.</p>
-            <label className="field-label mt-4">Hours</label>
-            <input
-              className="input transition duration-200 ease-out focus:shadow-md"
-              type="number"
-              min="1"
-              value={slaDraft}
-              onChange={(e) => setSlaDraft(e.target.value)}
-            />
-            <div className="mt-5 flex items-center justify-end gap-2">
-              <button onClick={() => setSlaModalOpen(false)} className="btn-ghost text-sm py-2 px-4 transition duration-200 ease-out hover:scale-105 active:scale-95">Cancel</button>
-              <button
-                onClick={() => { setSlaHours(Math.max(1, Number(slaDraft) || 3)); setSlaModalOpen(false); }}
-                className="btn-teal text-sm py-2 px-4 transition duration-200 ease-out hover:scale-105 active:scale-95"
+          <div className="w-full max-w-[460px] rounded-2xl bg-white dark:bg-slate-900 border p-6 shadow-xl animate-modal-in animate-modal-border-shadow">
+            {/* Header */}
+            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <Target className="w-5 h-5 text-lime-600" /> Resolution Target (SLA)
+            </h2>
+            <p className="mt-1.5 text-sm text-mute leading-relaxed">
+              Define how long a ticket can remain open before it is automatically marked as Overdue.
+            </p>
+
+            {/* Resolution time — big value + slider */}
+            <div className="mt-5">
+              <div className="field-label">Resolution Time</div>
+              <div
+                key={slaDraft}
+                className="mt-1 text-center text-2xl font-bold text-slate-900 dark:text-slate-100 animate-fade-up"
+                style={{ animationDuration: '250ms' }}
               >
-                Save
+                {fmtSlaLabel(slaDraft)}
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={SLA_VALUES.length - 1}
+                step={1}
+                value={SLA_VALUES.indexOf(slaDraft)}
+                onChange={(e) => setSlaDraft(SLA_VALUES[Number(e.target.value)])}
+                className="mt-3 w-full accent-lime-600 transition-all duration-200 ease-out"
+              />
+              <div className="mt-1 flex items-center justify-between text-[11px] text-mute font-medium">
+                {SLA_VALUES.map((v) => (
+                  <span key={v} className={v === slaDraft ? 'text-lime-700 font-bold' : ''}>{v}h</span>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick presets */}
+            <div className="mt-5">
+              <div className="field-label">Quick Presets</div>
+              <div className="mt-2 flex gap-2 flex-wrap">
+                {SLA_VALUES.map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setSlaDraft(v)}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ease-out hover:scale-105 active:scale-95 ${
+                      v === slaDraft
+                        ? 'bg-lime-600 border-lime-600 text-white shadow-sm'
+                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-lime-300'
+                    }`}
+                  >
+                    {v}h
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Live preview */}
+            <div key={`preview-${slaDraft}`} className="mt-5 rounded-xl border border-lime-200 dark:border-lime-500/30 bg-lime-50 dark:bg-lime-500/10 p-3.5 animate-fade-up" style={{ animationDuration: '250ms' }}>
+              <div className="text-[10px] uppercase tracking-wider text-lime-700 dark:text-lime-400 font-semibold">Preview</div>
+              <div className="mt-1.5 flex items-start gap-1.5 text-sm text-slate-700 dark:text-slate-300">
+                <CheckCircle2 className="w-4 h-4 text-lime-600 shrink-0 mt-0.5" />
+                <span>Tickets remain active for the first {fmtSlaLabel(slaDraft).toLowerCase()}.</span>
+              </div>
+              <div className="mt-1.5 flex items-start gap-1.5 text-sm text-slate-700 dark:text-slate-300">
+                <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                <span>After {fmtSlaLabel(slaDraft).toLowerCase()} they automatically appear in the Overdue category.</span>
+              </div>
+            </div>
+
+            {/* Info note */}
+            <div className="mt-4 flex items-start gap-1.5 text-xs text-mute">
+              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              <span>This setting affects newly created and currently open tickets. Closed and resolved tickets are not affected.</span>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                onClick={() => setSlaModalOpen(false)}
+                className="btn-ghost text-sm py-2.5 px-5 transition duration-200 ease-out hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { setSlaHours(slaDraft); setSlaModalOpen(false); }}
+                className="btn-teal text-sm py-2.5 px-5 transition duration-200 ease-out hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400"
+              >
+                Save SLA
               </button>
             </div>
           </div>
