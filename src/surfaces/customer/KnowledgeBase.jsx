@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { BookOpen, Bot, Info, Copy, Plus, X, Link2, Upload, Loader2 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api, getToken } from '../../api.js';
+import { loadKbTemplates as loadSaved, persistKbTemplates as persistSaved, qaCount } from './kbTemplatesStore.js';
 
 // =============================================================================
 // Knowledge Base — a library view on top of the per-agent knowledge editor
@@ -10,21 +11,10 @@ import { api, getToken } from '../../api.js';
 //  - "From your agents": each agent's live kbCompany/kbFaqs/prompt, read
 //    straight from /api/numbers. "Edit on agent" jumps to the real editor;
 //    "Save a copy" snapshots it into a reusable template.
-//  - "Saved knowledge bases": reusable templates. No backend table for
-//    these yet, so they're persisted to localStorage only — they don't sync
-//    across devices, but survive reloads on this browser.
+//  - "Saved knowledge bases": reusable templates, shared with AgentDetail.jsx
+//    via kbTemplatesStore.js (see that file for why it's localStorage, not a
+//    backend table).
 // =============================================================================
-const STORAGE_KEY = 'kb_saved_templates_v1';
-
-const loadSaved = () => {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-  catch { return []; }
-};
-const persistSaved = (list) => {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch { /* ignore quota errors */ }
-};
-
-const qaCount = (faqs) => (String(faqs || '').match(/^Q:/gm) || []).length;
 
 // Shown only when the account has no real numbers yet, so the page still
 // demonstrates the "from your agents" card layout. Fake name/phone/content.

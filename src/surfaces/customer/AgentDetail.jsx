@@ -10,6 +10,7 @@ import { api } from '../../api.js';
 import { useVoicePreview } from '../../hooks/useVoicePreview.js';
 import { VOICES, LANGUAGES, gradientFor, statusMeta } from './KbAgent.jsx';
 import { TEMPLATES } from './Templates.jsx';
+import { loadKbTemplates, persistKbTemplates, qaCount } from './kbTemplatesStore.js';
 
 const TABS = [
   { id: 'identity', label: 'Identity', Icon: IdCard },
@@ -200,21 +201,58 @@ export default function AgentDetail() {
   const [importErr, setImportErr] = useState('');
   const [importPreview, setImportPreview] = useState(null);
 
-  // "Import from knowledge base" is a chooser, not a single action — the
-  // account only has one real source (import from a website) plus the
-  // not-yet-real reusable-library concept already stubbed further down this
-  // page. Showing both as cards up front is honest about which is real.
+  // "Import from knowledge base" is a chooser — import from a website (real,
+  // AI-extracted) or apply one of the reusable templates saved on the
+  // Knowledge Base page (see kbTemplatesStore.js).
   const [sourcePicker, setSourcePicker] = useState(false);
+  const [browsingKb, setBrowsingKb] = useState(false);
 
-  // "Your knowledge bases" (a reusable-KB library) isn't a real feature yet —
-  // no such table/endpoint exists. Clicking those actions shows an honest
-  // notice instead of pretending they work.
   const [notice, setNotice] = useState('');
   useEffect(() => {
     if (!notice) return;
     const t = setTimeout(() => setNotice(''), 3000);
     return () => clearTimeout(t);
   }, [notice]);
+
+  // "Your knowledge bases" — reusable templates (name + company info + FAQs)
+  // shared with the Knowledge Base page via localStorage (kbTemplatesStore.js).
+  const [kbTemplates, setKbTemplates] = useState(() => loadKbTemplates());
+  const [creatingKb, setCreatingKb] = useState(false);
+  const [kbTemplateName, setKbTemplateName] = useState('');
+
+  const applyKbTemplate = (t) => {
+    set({ kbCompany: t.kbCompany || '', kbFaqs: t.kbFaqs || '' });
+    setSourcePicker(false);
+    setNotice(`✓ Applied "${t.name}" to this agent's knowledge base.`);
+  };
+
+  const openCreateKb = () => {
+    setKbTemplateName(`${name} knowledge base`);
+    setCreatingKb(true);
+  };
+
+  const saveKbTemplate = (e) => {
+    e.preventDefault();
+    if (!kbTemplateName.trim()) return;
+    const tpl = {
+      id: `tpl-${Date.now()}`,
+      name: kbTemplateName.trim(),
+      kbCompany: draft.kbCompany || '',
+      kbFaqs: draft.kbFaqs || '',
+      prompt: draft.prompt || '',
+    };
+    const next = [tpl, ...kbTemplates];
+    setKbTemplates(next);
+    persistKbTemplates(next);
+    setCreatingKb(false);
+    setNotice(`✓ Saved "${tpl.name}" — reuse it from any agent.`);
+  };
+
+  const deleteKbTemplate = (id) => {
+    const next = kbTemplates.filter((t) => t.id !== id);
+    setKbTemplates(next);
+    persistKbTemplates(next);
+  };
 
   const [expandedRule, setExpandedRule] = useState(null);
 
@@ -441,13 +479,10 @@ export default function AgentDetail() {
         <button
           type="button"
           className="btn-ghost text-xs inline-flex items-center gap-1 py-1.5 px-3"
-          onClick={() => { setSourcePicker(true); }}
+          onClick={() => { setSourcePicker(true); setBrowsingKb(false); }}
         >
           <ChevronRight size={12} /> Import from knowledge base
         </button>
-        {notice && (
-          <span className="pill text-xs" style={{ background: 'var(--ink)', color: '#fff' }}>{notice}</span>
-        )}
       </div>
 
       {/* === Jump nav — scrolls to each section on this single page ===== */}
@@ -613,10 +648,9 @@ export default function AgentDetail() {
                 </div>
               </div>
 
-              {/* "Your knowledge bases" (a reusable library shared across agents)
-                  isn't a real feature yet — no backing table/endpoint exists.
-                  Shown as an honest empty state; both actions below just
-                  surface a "coming soon" notice rather than pretending to work. */}
+              {/* "Your knowledge bases" — reusable templates shared across
+                  agents via kbTemplatesStore.js (localStorage; see that file
+                  for why not a backend table). Click a card to apply it. */}
               <div className="mt-6 pt-5 border-t" style={{ borderColor: 'var(--line-2)' }}>
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div>
@@ -632,18 +666,48 @@ export default function AgentDetail() {
                     Manage →
                   </button>
                 </div>
-                <div className="mt-3 rounded-xl border-2 border-dashed p-8 text-center" style={{ borderColor: 'var(--line)' }}>
-                  <Database size={22} className="mx-auto text-mute" />
-                  <div className="mt-2 font-semibold text-sm" style={{ color: 'var(--ink)' }}>No knowledge bases yet</div>
-                  <div className="text-xs text-mute mt-1">Create one on the Knowledge Base page, then reuse it on any agent.</div>
-                  <button
-                    type="button"
-                    className="btn-teal text-sm mt-4"
-                    onClick={() => setNotice('Reusable knowledge bases are coming soon.')}
-                  >
-                    + Create a knowledge base
-                  </button>
-                </div>
+                {kbTemplates.length === 0 ? (
+                  <div className="mt-3 rounded-xl border-2 border-dashed p-8 text-center" style={{ borderColor: 'var(--line)' }}>
+                    <Database size={22} className="mx-auto text-mute" />
+                    <div className="mt-2 font-semibold text-sm" style={{ color: 'var(--ink)' }}>No knowledge bases yet</div>
+                    <div className="text-xs text-mute mt-1">Create one on the Knowledge Base page, then reuse it on any agent.</div>
+                    <button type="button" className="btn-teal text-sm mt-4" onClick={openCreateKb}>
+                      + Create a knowledge base
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mt-3 space-y-2">
+                    {kbTemplates.map((t) => (
+                      <div
+                        key={t.id}
+                        onClick={() => applyKbTemplate(t)}
+                        className="flex items-center justify-between gap-3 p-3 rounded-xl border cursor-pointer transition duration-150 ease-out hover:border-lime-300 hover:bg-[var(--surface-2)]"
+                        style={{ borderColor: 'var(--line)' }}
+                      >
+                        <div className="min-w-0 flex items-center gap-2.5">
+                          <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--surface-2)' }}>
+                            <Database size={14} className="text-lime-600" />
+                          </span>
+                          <div className="min-w-0">
+                            <div className="font-semibold text-sm truncate" style={{ color: 'var(--ink)' }}>{t.name}</div>
+                            <div className="text-xs text-mute mt-0.5">{(t.kbCompany || '').length.toLocaleString()} chars info · {qaCount(t.kbFaqs)} Q&amp;A</div>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); deleteKbTemplate(t.id); }}
+                          className="text-mute hover:text-slate-900 dark:hover:text-slate-100 p-1 shrink-0"
+                          title="Delete this template"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                    <button type="button" className="btn-ghost text-sm w-full" onClick={openCreateKb}>
+                      + Create a knowledge base
+                    </button>
+                  </div>
+                )}
               </div>
           </div>
 
@@ -832,8 +896,7 @@ export default function AgentDetail() {
 
       {/* "Import from knowledge base" chooser — a website import is real
           (same /api/kb/import-from-website flow as the Knowledge tab);
-          browsing a reusable library isn't, so it's honestly marked preview
-          and surfaces the same notice as "+ Create a knowledge base" below. */}
+          browsing switches this same modal to the saved-templates list. */}
       {sourcePicker && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-10 overflow-y-auto"
@@ -842,49 +905,124 @@ export default function AgentDetail() {
           <div className="w-full max-w-lg rounded-xl bg-white border border-slate-200 shadow-xl p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="text-lg font-bold">Import a knowledge base</div>
-                <p className="text-xs text-mute mt-1">Choose where the agent's company info and FAQs should come from.</p>
+                <div className="text-lg font-bold">{browsingKb ? 'Saved knowledge bases' : 'Import a knowledge base'}</div>
+                <p className="text-xs text-mute mt-1">
+                  {browsingKb ? 'Pick a saved template to apply to this agent.' : "Choose where the agent's company info and FAQs should come from."}
+                </p>
               </div>
               <button onClick={() => setSourcePicker(false)} className="text-mute hover:text-[var(--ink)]" aria-label="Close">
                 <X size={20} />
               </button>
             </div>
 
-            <div className="mt-4 space-y-2">
-              <button
-                type="button"
-                className="w-full flex items-start gap-3 p-3 rounded-xl border text-left hover:bg-[var(--surface-2)]"
-                style={{ borderColor: 'var(--line)' }}
-                onClick={() => { setSourcePicker(false); setImporting(true); setImportErr(''); setImportPreview(null); setImportUrl(''); }}
-              >
-                <span className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--surface-tint)' }}>
-                  <Globe size={16} style={{ color: 'var(--primary)' }} />
-                </span>
-                <span>
-                  <span className="block font-semibold text-sm" style={{ color: 'var(--ink)' }}>Import from a website</span>
-                  <span className="block text-xs text-mute mt-0.5">Paste a URL — we'll read it and extract company info + FAQs for you to review.</span>
-                </span>
-              </button>
-
-              <button
-                type="button"
-                className="w-full flex items-start gap-3 p-3 rounded-xl border text-left hover:bg-[var(--surface-2)]"
-                style={{ borderColor: 'var(--line)' }}
-                onClick={() => { setSourcePicker(false); setNotice('Reusable knowledge bases are coming soon.'); }}
-              >
-                <span className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--surface-2)' }}>
-                  <Database size={16} className="text-mute" />
-                </span>
-                <span className="min-w-0">
-                  <span className="flex items-center gap-1.5">
-                    <span className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>Browse saved knowledge bases</span>
-                    <span className="pill text-[9px]" style={{ background: 'var(--line-2)', color: 'var(--ink-3)' }}>preview</span>
+            {!browsingKb ? (
+              <div className="mt-4 space-y-2">
+                <button
+                  type="button"
+                  className="w-full flex items-start gap-3 p-3 rounded-xl border text-left hover:bg-[var(--surface-2)]"
+                  style={{ borderColor: 'var(--line)' }}
+                  onClick={() => { setSourcePicker(false); setImporting(true); setImportErr(''); setImportPreview(null); setImportUrl(''); }}
+                >
+                  <span className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--surface-tint)' }}>
+                    <Globe size={16} style={{ color: 'var(--primary)' }} />
                   </span>
-                  <span className="block text-xs text-mute mt-0.5">Reuse a knowledge base saved from another agent.</span>
-                </span>
-              </button>
-            </div>
+                  <span>
+                    <span className="block font-semibold text-sm" style={{ color: 'var(--ink)' }}>Import from a website</span>
+                    <span className="block text-xs text-mute mt-0.5">Paste a URL — we'll read it and extract company info + FAQs for you to review.</span>
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  className="w-full flex items-start gap-3 p-3 rounded-xl border text-left hover:bg-[var(--surface-2)]"
+                  style={{ borderColor: 'var(--line)' }}
+                  onClick={() => setBrowsingKb(true)}
+                >
+                  <span className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--surface-2)' }}>
+                    <Database size={16} className="text-mute" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>Browse saved knowledge bases</span>
+                    <span className="block text-xs text-mute mt-0.5">Reuse a knowledge base saved from another agent.</span>
+                  </span>
+                </button>
+              </div>
+            ) : (
+              <div className="mt-4">
+                {kbTemplates.length === 0 ? (
+                  <div className="rounded-xl border-2 border-dashed p-6 text-center" style={{ borderColor: 'var(--line)' }}>
+                    <Database size={20} className="mx-auto text-mute" />
+                    <div className="mt-2 text-sm text-mute">No saved knowledge bases yet.</div>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-80 overflow-y-auto">
+                    {kbTemplates.map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => applyKbTemplate(t)}
+                        className="w-full flex items-center gap-3 p-3 rounded-xl border text-left hover:bg-[var(--surface-2)]"
+                        style={{ borderColor: 'var(--line)' }}
+                      >
+                        <span className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--surface-2)' }}>
+                          <Database size={16} className="text-lime-600" />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block font-semibold text-sm truncate" style={{ color: 'var(--ink)' }}>{t.name}</span>
+                          <span className="block text-xs text-mute mt-0.5">{(t.kbCompany || '').length.toLocaleString()} chars info · {qaCount(t.kbFaqs)} Q&amp;A</span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <button type="button" className="btn-ghost text-sm w-full mt-3" onClick={() => setBrowsingKb(false)}>
+                  ← Back
+                </button>
+              </div>
+            )}
           </div>
+        </div>
+      )}
+
+      {/* Save this agent's current company info + FAQs as a reusable
+          template (kbTemplatesStore.js) — pickable from any other agent. */}
+      {creatingKb && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-backdrop-in"
+          onClick={() => setCreatingKb(false)}
+        >
+          <form
+            onSubmit={saveKbTemplate}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-xl bg-white border border-slate-200 shadow-xl p-6 animate-modal-in"
+          >
+            <div className="text-lg font-bold" style={{ color: 'var(--ink)' }}>Create a knowledge base</div>
+            <p className="mt-1 text-sm text-mute">
+              Saves this agent's current Company info ({draft.kbCompany.length.toLocaleString()} chars) and FAQ pairs ({(draft.kbFaqs.match(/^Q:/gm) || []).length} Q&amp;A) as a reusable template.
+            </p>
+            <label className="field-label mt-4">Name *</label>
+            <input
+              className="input"
+              required
+              autoFocus
+              value={kbTemplateName}
+              onChange={(e) => setKbTemplateName(e.target.value)}
+              placeholder="e.g. Support desk template"
+            />
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button type="button" onClick={() => setCreatingKb(false)} className="btn-ghost text-sm py-2 px-4 transition duration-200 ease-out hover:scale-105 active:scale-95">Cancel</button>
+              <button type="submit" className="btn-teal text-sm py-2 px-4 transition duration-200 ease-out hover:scale-105 active:scale-95">Save Knowledge Base</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Floating so it's visible regardless of scroll position — the
+          triggers for this (Create/Import a reusable KB) live far down the
+          page, well below the old inline placement near the top. */}
+      {notice && (
+        <div className="fixed bottom-6 right-6 z-50 animate-pop-in">
+          <div className="pill text-xs shadow-xl" style={{ background: 'var(--ink)', color: '#fff' }}>{notice}</div>
         </div>
       )}
     </div>
