@@ -3,7 +3,7 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import {
   LayoutDashboard, Bot, FlaskConical, BookOpen, TrendingUp, Zap,
   FileText, CreditCard, Receipt, User, UserCircle, Menu, Wrench, Ticket, DoorOpen,
-  List, Terminal,
+  List, Terminal, Server, Check, Copy, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
@@ -518,6 +518,61 @@ function Health() {
   );
 }
 
+// Shown only when no real MCP server is configured (no DB/env MCP in this
+// sandbox), same "never overrides real data" rule as Overview.jsx's DEMO_*
+// constants — lets the page demonstrate its full layout instead of a dead
+// empty state.
+const DEMO_MCP_ENDPOINTS = [
+  { key: 'demo-9278', label: 'dashboard.9278.ai (default)', url: 'https://dashboard.9278.ai/mcp', source: 'demo', portal: null },
+];
+
+const DEMO_MCP_TOOLS = [
+  { name: 'list_agents', description: 'List all AI voice agents configured for this account, with status and phone number.' },
+  { name: 'get_call_statistics', description: 'Aggregate call volume, answer rate, and average duration over a date range.' },
+  { name: 'get_call_volume', description: 'Day-by-day call volume for the last 14 days, bucketed for charting.' },
+  { name: 'get_sentiment', description: 'Caller sentiment breakdown (positive / neutral / negative) across recent calls.' },
+  { name: 'get_agent_performance', description: 'Per-agent performance — calls handled, avg duration, resolution rate.' },
+  { name: 'list_active_rooms', description: 'List currently active LiveKit rooms — agents on a live call right now.' },
+  { name: 'get_system_health', description: 'Overall platform health check — database, telephony, and AI provider status.' },
+  { name: 'list_sip_trunks', description: 'List configured SIP trunks and their registration status.' },
+];
+
+const DEMO_MCP_RESULTS = {
+  list_agents: { agents: [{ id: 'ag_demo_1', name: 'KallUS Agent', number: '+27 82 555 0148', status: 'active' }] },
+  get_call_statistics: { total_calls: 64, answered: 64, answer_rate: 1, avg_duration_seconds: 48 },
+  get_call_volume: { days: Array.from({ length: 7 }, (_, i) => ({ date: new Date(Date.now() - (6 - i) * 86400000).toISOString().slice(0, 10), count: [4, 7, 3, 9, 6, 11, 5][i] })) },
+  get_sentiment: { positive: 0, neutral: 6, negative: 1, total_classified: 7 },
+  get_agent_performance: { agents: [{ name: 'KallUS Agent', calls: 64, avg_duration_seconds: 48, resolution_rate: 1 }] },
+  list_active_rooms: { rooms: [] },
+  get_system_health: { database: 'unavailable (dev sandbox)', telephony: 'ok', ai_provider: 'ok' },
+  list_sip_trunks: { trunks: [] },
+};
+const demoToolResult = (name) => DEMO_MCP_RESULTS[name] || { ok: true, demo: true, message: `Demo response for ${name}` };
+
+// Parameter schema + display metadata for the Tool Details panel. Only known
+// for the demo tool set above — real reseller MCP servers don't publish a
+// schema via /api/mcp/tools (it only returns name+description), so unknown
+// tools fall back to a raw-JSON arguments box instead of a guessed form.
+const TOOL_META = {
+  list_agents:           { category: 'Agents',    params: [], avgMs: 92 },
+  get_call_statistics:   { category: 'Analytics', params: [{ key: 'startDate', label: 'Start Date', type: 'date' }, { key: 'endDate', label: 'End Date', type: 'date' }], avgMs: 145 },
+  get_call_volume:       { category: 'Analytics', params: [{ key: 'startDate', label: 'Start Date', type: 'date' }, { key: 'endDate', label: 'End Date', type: 'date' }], avgMs: 168 },
+  get_sentiment:         { category: 'Analytics', params: [{ key: 'days', label: 'Days', type: 'number' }], avgMs: 132 },
+  get_agent_performance: { category: 'Agents',    params: [{ key: 'agentId', label: 'Agent ID', type: 'text' }], avgMs: 121 },
+  list_active_rooms:     { category: 'Telephony', params: [], avgMs: 78 },
+  get_system_health:     { category: 'System',    params: [], avgMs: 64 },
+  list_sip_trunks:       { category: 'Telephony', params: [], avgMs: 88 },
+};
+
+function InfoItem({ label, value, valueClass }) {
+  return (
+    <div>
+      <div className="text-[10px] uppercase tracking-wider text-mute font-semibold">{label}</div>
+      <div className={`mt-0.5 text-sm font-semibold ${valueClass || 'text-slate-900'}`}>{value}</div>
+    </div>
+  );
+}
+
 function McpBrowser() {
   const [endpoints, setEndpoints] = useState(null);    // list of { key, label, url, portal, source }
   const [endpoint, setEndpoint]   = useState('env');   // selected endpoint key
@@ -525,7 +580,12 @@ function McpBrowser() {
   const [filter, setFilter] = useState('');
   const [picked, setPicked] = useState(null);
   const [args, setArgs]     = useState('{}');
+  const [paramValues, setParamValues] = useState({});
   const [result, setResult] = useState(null);
+  const [elapsedMs, setElapsedMs] = useState(null);
+  const [runOk, setRunOk]   = useState(true);
+  const [showFullResponse, setShowFullResponse] = useState(false);
+  const [schemaCopied, setSchemaCopied] = useState(false);
   const [busy, setBusy]     = useState(false);
   const [err, setErr]       = useState('');
   // Add/edit MCP creds modal — superadmin can wire up a reseller's
@@ -548,42 +608,87 @@ function McpBrowser() {
     })();
   }, []);
 
-  // Re-fetch the tool catalog whenever the picked endpoint changes.
+  // Re-fetch the tool catalog whenever the picked endpoint changes. Guards
+  // against the demo-mode switch (below) racing a still-in-flight real
+  // fetch for the initial 'env' endpoint and clobbering the demo tools.
   useEffect(() => {
+    let cancelled = false;
     setTools(null); setPicked(null); setResult(null); setErr('');
+    if (endpoint.startsWith('demo-')) { setTools(DEMO_MCP_TOOLS); return; }
     (async () => {
       try {
         const r = await api(`/api/mcp/tools?endpoint=${encodeURIComponent(endpoint)}`);
-        setTools(r.tools || []);
+        if (!cancelled) setTools(r.tools || []);
       } catch (e) {
-        setErr(e.message);
-        setTools([]);
+        if (!cancelled) { setErr(e.message); setTools([]); }
       }
     })();
+    return () => { cancelled = true; };
   }, [endpoint]);
+
+  // No real MCP server configured — fall back to a demo endpoint so the
+  // page demonstrates its full layout instead of a dead empty state.
+  const demoMode = endpoints !== null && endpoints.length === 0;
+  useEffect(() => {
+    if (demoMode && endpoint === 'env') setEndpoint(DEMO_MCP_ENDPOINTS[0].key);
+  }, [demoMode]);
+  const displayEndpoints = demoMode ? DEMO_MCP_ENDPOINTS : (endpoints || []);
+
+  const meta = TOOL_META[picked] || null;
 
   const run = async () => {
     setErr('');
     setBusy(true);
     setResult(null);
+    setShowFullResponse(false);
     let parsed = {};
-    try { parsed = JSON.parse(args); }
-    catch (e) { setErr('Args must be valid JSON: ' + e.message); setBusy(false); return; }
+    if (meta) {
+      // Known schema — build args from the auto-generated field inputs.
+      for (const p of meta.params) if (paramValues[p.key]) parsed[p.key] = paramValues[p.key];
+    } else {
+      try { parsed = JSON.parse(args); }
+      catch (e) { setErr('Args must be valid JSON: ' + e.message); setBusy(false); return; }
+    }
+    const startedAt = performance.now();
+    if (endpoint.startsWith('demo-')) {
+      setTimeout(() => {
+        setResult(demoToolResult(picked));
+        setElapsedMs(Math.round(performance.now() - startedAt));
+        setRunOk(true);
+        setBusy(false);
+      }, 500);
+      return;
+    }
     try {
       const r = await api('/api/mcp/call', {
         method: 'POST',
         body: { name: picked, args: parsed, endpoint },
       });
       setResult(r.result);
+      setRunOk(true);
     } catch (e) {
       setErr(e.message);
+      setRunOk(false);
     } finally {
+      setElapsedMs(Math.round(performance.now() - startedAt));
       setBusy(false);
     }
   };
 
+  const copySchema = () => {
+    const schema = {
+      name: picked,
+      description: (tools || []).find((t) => t.name === picked)?.description || '',
+      parameters: meta ? meta.params.map((p) => ({ key: p.key, type: p.type })) : 'unspecified — this MCP server does not publish a schema',
+    };
+    navigator.clipboard?.writeText(JSON.stringify(schema, null, 2)).then(() => {
+      setSchemaCopied(true);
+      setTimeout(() => setSchemaCopied(false), 1200);
+    }).catch(() => {});
+  };
+
   const list   = (tools || []).filter((t) => !filter || t.name.toLowerCase().includes(filter.toLowerCase()));
-  const active = (endpoints || []).find((e) => e.key === endpoint);
+  const active = displayEndpoints.find((e) => e.key === endpoint);
 
   const refreshEndpoints = async () => {
     const r = await api('/api/admin/mcp/endpoints');
@@ -624,20 +729,16 @@ function McpBrowser() {
           <div className="text-xs uppercase tracking-wider text-mute font-semibold">MCP server</div>
           <button
             onClick={() => setEditing({ resellerPortal: '', url: '', token: '' })}
-            className="text-xs text-lime-600 hover:underline font-semibold"
+            className="btn-teal text-xs whitespace-nowrap transition duration-200 ease-out hover:scale-105 active:scale-95"
           >
-            + Add / update MCP for a reseller portal
+            + Add / update MCP
           </button>
         </div>
         {endpoints === null ? (
           <div className="text-sm text-mute">Loading endpoints…</div>
-        ) : endpoints.length === 0 ? (
-          <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-            No MCP servers configured.
-          </div>
         ) : (
           <div className="flex flex-wrap gap-2">
-            {endpoints.map((ep) => {
+            {displayEndpoints.map((ep) => {
               const isActive = ep.key === endpoint;
               return (
                 <div
@@ -651,11 +752,11 @@ function McpBrowser() {
                   <button onClick={() => setEndpoint(ep.key)} className="block text-left w-full">
                     <div className="flex items-center gap-2">
                       <span className={`pill text-[9px] uppercase tracking-wider font-semibold ${
-                        ep.source === 'env'
-                          ? 'bg-emerald-500/15 text-emerald-700'
+                        ep.source === 'env' ? 'bg-emerald-500/15 text-emerald-700'
+                          : ep.source === 'demo' ? 'bg-slate-200 text-slate-700'
                           : 'bg-purple-500/15 text-purple-700'
                       }`}>
-                        {ep.source === 'env' ? 'default' : 'reseller'}
+                        {ep.source === 'env' ? 'default' : ep.source === 'demo' ? 'demo' : 'reseller'}
                       </span>
                       <span className="font-semibold">{ep.label}</span>
                     </div>
@@ -699,7 +800,10 @@ function McpBrowser() {
             {list.map((t) => (
               <div
                 key={t.name}
-                onClick={() => { setPicked(t.name); setArgs('{}'); setResult(null); }}
+                onClick={() => {
+                  setPicked(t.name); setArgs('{}'); setParamValues({}); setResult(null);
+                  setErr(''); setElapsedMs(null); setShowFullResponse(false);
+                }}
                 className={`p-2 text-xs cursor-pointer border-b border-line ${picked === t.name ? 'bg-lime-50 text-lime-700' : 'hover:bg-slate-50'}`}
               >
                 <div className="font-mono">{t.name}</div>
@@ -708,29 +812,127 @@ function McpBrowser() {
             ))}
           </div>
         </div>
-        <div>
+        {/* === Tool Details panel ===================================== */}
+        <div key={picked || 'empty'} className="animate-fade-up">
           {!picked ? (
-            <div className="text-mute text-sm">Pick a tool from the list to invoke it.</div>
+            <div className="form-card rounded-2xl shadow-sm text-center py-14 px-6">
+              <div className="relative w-16 h-16 mx-auto mb-4">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--grad-start)] to-[var(--grad-end)] flex items-center justify-center">
+                  <Wrench className="w-7 h-7 text-white" />
+                </div>
+                <div className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-lg bg-white border border-lime-200 shadow flex items-center justify-center">
+                  <Server className="w-3.5 h-3.5 text-lime-700" />
+                </div>
+              </div>
+              <div className="text-base font-bold text-slate-900">Select an MCP Tool</div>
+              <p className="mt-1.5 text-sm text-mute max-w-xs mx-auto">
+                Choose a tool from the left panel to inspect its details and execute it.
+              </p>
+              <div className="mt-5 flex flex-col items-center gap-1.5 text-xs text-slate-600">
+                {['View description', 'See required parameters', 'Execute the tool', 'Inspect JSON response', 'Copy results'].map((f) => (
+                  <div key={f} className="flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5 text-lime-600 shrink-0" /> {f}
+                  </div>
+                ))}
+              </div>
+            </div>
           ) : (
-            <>
-              <div className="font-mono text-sm">{picked}</div>
-              <label className="field-label mt-3">Arguments (JSON)</label>
-              <textarea
-                className="input font-mono text-xs"
-                rows={5}
-                value={args}
-                onChange={(e) => setArgs(e.target.value)}
-              />
-              <div className="mt-3 flex gap-2">
-                <button className="btn-teal text-sm" onClick={run} disabled={busy}>
-                  {busy ? 'Running…' : '▶ Run tool'}
+            <div className="form-card rounded-2xl shadow-sm p-5">
+              {/* Header */}
+              <div className="text-[10px] uppercase tracking-wider text-mute font-semibold">Tool Details</div>
+              <div className="mt-1 flex items-center gap-2 flex-wrap">
+                <div className="font-mono text-base font-bold text-slate-900">{picked}</div>
+                <span className="pill text-[10px] uppercase tracking-wider font-semibold bg-lime-500/15 text-lime-700">Read Only</span>
+              </div>
+
+              {/* Description */}
+              <p className="mt-3 text-sm text-mute leading-relaxed">
+                {(tools || []).find((t) => t.name === picked)?.description || 'No description provided.'}
+              </p>
+
+              {/* Info grid */}
+              <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 py-4 border-y border-line">
+                <InfoItem label="Category" value={meta?.category || 'General'} />
+                <InfoItem label="Parameters" value={meta ? (meta.params.length ? `${meta.params.length} field${meta.params.length > 1 ? 's' : ''}` : 'None') : 'Unspecified'} />
+                <InfoItem label="Returns" value="JSON" />
+                <InfoItem label="Permission" value="Read Only" />
+                <InfoItem label="Average Response" value={meta ? `${meta.avgMs} ms` : '—'} />
+              </div>
+
+              {/* Parameters — auto-generated form for known tools, raw JSON otherwise */}
+              <div className="mt-4">
+                <div className="field-label">Parameters</div>
+                {meta ? (
+                  meta.params.length === 0 ? (
+                    <div className="mt-1.5 text-sm text-mute">This tool does not require any input parameters.</div>
+                  ) : (
+                    <div className="mt-2 space-y-3">
+                      {meta.params.map((p) => (
+                        <div key={p.key}>
+                          <label className="field-label">{p.label}</label>
+                          <input
+                            type={p.type}
+                            className="input text-sm"
+                            value={paramValues[p.key] || ''}
+                            onChange={(e) => setParamValues((v) => ({ ...v, [p.key]: e.target.value }))}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )
+                ) : (
+                  <>
+                    <div className="mt-1.5 text-xs text-mute">This MCP server doesn't publish a parameter schema — enter arguments as JSON.</div>
+                    <textarea
+                      className="input font-mono text-xs mt-2"
+                      rows={5}
+                      value={args}
+                      onChange={(e) => setArgs(e.target.value)}
+                    />
+                  </>
+                )}
+              </div>
+
+              {/* Action buttons */}
+              <div className="mt-4 flex gap-2">
+                <button className="btn-teal text-sm flex-1 transition duration-200 ease-out hover:scale-[1.02] active:scale-95" onClick={run} disabled={busy}>
+                  {busy ? 'Running…' : '▶ Run Tool'}
+                </button>
+                <button
+                  className="btn-ghost text-sm inline-flex items-center gap-1.5 transition duration-200 ease-out hover:scale-[1.02] active:scale-95"
+                  onClick={copySchema}
+                  type="button"
+                >
+                  {schemaCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />} {schemaCopied ? 'Copied' : 'Copy Schema'}
                 </button>
               </div>
-              {err && <div className="mt-3 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">{err}</div>}
+
+              {err && <div className="mt-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">⚠ {err}</div>}
+
+              {/* Execution result */}
               {result !== null && (
-                <pre className="mt-4 form-card text-xs leading-relaxed text-mute whitespace-pre-wrap overflow-x-auto max-h-[420px]">{JSON.stringify(result, null, 2)}</pre>
+                <div className="mt-4 rounded-xl border border-lime-200 bg-lime-50/40 p-4 animate-fade-up">
+                  <div className="flex items-center gap-1.5 text-sm font-bold text-slate-900">
+                    <Check className="w-4 h-4 text-lime-600" /> Execution Complete
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 gap-3">
+                    <InfoItem label="Status" value={runOk ? 'Success' : 'Error'} valueClass={runOk ? 'text-lime-700' : 'text-red-600'} />
+                    <InfoItem label="Response Time" value={elapsedMs != null ? `${elapsedMs} ms` : '—'} />
+                    <InfoItem label="Returned" value="JSON Object" />
+                  </div>
+                  <button
+                    onClick={() => setShowFullResponse((v) => !v)}
+                    className="mt-3 text-xs font-semibold text-lime-700 hover:underline inline-flex items-center gap-1"
+                    type="button"
+                  >
+                    {showFullResponse ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />} View Full Response
+                  </button>
+                  {showFullResponse && (
+                    <pre className="mt-3 bg-white border border-line rounded-lg text-xs leading-relaxed text-mute whitespace-pre-wrap overflow-x-auto max-h-[420px] p-3">{JSON.stringify(result, null, 2)}</pre>
+                  )}
+                </div>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -800,7 +1002,7 @@ function McpBrowser() {
                 type="button"
                 onClick={saveCreds}
                 disabled={editBusy || !editing.resellerPortal}
-                className="px-4 py-2 rounded-lg text-white text-sm font-semibold bg-[linear-gradient(135deg,#0ea5e9_0%,#6366f1_55%,#8b5cf6_110%)]"
+                className="btn-teal text-sm whitespace-nowrap"
               >
                 {editBusy ? 'Saving…' : 'Save MCP creds'}
               </button>
