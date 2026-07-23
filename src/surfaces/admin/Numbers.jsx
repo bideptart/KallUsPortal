@@ -71,8 +71,7 @@ export default function Numbers() {
   const [formErr, setFormErr] = useState('');
   const [okMsg, setOkMsg]     = useState('');
 
-  // Row selection + export
-  const [selected, setSelected] = useState(() => new Set());
+  // Export
   const [exportOpen, setExportOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [toast, setToast] = useState('');
@@ -116,24 +115,9 @@ export default function Numbers() {
     return true;
   });
 
-  const allFilteredSelected = filtered.length > 0 && filtered.every((n) => selected.has(n.value));
-  const toggleSelectAll = () => {
-    setSelected((prev) => {
-      if (allFilteredSelected) return new Set();
-      return new Set(filtered.map((n) => n.value));
-    });
-  };
-  const toggleRow = (value) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(value)) next.delete(value); else next.add(value);
-      return next;
-    });
-  };
-
   const runExport = (kind) => {
     setExportOpen(false);
-    const rows = selected.size > 0 ? filtered.filter((n) => selected.has(n.value)) : filtered;
+    const rows = filtered;
     if (!rows.length) return;
     setExporting(true);
     setTimeout(() => {
@@ -197,13 +181,13 @@ export default function Numbers() {
             >
               {exporting
                 ? <>Exporting…</>
-                : <><Download className="w-4 h-4" /> Export {selected.size > 0 ? `(${selected.size})` : ''} <ChevronDown className="w-3.5 h-3.5" /></>
+                : <><Download className="w-4 h-4" /> Export <ChevronDown className="w-3.5 h-3.5" /></>
               }
             </button>
             {exportOpen && (
               <div className="absolute right-0 top-full mt-1.5 w-56 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-50 p-1.5 animate-modal-in">
                 <div className="px-2.5 pt-1 pb-1.5 text-[10px] uppercase tracking-wider text-mute font-semibold">
-                  {selected.size > 0 ? `${selected.size} selected` : `All ${filtered.length} filtered`}
+                  All {filtered.length} filtered
                 </div>
                 <button
                   type="button"
@@ -311,15 +295,6 @@ export default function Numbers() {
         <table>
           <thead>
             <tr>
-              <th className="w-8">
-                <input
-                  type="checkbox"
-                  className="rounded accent-lime-600"
-                  checked={allFilteredSelected}
-                  onChange={toggleSelectAll}
-                  aria-label="Select all filtered DIDs"
-                />
-              </th>
               <th>DID</th>
               <th>Status</th>
               <th>Owner</th>
@@ -331,22 +306,13 @@ export default function Numbers() {
           </thead>
           <tbody>
             {data === null && (
-              <tr><td colSpan={8} className="text-center text-mute py-6">Loading…</td></tr>
+              <tr><td colSpan={7} className="text-center text-mute py-6">Loading…</td></tr>
             )}
             {data && filtered.length === 0 && (
-              <tr><td colSpan={8} className="text-center text-mute py-6">No DIDs match the current filter.</td></tr>
+              <tr><td colSpan={7} className="text-center text-mute py-6">No DIDs match the current filter.</td></tr>
             )}
             {filtered.map((n) => (
-              <tr key={n.value} className={selected.has(n.value) ? 'bg-lime-50/60' : ''}>
-                <td className="w-8">
-                  <input
-                    type="checkbox"
-                    className="rounded accent-lime-600"
-                    checked={selected.has(n.value)}
-                    onChange={() => toggleRow(n.value)}
-                    aria-label={`Select ${n.value}`}
-                  />
-                </td>
+              <tr key={n.value}>
                 <td className="font-mono text-sm">{n.value}</td>
                 <td>
                   {n.status === 'busy'
