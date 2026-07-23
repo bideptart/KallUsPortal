@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
 
 // =============================================================================
@@ -48,6 +49,31 @@ const fmtRelative = (d) => {
   if (absMin < 60) return `${absMin}m ago`;
   if (absHr  < 24) return `${absHr}h ago`;
   return `${absDay}d ago`;
+};
+
+// Stale-while-revalidate cache for this tab. Without it, every reload (and
+// every "Upcoming only" toggle) resets `meetings` to null, so the whole list
+// blanks to "Loading meetings…" for however long the round-trip takes — that
+// blank-then-pop is what actually reads as slow. Hydrating synchronously from
+// the last successful load for the same (user, filter) combo shows real rows
+// immediately; the load below always re-fetches in the background and
+// overwrites this with fresh data once it lands. Session-scoped and keyed by
+// user id so it never leaks across accounts or outlives the tab.
+const MEETINGS_CACHE_KEY = 'kallus.meetings.cache.v1';
+const readMeetingsCache = (userId, upcomingOnly) => {
+  if (!userId) return null;
+  try {
+    const parsed = JSON.parse(sessionStorage.getItem(MEETINGS_CACHE_KEY) || 'null');
+    return parsed && parsed.userId === userId && parsed.upcomingOnly === upcomingOnly ? parsed.meetings : null;
+  } catch {
+    return null;
+  }
+};
+const writeMeetingsCache = (userId, upcomingOnly, meetings) => {
+  if (!userId) return;
+  try {
+    sessionStorage.setItem(MEETINGS_CACHE_KEY, JSON.stringify({ userId, upcomingOnly, meetings }));
+  } catch { /* storage full / private-mode — just skip caching */ }
 };
 
 const STATUS_PILL = {
@@ -225,10 +251,15 @@ export default function Meetings({
   title = '📅 Scheduled meetings',
   description = 'Every meeting your AI agent booked through Google Calendar.',
 }) {
-  const [meetings, setMeetings] = useState(null);
-  const [err, setErr] = useState('');
-  const [loading, setLoading] = useState(true);
+  const { currentUser } = useApp();
   const [upcomingOnly, setUpcomingOnly] = useState(true);
+  const [meetings, setMeetings] = useState(() => readMeetingsCache(currentUser?.id, true));
+  const [err, setErr] = useState('');
+  const [refreshing, setRefreshing] = useState(true);
+  // Derived, not separate state: whenever there's no data (real or cached)
+  // for the currently selected filter, the list itself is the loading
+  // indicator — never a stale mismatched-filter list with no visible cue.
+  const loading = meetings === null;
   const [month, setMonth] = useState(() => {
     const n = new Date();
     return new Date(n.getFullYear(), n.getMonth(), 1);
@@ -251,21 +282,31 @@ export default function Meetings({
     return () => io.disconnect();
   }, []);
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (which = upcomingOnly) => {
+    setRefreshing(true);
     setErr('');
     try {
-      const r = await api(`/api/scheduled-meetings?upcoming=${upcomingOnly ? 'true' : 'false'}`);
-      setMeetings(r.meetings || []);
+      const r = await api(`/api/scheduled-meetings?upcoming=${which ? 'true' : 'false'}`);
+      const next = r.meetings || [];
+      setMeetings(next);
+      writeMeetingsCache(currentUser?.id, which, next);
     } catch (e) {
       setErr(e.message || 'Failed to load meetings');
-      setMeetings([]);
+      setMeetings((prev) => prev ?? []);
     } finally {
-      setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [upcomingOnly]);
+  // Switching the filter shows whatever's cached for that specific (user,
+  // filter) combo immediately — null (→ the loading state) only when this
+  // filter has never been loaded before — then always refreshes in the
+  // background so the list is never left silently stale.
+  useEffect(() => {
+    setMeetings(readMeetingsCache(currentUser?.id, upcomingOnly));
+    load(upcomingOnly);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [upcomingOnly]);
 
   // Index meetings by local day for the calendar dot rendering.
   const meetingsByDay = useMemo(() => {
@@ -301,6 +342,7 @@ export default function Meetings({
           {total > 0 && (
             <> · <span className="text-lime-600 dark:text-lime-400 font-semibold">{upcomingCount} upcoming</span></>
           )}
+          {refreshing && !loading && <span className="font-normal text-xs text-mute ml-2">Refreshing…</span>}
         </p>
         <div className="flex items-center gap-2 flex-wrap">
           <label className="flex items-center gap-2 text-sm text-mute cursor-pointer">
@@ -312,8 +354,8 @@ export default function Meetings({
             />
             Upcoming only
           </label>
-          <button onClick={load} disabled={loading} className="btn-teal text-sm transition duration-200 ease-out hover:scale-105 active:scale-95">
-            {loading ? 'Loading…' : '↻ Refresh'}
+          <button onClick={() => load()} disabled={refreshing} className="btn-teal text-sm transition duration-200 ease-out hover:scale-105 active:scale-95">
+            {refreshing ? 'Loading…' : '↻ Refresh'}
           </button>
         </div>
       </div>

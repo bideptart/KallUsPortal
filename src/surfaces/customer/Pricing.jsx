@@ -50,24 +50,22 @@ export default function Pricing() {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      try {
-        // auth:false — /api/plans is public and works with no DB attached,
-        // so the catalog renders even when everything else is offline.
-        const r = await api('/api/plans', { auth: false });
-        if (!cancelled) setPlans(r.plans || []);
-      } catch (e) {
-        if (!cancelled) setErr(e.message || 'Could not load plans');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-      // Only used to mark tiers the customer already owns. Optional — a
-      // failure here just means no "Current plan" badges.
-      try {
-        const n = await api('/api/numbers');
-        if (!cancelled) setNumbers(n.numbers || []);
-      } catch {}
-    })();
+
+    // Two independent endpoints — fire both immediately instead of waiting
+    // for /api/plans to fully resolve before /api/numbers even starts.
+    // auth:false — /api/plans is public and works with no DB attached,
+    // so the catalog renders even when everything else is offline.
+    api('/api/plans', { auth: false })
+      .then((r) => { if (!cancelled) setPlans(r.plans || []); })
+      .catch((e) => { if (!cancelled) setErr(e.message || 'Could not load plans'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+
+    // Only used to mark tiers the customer already owns. Optional — a
+    // failure here just means no "Current plan" badges.
+    api('/api/numbers')
+      .then((n) => { if (!cancelled) setNumbers(n.numbers || []); })
+      .catch(() => {});
+
     return () => { cancelled = true; };
   }, [reloadKey]);
 

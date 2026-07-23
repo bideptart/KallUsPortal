@@ -37,6 +37,32 @@ const fmtTime = (t) => {
 
 const ANSWERED = new Set(['completed', 'answered', 'in-progress']);
 
+// Stale-while-revalidate cache for this tab. A hard reload otherwise resets
+// `calls`/`sentimentAgg` to null, so every stat tile and chart flashes to
+// 0/— for as long as the network round-trip takes — which is what actually
+// reads as "slow", independent of how fast the backend really is. Hydrating
+// synchronously from the last successful load makes the reload show real
+// numbers immediately; the effect below always re-fetches in the background
+// and overwrites this with fresh data once it lands. Session-scoped (not
+// localStorage) and keyed by user id so it never leaks across accounts or
+// outlives the browser tab.
+const ANALYTICS_CACHE_KEY = 'kallus.analytics.cache.v1';
+const readAnalyticsCache = (userId) => {
+  if (!userId) return null;
+  try {
+    const parsed = JSON.parse(sessionStorage.getItem(ANALYTICS_CACHE_KEY) || 'null');
+    return parsed && parsed.userId === userId ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+const writeAnalyticsCache = (userId, calls, sentimentAgg) => {
+  if (!userId) return;
+  try {
+    sessionStorage.setItem(ANALYTICS_CACHE_KEY, JSON.stringify({ userId, calls, sentimentAgg }));
+  } catch { /* storage full / private-mode — just skip caching */ }
+};
+
 const startOfDay = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
 const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
@@ -54,8 +80,9 @@ const PRESETS = [
 
 export default function Analytics() {
   const { currentUser } = useApp();
-  const [calls, setCalls] = useState(null);
-  const [sentimentAgg, setSentimentAgg] = useState(null);
+  const [calls, setCalls] = useState(() => readAnalyticsCache(currentUser?.id)?.calls ?? null);
+  const [sentimentAgg, setSentimentAgg] = useState(() => readAnalyticsCache(currentUser?.id)?.sentimentAgg ?? null);
+  const [refreshing, setRefreshing] = useState(true);
   const [err, setErr] = useState('');
 
   const [typeFilter, setTypeFilter] = useState('all');
@@ -70,10 +97,15 @@ export default function Analytics() {
           api('/api/mcp/sentiment?days=30').catch(() => null),
         ]);
         if (cancelled) return;
-        setCalls(c.calls || []);
-        setSentimentAgg(s?.data || null);
+        const nextCalls = c.calls || [];
+        const nextSentiment = s?.data || null;
+        setCalls(nextCalls);
+        setSentimentAgg(nextSentiment);
+        writeAnalyticsCache(currentUser?.id, nextCalls, nextSentiment);
       } catch (e) {
         if (!cancelled) setErr(e.message || 'Could not load analytics');
+      } finally {
+        if (!cancelled) setRefreshing(false);
       }
     })();
     return () => { cancelled = true; };
@@ -159,7 +191,10 @@ export default function Analytics() {
   return (
     <div>
       {/* Icon + "Analytics" title now live in the sticky top bar instead of here. */}
-      <p className="font-semibold text-base tracking-wide animate-fade-up" style={{ color: 'var(--ink-2)' }}>Your call history and activity across all your numbers.</p>
+      <p className="font-semibold text-base tracking-wide animate-fade-up" style={{ color: 'var(--ink-2)' }}>
+        Your call history and activity across all your numbers.
+        {refreshing && calls != null && <span className="font-normal text-xs text-mute ml-2">Refreshing…</span>}
+      </p>
 
       {err && (
         <div className="mt-4 text-sm text-red-500 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">{err}</div>

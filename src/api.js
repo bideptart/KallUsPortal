@@ -13,27 +13,46 @@ export const setToken = (t) => {
   else localStorage.removeItem(TOKEN_KEY);
 };
 
+// Collapses concurrent identical GET requests into a single network call —
+// covers React StrictMode's dev-only double-invoke and any two components
+// that happen to request the same path in the same tick. Only GETs are safe
+// to share (mutations must never be deduped), and the entry is cleared as
+// soon as it settles, so it never masks a genuinely fresh request later.
+const inflightGets = new Map();
+
 export async function api(path, { method = 'GET', body, auth = true } = {}) {
-  const headers = { 'Content-Type': 'application/json' };
-  if (auth) {
-    const t = getToken();
-    if (t) headers.Authorization = `Bearer ${t}`;
+  const isGet = method === 'GET';
+  const key = isGet ? `${auth ? '1' : '0'}:${path}` : null;
+  if (isGet && inflightGets.has(key)) return inflightGets.get(key);
+
+  const request = (async () => {
+    const headers = { 'Content-Type': 'application/json' };
+    if (auth) {
+      const t = getToken();
+      if (t) headers.Authorization = `Bearer ${t}`;
+    }
+    const res = await fetch(API_BASE + path, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    let data = null;
+    const text = await res.text();
+    if (text) {
+      try { data = JSON.parse(text); } catch { data = { raw: text }; }
+    }
+    if (!res.ok) {
+      const err = new Error((data && data.error) || `Request failed (${res.status})`);
+      err.status = res.status;
+      err.data = data;
+      throw err;
+    }
+    return data;
+  })();
+
+  if (isGet) {
+    inflightGets.set(key, request);
+    request.finally(() => inflightGets.delete(key));
   }
-  const res = await fetch(API_BASE + path, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  let data = null;
-  const text = await res.text();
-  if (text) {
-    try { data = JSON.parse(text); } catch { data = { raw: text }; }
-  }
-  if (!res.ok) {
-    const err = new Error((data && data.error) || `Request failed (${res.status})`);
-    err.status = res.status;
-    err.data = data;
-    throw err;
-  }
-  return data;
+  return request;
 }

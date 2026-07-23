@@ -31,6 +31,7 @@ export default function Overview({ rechargeOn }) {
   const [topupBusy, setTopupBusy] = useState(false);
   const [topupMsg, setTopupMsg] = useState('');
   const [numbers, setNumbers] = useState([]);
+  const [numbersLoading, setNumbersLoading] = useState(true);
 
   // Call analytics card — call-statistics / sentiment / call-volume are all
   // auto-scoped to this customer's own agent server-side (PER_AGENT_TOOLS in
@@ -49,32 +50,36 @@ export default function Overview({ rechargeOn }) {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      try {
-        const data = await api('/api/twilio/stats');
-        if (!cancelled) setStats(data);
-      } catch (e) {
-        if (!cancelled) setStatsErr(e.message);
-      } finally {
-        if (!cancelled) setStatsLoading(false);
-      }
-      if (!cancelled) await refreshWallet();
-      try {
-        const r = await api('/api/numbers');
-        if (!cancelled) setNumbers(r.numbers || []);
-      } catch {}
-      try {
-        const [cs, sent, vol] = await Promise.all([
-          api('/api/mcp/call-statistics?days=30').catch(() => null),
-          api('/api/mcp/sentiment?days=30').catch(() => null),
-          api('/api/mcp/call-volume?days=14').catch(() => null),
-        ]);
-        if (cancelled) return;
-        setCallStats(cs?.data || null);
-        setSentiment(sent?.data || null);
-        setVolume(vol?.data || null);
-      } catch {}
-    })();
+
+    // Each request fires immediately (nothing here is awaited before the
+    // next starts) and updates its own state the moment it resolves — so
+    // e.g. the numbers table paints as soon as /api/numbers is back instead
+    // of waiting on /api/twilio/stats, which is the slowest of the six.
+    api('/api/twilio/stats')
+      .then((data) => { if (!cancelled) setStats(data); })
+      .catch((e) => { if (!cancelled) setStatsErr(e.message); })
+      .finally(() => { if (!cancelled) setStatsLoading(false); });
+
+    api('/api/wallet')
+      .then((w) => { if (!cancelled) setWallet(w.wallet); })
+      .catch(() => {});
+
+    api('/api/numbers')
+      .then((r) => { if (!cancelled) setNumbers(r.numbers || []); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setNumbersLoading(false); });
+
+    Promise.all([
+      api('/api/mcp/call-statistics?days=30').catch(() => null),
+      api('/api/mcp/sentiment?days=30').catch(() => null),
+      api('/api/mcp/call-volume?days=14').catch(() => null),
+    ]).then(([cs, sent, vol]) => {
+      if (cancelled) return;
+      setCallStats(cs?.data || null);
+      setSentiment(sent?.data || null);
+      setVolume(vol?.data || null);
+    });
+
     return () => { cancelled = true; };
   }, [currentUser?.role]);
 
@@ -207,7 +212,9 @@ export default function Overview({ rechargeOn }) {
           </thead>
           <tbody>
             {displayNumbers.length === 0 && (
-              <tr><td colSpan={8} className="text-center text-mute py-8">No numbers yet — add a plan to get started.</td></tr>
+              <tr><td colSpan={8} className="text-center text-mute py-8">
+                {numbersLoading ? 'Loading your numbers…' : 'No numbers yet — add a plan to get started.'}
+              </td></tr>
             )}
             {displayNumbers.map((n) => {
               const rowLeft  = singleNumber ? minLeft   : null;

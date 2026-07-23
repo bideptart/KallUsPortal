@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
 
 // =============================================================================
@@ -29,6 +30,31 @@ const stripCountryCode = (fullNumber) => {
   return fullNumber.startsWith(COUNTRY_CODE) ? fullNumber.slice(COUNTRY_CODE.length) : fullNumber.replace(/^\+/, '');
 };
 
+// Stale-while-revalidate cache for this tab. Without it, every reload resets
+// `numbers` to [] and the whole card grid blanks to "No numbers yet" for
+// however long /api/numbers takes — indistinguishable from a genuinely empty
+// account, and the blank-then-pop is what reads as slow. Hydrating
+// synchronously from the last successful load shows the real cards
+// immediately; loadNumbers() below always re-fetches in the background and
+// overwrites this with fresh data once it lands. Session-scoped and keyed by
+// user id so it never leaks across accounts or outlives the tab.
+const TOOLS_NUMBERS_CACHE_KEY = 'kallus.tools.numbers.cache.v1';
+const readNumbersCache = (userId) => {
+  if (!userId) return null;
+  try {
+    const parsed = JSON.parse(sessionStorage.getItem(TOOLS_NUMBERS_CACHE_KEY) || 'null');
+    return parsed && parsed.userId === userId ? parsed.numbers : null;
+  } catch {
+    return null;
+  }
+};
+const writeNumbersCache = (userId, numbers) => {
+  if (!userId) return;
+  try {
+    sessionStorage.setItem(TOOLS_NUMBERS_CACHE_KEY, JSON.stringify({ userId, numbers }));
+  } catch { /* storage full / private-mode — just skip caching */ }
+};
+
 function Toggle({ on, onChange, disabled }) {
   return (
     <button
@@ -47,7 +73,8 @@ function Toggle({ on, onChange, disabled }) {
 }
 
 export default function Tools() {
-  const [numbers, setNumbers] = useState([]);
+  const { currentUser } = useApp();
+  const [numbers, setNumbers] = useState(() => readNumbersCache(currentUser?.id) ?? []);
   const [selectedId, setSelectedId] = useState('');
   const [loadingNumbers, setLoadingNumbers] = useState(true);
 
@@ -83,7 +110,9 @@ export default function Tools() {
     setLoadingNumbers(true);
     try {
       const r = await api('/api/numbers');
-      setNumbers(r.numbers || []);
+      const next = r.numbers || [];
+      setNumbers(next);
+      writeNumbersCache(currentUser?.id, next);
     } catch {}
     finally { setLoadingNumbers(false); }
   };
@@ -154,6 +183,7 @@ export default function Tools() {
       <p className="text-base font-semibold tracking-wide animate-fade-up" style={{ color: 'var(--ink-2)' }}>
         Pick a plan / number below, then configure its tools — call transfer, booking notifications, more soon.
         Changes take effect on the next call (no restart needed).
+        {loadingNumbers && numbers.length > 0 && <span className="font-normal text-xs text-mute ml-2">Refreshing…</span>}
       </p>
 
       <div className="mt-4">
@@ -198,7 +228,7 @@ export default function Tools() {
 
       {numbers.length === 0 ? (
         <div className="mt-6 form-card text-center text-mute py-10">
-          No numbers yet. Add one from Plan &amp; Numbers to configure tools.
+          {loadingNumbers ? 'Loading your numbers…' : 'No numbers yet. Add one from Plan & Numbers to configure tools.'}
         </div>
       ) : (
         <>

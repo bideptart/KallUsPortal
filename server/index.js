@@ -4032,6 +4032,31 @@ const fetchCallsForNumbers = async (digitsList, { fresh = false } = {}) => {
   return unique;
 };
 
+// Tenant-wide list_calls fan-out for the admin branch of /api/twilio/stats,
+// /api/twilio/calls and /api/recordings — same expensive list_calls ×
+// MAX_PAGES round-trip that fetchCallsForNumbers caches for customers, but
+// the admin path paged directly with no cache at all in all three. Same
+// short-TTL pattern as CALLS_CACHE.
+let ADMIN_CALLS_CACHE = null;   // { ts, calls }
+const ADMIN_CALLS_TTL_MS = 60_000;
+const fetchAllCallsForAdmin = async ({ fresh = false } = {}) => {
+  if (!fresh && ADMIN_CALLS_CACHE && Date.now() - ADMIN_CALLS_CACHE.ts < ADMIN_CALLS_TTL_MS) {
+    return ADMIN_CALLS_CACHE.calls;
+  }
+  const rows = [];
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const out = unwrapMcp(await callTool('list_calls', {
+      days: LOOKBACK_DAYS, page, per_page: PAGE_SIZE,
+    }));
+    const batch = Array.isArray(out?.calls) ? out.calls : (Array.isArray(out) ? out : []);
+    if (!batch.length) break;
+    rows.push(...batch);
+    if (batch.length < PAGE_SIZE) break;
+  }
+  ADMIN_CALLS_CACHE = { ts: Date.now(), calls: rows };
+  return rows;
+};
+
 // MCP list_calls doesn't return a money figure, so we derive it from the user's plan.
 app.get('/api/twilio/calls', auth, async (req, res) => {
   try {
@@ -4044,24 +4069,13 @@ app.get('/api/twilio/calls', auth, async (req, res) => {
       : await getUserNumberDigits(req.user.id);
     if (ownDigits && !ownDigits.size) return res.json({ calls: [] });
 
-    let rows;
-    if (ownDigits) {
-      // Per-DID fan-out — each call to MCP paginates through that DID's full
-      // history (last LOOKBACK_DAYS days, up to MAX_PAGES * PAGE_SIZE rows).
-      rows = await fetchCallsForNumbers([...ownDigits], { fresh: req.query.refresh === '1' });
-    } else {
-      // Admin path: unfiltered sweep, paginated.
-      rows = [];
-      for (let page = 1; page <= MAX_PAGES; page++) {
-        const out = unwrapMcp(await callTool('list_calls', {
-          days: LOOKBACK_DAYS, page, per_page: PAGE_SIZE,
-        }));
-        const batch = Array.isArray(out?.calls) ? out.calls : (Array.isArray(out) ? out : []);
-        if (!batch.length) break;
-        rows.push(...batch);
-        if (batch.length < PAGE_SIZE) break;
-      }
-    }
+    // Per-DID fan-out — each call to MCP paginates through that DID's full
+    // history (last LOOKBACK_DAYS days, up to MAX_PAGES * PAGE_SIZE rows).
+    // Admin path shares the same cached tenant-wide sweep as /api/twilio/stats.
+    const fresh = req.query.refresh === '1';
+    let rows = ownDigits
+      ? await fetchCallsForNumbers([...ownDigits], { fresh })
+      : await fetchAllCallsForAdmin({ fresh });
     rows = rows.slice(0, limit);
 
     res.json({
@@ -4166,22 +4180,9 @@ app.get('/api/recordings', auth, async (req, res) => {
     // (removed) get_recording_url MCP tool — instead each row's audio is
     // streamed on-demand through /api/recordings/:callId/audio, which proxies
     // the dashboard's cookie-authenticated egress download (see dashboardWeb.js).
-    let calls;
-    if (ownDigits) {
-      calls = await fetchCallsForNumbers([...ownDigits], { fresh: skipCache });
-    } else {
-      // Admin path: unfiltered sweep, paginated.
-      calls = [];
-      for (let page = 1; page <= MAX_PAGES; page++) {
-        const out = unwrapMcp(await callTool('list_calls', {
-          days: LOOKBACK_DAYS, page, per_page: PAGE_SIZE,
-        }));
-        const batch = Array.isArray(out?.calls) ? out.calls : (Array.isArray(out) ? out : []);
-        if (!batch.length) break;
-        calls.push(...batch);
-        if (batch.length < PAGE_SIZE) break;
-      }
-    }
+    const calls = ownDigits
+      ? await fetchCallsForNumbers([...ownDigits], { fresh: skipCache })
+      : await fetchAllCallsForAdmin({ fresh: skipCache });
 
     const ratePerMin = Number(req.user.plan_rate) || 0;
     const recordings = calls
@@ -4903,7 +4904,6 @@ app.get('/api/twilio/pricing/:country', async (req, res) => {
   }
 });
 
-// Aggregate stats for the user's number (or all numbers if admin) — MCP-sourced.
 app.get('/api/twilio/stats', auth, async (req, res) => {
   try {
     const ratePerMin = Number(req.user.plan_rate) || 0;
@@ -4921,24 +4921,12 @@ app.get('/api/twilio/stats', auth, async (req, res) => {
       });
     }
 
-    let rows;
-    if (ownDigits) {
-      // Per-DID fan-out — matches the call-history endpoint so all-time totals
-      // are consistent between Overview's "Total minutes used" and the
-      // Call history page's row count.
-      rows = await fetchCallsForNumbers([...ownDigits]);
-    } else {
-      rows = [];
-      for (let page = 1; page <= MAX_PAGES; page++) {
-        const out = unwrapMcp(await callTool('list_calls', {
-          days: LOOKBACK_DAYS, page, per_page: PAGE_SIZE,
-        }));
-        const batch = Array.isArray(out?.calls) ? out.calls : (Array.isArray(out) ? out : []);
-        if (!batch.length) break;
-        rows.push(...batch);
-        if (batch.length < PAGE_SIZE) break;
-      }
-    }
+    // Per-DID fan-out — matches the call-history endpoint so all-time totals
+    // are consistent between Overview's "Total minutes used" and the
+    // Call history page's row count.
+    const rows = ownDigits
+      ? await fetchCallsForNumbers([...ownDigits])
+      : await fetchAllCallsForAdmin();
 
     const todayStart = new Date(); todayStart.setUTCHours(0, 0, 0, 0);
     const monthStart = new Date(); monthStart.setUTCDate(1); monthStart.setUTCHours(0, 0, 0, 0);
@@ -5320,15 +5308,47 @@ const PER_AGENT_TOOLS = new Set([
   'get_latency', 'get_agent_performance',
 ]);
 
+// Short-TTL cache for the PER_AGENT_TOOLS analytics tools (sentiment,
+// call-volume, call-statistics, latency, agent-performance) — Overview and
+// Analytics both request get_sentiment with the same days=30 window, so
+// within this window the second page's load skips the MCP round-trip
+// entirely. Scoped to just these aggregate/report-style tools, NOT the
+// admin live-monitoring ones (system-health, service-status, active-rooms,
+// …) where a stale snapshot would be misleading. Keyed by tool + scoped
+// args so customers/agents never share another tenant's cached data.
+const MCP_ANALYTICS_CACHE = new Map();
+const MCP_ANALYTICS_TTL_MS = 30_000;
+
 for (const [path, tool] of Object.entries(mcpReadOnly)) {
+  const cacheable = PER_AGENT_TOOLS.has(tool);
   app.get(path, auth, async (req, res) => {
     try {
       const args = { ...(req.query || {}) };
-      if (PER_AGENT_TOOLS.has(tool) && req.user.role !== 'admin' && req.user.agent_id) {
+      const skipCache = args.refresh === '1';
+      delete args.refresh;
+      if (cacheable && req.user.role !== 'admin' && req.user.agent_id) {
         args.agent_id = req.user.agent_id;
       }
+
+      const key = cacheable ? `${tool}:${JSON.stringify(args)}` : null;
+      if (cacheable && !skipCache) {
+        const hit = MCP_ANALYTICS_CACHE.get(key);
+        if (hit && Date.now() - hit.ts < MCP_ANALYTICS_TTL_MS) {
+          res.setHeader('x-cache', 'hit');
+          return res.json(hit.payload);
+        }
+      }
+
       const r = await callTool(tool, args);
-      res.json({ tool, data: unwrapMcpResult(r) });
+      const payload = { tool, data: unwrapMcpResult(r) };
+      if (cacheable) {
+        if (MCP_ANALYTICS_CACHE.size > 500) {
+          MCP_ANALYTICS_CACHE.delete(MCP_ANALYTICS_CACHE.keys().next().value);
+        }
+        MCP_ANALYTICS_CACHE.set(key, { ts: Date.now(), payload });
+      }
+      res.setHeader('x-cache', 'miss');
+      res.json(payload);
     } catch (e) {
       res.status(502).json({ error: e.message || 'MCP call failed', tool });
     }

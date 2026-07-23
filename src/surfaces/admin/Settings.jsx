@@ -1,10 +1,20 @@
 import { useEffect, useState } from 'react';
+import { RefreshCw, Pencil, ShieldAlert, ShieldCheck, CircleDot } from 'lucide-react';
 import { api } from '../../api.js';
 
+const SOURCE_META = {
+  db:    { label: 'Override', cls: 'bg-lime-100 text-lime-700' },
+  env:   { label: 'From .env', cls: 'bg-blue-100 text-blue-700' },
+  unset: { label: 'Unset', cls: 'bg-amber-100 text-amber-700' },
+};
+
 function StatusPill({ source }) {
-  if (source === 'db') return <span className="pill bg-lime-500/20 text-lime-400">● Override</span>;
-  if (source === 'env') return <span className="pill bg-blue-500/20 text-blue-400">● From .env</span>;
-  return <span className="pill bg-amber-500/20 text-amber-400">○ Unset</span>;
+  const m = SOURCE_META[source] || SOURCE_META.unset;
+  return (
+    <span className={`pill text-[10px] font-semibold ${m.cls}`}>
+      <CircleDot size={9} /> {m.label}
+    </span>
+  );
 }
 
 function FieldRow({ field, draft, setDraft, editing }) {
@@ -12,11 +22,14 @@ function FieldRow({ field, draft, setDraft, editing }) {
   return (
     <div className="setting-row">
       <div>
-        <div className="font-mono text-sm">{field.key}</div>
-        <div className="field-help">{field.label}</div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <code className="text-[12px]">{field.key}</code>
+          <StatusPill source={field.source} />
+        </div>
+        <div className="field-help mt-1">{field.label}</div>
         {field.restartHint && (
-          <div className="text-[11px] text-amber-400 mt-1">
-            ⚠ Server restart required for this change to take effect.
+          <div className="flex items-center gap-1 text-[11px] text-amber-600 mt-1.5">
+            <ShieldAlert size={12} /> Server restart required for this change to take effect.
           </div>
         )}
       </div>
@@ -56,6 +69,9 @@ function SectionCard({ section, refresh }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
   const [err, setErr] = useState('');
+
+  const [emoji, ...nameParts] = section.sectionLabel.split(' ');
+  const name = nameParts.join(' ');
 
   const startEdit = () => {
     // Pre-fill non-secret fields with their actual masked-but-not-secret value;
@@ -104,11 +120,18 @@ function SectionCard({ section, refresh }) {
   };
 
   return (
-    <div className="form-card mt-5">
-      <div className="flex items-center justify-between mb-3">
-        <div className="text-sm font-semibold text-lime-400">{section.sectionLabel}</div>
+    <div className="form-card mt-5 transition-shadow duration-200 hover:shadow-md">
+      <div className="flex items-center justify-between gap-3 pb-3 mb-1 border-b" style={{ borderColor: 'var(--line-2)' }}>
+        <div className="flex items-center gap-2.5">
+          <span className="w-9 h-9 rounded-lg flex items-center justify-center text-base shrink-0" style={{ background: 'var(--surface-2)' }}>
+            {emoji}
+          </span>
+          <div className="font-semibold text-sm text-slate-900 dark:text-slate-100">{name}</div>
+        </div>
         {!editing ? (
-          <button className="btn-ghost text-xs" onClick={startEdit}>✎ Edit</button>
+          <button className="btn-ghost text-xs inline-flex items-center gap-1.5" onClick={startEdit}>
+            <Pencil size={12} /> Edit
+          </button>
         ) : (
           <div className="flex gap-2">
             <button className="btn-ghost text-xs" onClick={cancel} disabled={busy}>Cancel</button>
@@ -123,17 +146,8 @@ function SectionCard({ section, refresh }) {
         <FieldRow key={f.key} field={f} draft={draft} setDraft={setDraft} editing={editing} />
       ))}
 
-      <div className="mt-3 flex flex-wrap gap-3 text-[11px]">
-        {section.fields.map((f) => (
-          <span key={f.key} className="flex items-center gap-1">
-            <span className="text-mute font-mono">{f.key}</span>
-            <StatusPill source={f.source} />
-          </span>
-        ))}
-      </div>
-
-      {msg && <div className="mt-3 text-sm text-lime-400">{msg}</div>}
-      {err && <div className="mt-3 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">{err}</div>}
+      {msg && <div className="mt-3 text-sm text-lime-700 flex items-center gap-1.5"><ShieldCheck size={14} /> {msg}</div>}
+      {err && <div className="mt-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{err}</div>}
     </div>
   );
 }
@@ -160,16 +174,18 @@ export default function Settings() {
       {/* "Settings" title now lives in the sticky top bar instead of here —
           the "· credentials" distinction moved into this subtitle so it's
           not lost. */}
-      <div className="flex items-center justify-between">
-        <p className="text-base font-semibold tracking-wide" style={{ color: 'var(--ink-2)' }}>
-          Credentials — edit secrets and external-service URLs. Values you save here are stored
+      <div className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4">
+        <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-2)' }}>
+          <strong className="text-slate-900">Credentials</strong> — edit secrets and external-service URLs. Values you save here are stored
           encrypted in the database and override <code>.env</code>. Clearing a field falls back to
           the env value.
         </p>
-        <button className="btn-ghost text-sm" onClick={load}>↻ Refresh</button>
+        <button className="btn-ghost text-sm inline-flex items-center gap-1.5 shrink-0" onClick={load}>
+          <RefreshCw size={13} /> Refresh
+        </button>
       </div>
 
-      {err && <div className="mt-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">{err}</div>}
+      {err && <div className="mt-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{err}</div>}
 
       {sections === null && <div className="mt-6 text-mute text-sm">Loading…</div>}
 
@@ -177,9 +193,11 @@ export default function Settings() {
         <SectionCard key={sec.section} section={sec} refresh={load} />
       ))}
 
-      <div className="mt-8 rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 text-sm">
-        <div className="font-semibold text-amber-400">Notes</div>
-        <ul className="mt-2 space-y-1 text-mute text-xs">
+      <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm">
+        <div className="flex items-center gap-1.5 font-semibold text-amber-700">
+          <ShieldAlert size={14} /> Notes
+        </div>
+        <ul className="mt-2 space-y-1 text-amber-800/80 text-xs">
           <li>• <strong>Override</strong> — value lives in the <code>settings</code> table; takes precedence over <code>.env</code>.</li>
           <li>• <strong>From .env</strong> — value comes from the server's <code>.env</code> file; no DB override.</li>
           <li>• Secrets are stored as plain text in DB — make sure DB access is restricted (it is: only Postgres user <code>postgres</code> can read).</li>
