@@ -317,13 +317,14 @@ export default function AgentsList() {
       <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { key: 'active', icon: Zap,           label: 'Active Agents', value: activeAgentsCount, sub: 'Currently running' },
-          { key: 'voice',  icon: Phone,          label: 'Voice Agents',  value: voiceAgentsCount,  sub: 'Inbound & outbound' },
-          { key: 'chat',   icon: MessageCircle,  label: 'Chat Agents',   value: chatAgentsCount,   sub: 'Website & messaging' },
+          { key: 'voice',  icon: Phone,          label: 'Voice Agents',  value: voiceAgentsCount,  sub: 'Inbound & outbound', onClick: () => navigate(`${basePath}/numbers`) },
+          { key: 'chat',   icon: MessageCircle,  label: 'Chat Agents',   value: chatAgentsCount,   sub: 'Website & messaging', onClick: () => navigate(`${basePath}/agent-detail-chat?n=${encodeURIComponent(PREVIEW_CHAT_AGENT.id)}`) },
           { key: 'calls',  icon: TrendingUp,     label: 'Calls Today',   value: callsTodayTotal,   sub: '+12% vs yesterday' },
-        ].map(({ key, icon: Icon, label, value, sub }) => (
+        ].map(({ key, icon: Icon, label, value, sub, onClick }) => (
           <div
             key={key}
-            className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            className={`rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${onClick ? 'cursor-pointer' : ''}`}
+            onClick={onClick}
           >
             <div className="flex items-center gap-2">
               <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-lime-100 text-lime-700">
