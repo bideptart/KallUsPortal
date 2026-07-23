@@ -229,7 +229,10 @@ export default function Playground() {
 
   if (!currentUser) return null;
 
-  const isAdminTier = currentUser.userType === 'superadmin' || currentUser.userType === 'admin';
+  const isAdminTier =
+    currentUser.userType === 'superadmin'
+    || currentUser.userType === 'admin'
+    || currentUser.role === 'admin';
   const basePath = isAdminTier ? '/admin' : '/dashboard';
 
   // Only the chat preview agent always exists — a brand-new account with no

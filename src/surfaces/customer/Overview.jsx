@@ -157,7 +157,10 @@ export default function Overview({ rechargeOn }) {
   // This component renders under both /dashboard (Customer) and /admin
   // (Admin/Superadmin, since they share the same Overview page) — links must
   // resolve against whichever shell is actually mounted.
-  const isAdminTier = currentUser.userType === 'superadmin' || currentUser.userType === 'admin';
+  const isAdminTier =
+    currentUser.userType === 'superadmin'
+    || currentUser.userType === 'admin'
+    || currentUser.role === 'admin';
   const basePath = isAdminTier ? '/admin' : '/dashboard';
 
   return (

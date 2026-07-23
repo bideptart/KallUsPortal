@@ -244,7 +244,10 @@ export default function AgentsList() {
 
   if (!currentUser) return null;
 
-  const isAdminTier = currentUser.userType === 'superadmin' || currentUser.userType === 'admin';
+  const isAdminTier = 
+    currentUser.userType === 'superadmin' || 
+    currentUser.userType === 'admin' || 
+    currentUser.role === 'admin';
   const basePath = isAdminTier ? '/admin' : '/dashboard';
 
   const voiceAgents = numbers;
