@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, FileSpreadsheet, FileText, Download } from 'lucide-react';
 import { api } from '../../api.js';
 
@@ -104,7 +104,10 @@ export default function Numbers() {
   const numbers = data?.numbers || [];
   const totals  = data?.totals  || { total: 0, busy: 0, free: 0 };
 
-  const filtered = numbers.filter((n) => {
+  // Memoized so toggling a row checkbox, typing in the add-number form, or
+  // opening the export menu — none of which affect the result — doesn't
+  // re-filter the whole inventory on every render.
+  const filtered = useMemo(() => numbers.filter((n) => {
     if (filter !== 'all' && n.status !== filter) return false;
     if (search) {
       const q = search.toLowerCase();
@@ -113,7 +116,7 @@ export default function Numbers() {
         && !(n.owner?.label || '').toLowerCase().includes(q)) return false;
     }
     return true;
-  });
+  }), [data, filter, search]);
 
   const runExport = (kind) => {
     setExportOpen(false);

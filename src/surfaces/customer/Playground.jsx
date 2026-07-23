@@ -190,12 +190,17 @@ export default function Playground() {
 
   // Mode governs which agent type is testable — switching modes jumps the
   // picker to the first matching agent instead of showing a mismatched one.
+  // A brand-new account has no voice agent yet, but the chat preview agent
+  // always exists — default to chat mode instead of falling through to the
+  // "No voice agent yet" empty state just because 'voice' is the default.
   useEffect(() => {
     if (!loaded) return;
-    const wantType = mode === 'chat' ? 'chat' : 'voice';
+    const effectiveMode = mode === 'voice' && voiceAgents.length === 0 ? 'chat' : mode;
+    if (effectiveMode !== mode) setMode(effectiveMode);
+    const wantType = effectiveMode === 'chat' ? 'chat' : 'voice';
     const stillValid = agents.find((a) => a.id === selectedId && a.type === wantType);
     if (!stillValid) setSelectedId(agents.find((a) => a.type === wantType)?.id || null);
-  }, [mode, loaded]);
+  }, [mode, loaded, voiceAgents.length]);
 
   const selected = agents.find((a) => a.id === selectedId) || null;
 

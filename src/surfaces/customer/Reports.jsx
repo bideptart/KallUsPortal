@@ -35,6 +35,31 @@ const fmtTime = (t) => {
   return isNaN(d.getTime()) ? String(t) : d.toLocaleString();
 };
 
+// Stale-while-revalidate cache for this tab. Without it, every reload resets
+// `recordings` to null, blanking the whole call list to skeleton rows for
+// however long /api/recordings + /api/numbers take — that blank-then-pop is
+// what actually reads as slow, independent of real backend speed. Hydrating
+// synchronously from the last successful load shows the real rows
+// immediately; load() below always re-fetches in the background and
+// overwrites this with fresh data once it lands. Session-scoped and keyed by
+// user id so it never leaks across accounts or outlives the tab.
+const REPORTS_CACHE_KEY = 'kallus.reports.cache.v1';
+const readReportsCache = (userId) => {
+  if (!userId) return null;
+  try {
+    const parsed = JSON.parse(sessionStorage.getItem(REPORTS_CACHE_KEY) || 'null');
+    return parsed && parsed.userId === userId ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+const writeReportsCache = (userId, recordings, numbers) => {
+  if (!userId) return;
+  try {
+    sessionStorage.setItem(REPORTS_CACHE_KEY, JSON.stringify({ userId, recordings, numbers }));
+  } catch { /* storage full / private-mode — just skip caching */ }
+};
+
 // Default range for this page — "Last 7 days" rather than the shared
 // "today" default, so the log lands showing a week of activity like the
 // reference report view.
@@ -76,8 +101,8 @@ const downloadCsv = (rows) => {
 
 export default function Reports() {
   const { currentUser } = useApp();
-  const [recordings, setRecordings] = useState(null);
-  const [numbers, setNumbers] = useState([]);
+  const [recordings, setRecordings] = useState(() => readReportsCache(currentUser?.id)?.recordings ?? null);
+  const [numbers, setNumbers] = useState(() => readReportsCache(currentUser?.id)?.numbers ?? []);
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -111,11 +136,14 @@ export default function Reports() {
         api(`/api/recordings?limit=500${force ? '&refresh=1' : ''}`),
         api('/api/numbers').catch(() => ({ numbers: [] })),
       ]);
-      setRecordings(recsRes.recordings || []);
-      setNumbers(numbersRes.numbers || []);
+      const nextRecordings = recsRes.recordings || [];
+      const nextNumbers = numbersRes.numbers || [];
+      setRecordings(nextRecordings);
+      setNumbers(nextNumbers);
+      writeReportsCache(currentUser?.id, nextRecordings, nextNumbers);
     } catch (e) {
       setErr(e.message || 'Could not load calls');
-      setRecordings([]);
+      setRecordings((prev) => prev ?? []);
     } finally {
       setLoading(false);
     }
@@ -205,6 +233,7 @@ export default function Reports() {
       {/* Icon + "Reports" title now live in the sticky top bar instead of here. */}
       <p className="text-base font-semibold tracking-wide animate-fade-up" style={{ color: 'var(--ink-2)' }}>
         Call and chat history — recordings, transcripts, and AI summaries per record.
+        {loading && recordings !== null && <span className="font-normal text-xs text-mute ml-2">Refreshing…</span>}
       </p>
 
       {err && (
@@ -227,24 +256,24 @@ export default function Reports() {
                 </span>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <div className="relative">
-                  <SearchIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <div className="relative group">
+                  <SearchIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-[#3a5a0c] transition-colors duration-200 pointer-events-none" />
                   <input
                     type="text"
                     inputMode={logsTab === 'call' ? 'tel' : 'text'}
                     placeholder={logsTab === 'call' ? 'Search by number' : 'Search by session or agent'}
-                    className="input text-sm py-1.5 pl-9 w-44"
+                    className="input input-accent text-sm py-1.5 pl-9 w-44"
                     value={inboundSearch}
                     onChange={(e) => setInboundSearch(e.target.value)}
                   />
                 </div>
                 <button
-                  className="btn-ghost text-xs py-1.5 px-3"
+                  className="btn-ghost btn-ghost-accent text-xs py-1.5 px-3"
                   onClick={() => downloadCsv(logsTab === 'call' ? filteredRecordings : filteredChats)}
                 >
                   ⬇ Export
                 </button>
-                <button className="btn-ghost text-xs py-1.5 px-3" onClick={() => load({ force: true })} disabled={loading}>
+                <button className="btn-ghost btn-ghost-accent text-xs py-1.5 px-3" onClick={() => load({ force: true })} disabled={loading}>
                   {loading ? 'Loading…' : '↻ Refresh'}
                 </button>
               </div>
@@ -338,7 +367,7 @@ export default function Reports() {
           <>
           {/* Call list */}
           <div className="space-y-3">
-            {loading && (
+            {recordings === null && (
               <>
                 {[0, 1, 2, 3, 4].map((i) => (
                   <div key={i} className="form-card animate-pulse">
@@ -357,12 +386,12 @@ export default function Reports() {
                 ))}
               </>
             )}
-            {!loading && filteredRecordings.length === 0 && (
+            {recordings !== null && filteredRecordings.length === 0 && (
               <div className="form-card text-center text-mute">
                 No calls match the current filter.
               </div>
             )}
-            {!loading && filteredRecordings.map((r) => {
+            {recordings !== null && filteredRecordings.map((r) => {
               const t = transcripts[r.callId];
               const s = summaries[r.callId];
               const transcriptOpen = t?.open;

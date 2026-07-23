@@ -1,4 +1,4 @@
-import { useEffect, useState, lazy, Suspense } from 'react';
+import { useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
   LayoutDashboard, Bot, FlaskConical, BookOpen, TrendingUp, Zap,
@@ -739,7 +739,13 @@ function McpBrowser() {
     }).catch(() => {});
   };
 
-  const list   = (tools || []).filter((t) => !filter || t.name.toLowerCase().includes(filter.toLowerCase()));
+  // Memoized — typing in the args/param editors below re-renders this
+  // component on every keystroke, and shouldn't re-filter the whole tool
+  // list each time (only `tools` or the search box actually affect it).
+  const list = useMemo(
+    () => (tools || []).filter((t) => !filter || t.name.toLowerCase().includes(filter.toLowerCase())),
+    [tools, filter],
+  );
   const active = displayEndpoints.find((e) => e.key === endpoint);
 
   const refreshEndpoints = async () => {

@@ -76,6 +76,12 @@ h1, h2, h3, h4, h5, h6 {
     border-color: var(--primary);
     box-shadow: 0 0 0 4px rgba(77,124,15,0.14);
   }
+  /* Accent glow on hover for search-style inputs (e.g. Reports' log search
+     box) — on top of the existing focus glow, not a replacement for it. */
+  .input-accent:hover {
+    border-color: rgba(77,124,15,0.45);
+    box-shadow: 0 0 0 3px rgba(77,124,15,0.12), 0 2px 10px -2px rgba(77,124,15,0.3);
+  }
   .input-mono { font-family: ui-monospace, monospace; font-size: 13px; padding: 9px 12px; }
   .input-lg { padding: 14px 16px; font-size: 15px; }
   textarea.input { font-family: inherit; line-height: 1.5; }
@@ -119,6 +125,15 @@ h1, h2, h3, h4, h5, h6 {
   }
   .btn-ghost:hover { background: var(--surface-2); border-color: rgba(15,23,42,0.20); box-shadow: 0 2px 10px rgba(15,23,42,0.06); }
   .btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Accent-filled hover for ghost pills that should pop with the brand's
+     dark accent on hover instead of the neutral gray (e.g. Export / Refresh)
+     — same dark green already used for active/filled states elsewhere. */
+  .btn-ghost-accent:hover:not(:disabled) {
+    background: #3a5a0c;
+    border-color: #3a5a0c;
+    color: #ffffff;
+  }
 
   .btn-red {
     background: linear-gradient(135deg, #ef4444, #b91c1c);

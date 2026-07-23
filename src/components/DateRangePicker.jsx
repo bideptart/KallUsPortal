@@ -1,4 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { X } from 'lucide-react';
+import MiniCalendar from './MiniCalendar.jsx';
 
 // =============================================================================
 // DateRangePicker — shared filter for /dashboard/{reports,recordings,calls}.
@@ -20,6 +22,16 @@ const ymd = (d) => {
 };
 
 const startOfDay = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+
+// Display text for the date button — "23 Jul '26", matching the short-date
+// format already used elsewhere in the app (e.g. Overview's plan renewal date).
+const fmtDisplay = (s) => {
+  if (!s) return 'Select date';
+  const [y, m, d] = s.split('-').map(Number);
+  if (!y || !m || !d) return 'Select date';
+  const dt = new Date(y, m - 1, d);
+  return isNaN(dt.getTime()) ? 'Select date' : dt.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: '2-digit' });
+};
 
 // Each preset returns { from, to } strings. Computed at click time so
 // presets stay correct across midnight without a re-mount.
@@ -106,6 +118,17 @@ export default function DateRangePicker({ from, to, onChange, className = '', ac
     onChange?.({ from: r.from, to: r.to });
   };
 
+  // Which field's calendar is open — 'from' | 'to' | null. Opens as a
+  // centered modal (backdrop + card), same pattern as the Tickets page's
+  // detail modal — click the backdrop or the × to close.
+  const [openField, setOpenField] = useState(null);
+  const closeModal = () => setOpenField(null);
+  const handleSelect = (d) => {
+    if (openField === 'from') onChange?.({ from: d, to: to || '' });
+    else if (openField === 'to') onChange?.({ from: from || '', to: d });
+    closeModal();
+  };
+
   return (
     <div className={className}>
       <div className="flex flex-wrap gap-1.5">
@@ -130,25 +153,40 @@ export default function DateRangePicker({ from, to, onChange, className = '', ac
       <div className="mt-3 grid sm:grid-cols-2 gap-3">
         <div>
           <label className="field-label">From date</label>
-          <input
-            type="date"
-            className="input text-sm py-1.5"
-            value={from || ''}
-            max={to || undefined}
-            onChange={(e) => onChange?.({ from: e.target.value, to: to || '' })}
-          />
+          <button type="button" className="input text-sm py-1.5 text-left" onClick={() => setOpenField('from')}>
+            {fmtDisplay(from)}
+          </button>
         </div>
         <div>
           <label className="field-label">To date</label>
-          <input
-            type="date"
-            className="input text-sm py-1.5"
-            value={to || ''}
-            min={from || undefined}
-            onChange={(e) => onChange?.({ from: from || '', to: e.target.value })}
-          />
+          <button type="button" className="input text-sm py-1.5 text-left" onClick={() => setOpenField('to')}>
+            {fmtDisplay(to)}
+          </button>
         </div>
       </div>
+
+      {openField && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-backdrop-in"
+          onClick={closeModal}
+        >
+          <div className="relative animate-modal-in animate-modal-border-shadow" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={closeModal}
+              className="absolute -top-2.5 -right-2.5 w-7 h-7 rounded-full bg-white border shadow flex items-center justify-center text-mute hover:text-slate-900 transition duration-200 ease-out hover:scale-110 active:scale-95"
+              aria-label="Close"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+            <MiniCalendar
+              value={openField === 'from' ? from : to}
+              min={openField === 'to' ? (from || undefined) : undefined}
+              max={openField === 'from' ? (to || undefined) : undefined}
+              onSelect={handleSelect}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
