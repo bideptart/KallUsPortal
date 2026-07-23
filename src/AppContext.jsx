@@ -28,8 +28,8 @@ export function AppProvider({ children }) {
       // pattern external marketing sites use after they complete signup +
       // Stripe on www.9278.ai and redirect the user into the portal:
       //   https://voice.9278.ai/dashboard/overview?token=<bearer>
-      // We promote it into localStorage and scrub the URL so it never sits
-      // in browser history.
+      // We promote it into this tab's session storage and scrub the URL so
+      // it never sits in browser history.
       try {
         const url = new URL(window.location.href);
         const urlToken = url.searchParams.get('token');

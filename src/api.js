@@ -1,5 +1,16 @@
 const TOKEN_KEY = '9278.token';
 
+// sessionStorage, not localStorage — the token must be per-TAB, not shared
+// across every tab of the origin. With a shared key, signing into a
+// different account in one tab silently overwrote the token every other
+// open tab was using; that tab looked fine until its next reload, which
+// then bootstrapped as whichever account now owned the (clobbered) token —
+// e.g. an admin's tab reloading into a customer's account. Each tab now
+// gets its own independent session; the trade-off is that closing a tab
+// signs it out (no more "stay signed in" across a closed tab/browser
+// restart) — a deliberate choice to make one tab's sign-in unable to ever
+// silently take over another tab's.
+
 // Base URL for the backend API. Empty in dev (the Vite proxy forwards /api to
 // the local Express server) and on any host that runs the backend at the same
 // origin. Set VITE_API_BASE to an absolute URL (e.g. https://api.example.com)
@@ -7,10 +18,10 @@ const TOKEN_KEY = '9278.token';
 // which serves only the static build and has no Node server.
 const API_BASE = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
 
-export const getToken = () => localStorage.getItem(TOKEN_KEY) || '';
+export const getToken = () => sessionStorage.getItem(TOKEN_KEY) || '';
 export const setToken = (t) => {
-  if (t) localStorage.setItem(TOKEN_KEY, t);
-  else localStorage.removeItem(TOKEN_KEY);
+  if (t) sessionStorage.setItem(TOKEN_KEY, t);
+  else sessionStorage.removeItem(TOKEN_KEY);
 };
 
 // Collapses concurrent identical GET requests into a single network call —
