@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, FileSpreadsheet, FileText, Download } from 'lucide-react';
 import { api } from '../../api.js';
+import { useApp } from '../../AppContext.jsx';
+import { readCache, writeCache } from '../../utils/swrCache.js';
 
 const fmtDate = (iso) => {
   if (!iso) return '—';
@@ -59,7 +61,8 @@ const dateStamp = () => {
 // register new DIDs.
 // =============================================================================
 export default function Numbers() {
-  const [data, setData] = useState(null);
+  const { currentUser } = useApp();
+  const [data, setData] = useState(() => readCache('admin.numbers', currentUser?.id) ?? null);
   const [err, setErr]   = useState('');
   const [filter, setFilter] = useState('all');     // 'all' | 'busy' | 'free'
   const [search, setSearch] = useState('');
@@ -95,6 +98,7 @@ export default function Numbers() {
     try {
       const r = await api('/api/admin/numbers');
       setData(r);
+      writeCache('admin.numbers', currentUser?.id, r);
     } catch (e) {
       setErr(e.message);
     }

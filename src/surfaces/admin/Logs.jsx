@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../api.js';
+import { useApp } from '../../AppContext.jsx';
+import { readCache, writeCache } from '../../utils/swrCache.js';
 
 const fmtTs = (iso) => {
   if (!iso) return '';
@@ -9,8 +11,9 @@ const fmtTs = (iso) => {
 };
 
 export default function Logs() {
-  const [calls, setCalls] = useState(null);
-  const [users, setUsers] = useState(null);
+  const { currentUser } = useApp();
+  const [calls, setCalls] = useState(() => readCache('admin.logs.calls', currentUser?.id) ?? null);
+  const [users, setUsers] = useState(() => readCache('admin.logs.users', currentUser?.id) ?? null);
   const [err, setErr] = useState('');
 
   const load = async () => {
@@ -20,8 +23,12 @@ export default function Logs() {
         api('/api/twilio/calls?limit=50'),
         api('/api/admin/users'),
       ]);
-      setCalls(c.calls || []);
-      setUsers(u.users || []);
+      const nextCalls = c.calls || [];
+      const nextUsers = u.users || [];
+      setCalls(nextCalls);
+      setUsers(nextUsers);
+      writeCache('admin.logs.calls', currentUser?.id, nextCalls);
+      writeCache('admin.logs.users', currentUser?.id, nextUsers);
     } catch (e) {
       setErr(e.message);
       setCalls([]); setUsers([]);

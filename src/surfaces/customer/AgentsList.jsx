@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
+import { readCache, writeCache } from '../../utils/swrCache.js';
 
 const isSameDay = (a, b) => a.toDateString() === b.toDateString();
 const isYesterday = (a, b) => {
@@ -222,7 +223,7 @@ function TypeFilterDropdown({ value, onChange }) {
 export default function AgentsList() {
   const { currentUser } = useApp();
   const navigate = useNavigate();
-  const [numbers, setNumbers] = useState([]);
+  const [numbers, setNumbers] = useState(() => readCache('agentsList.numbers', currentUser?.id) ?? []);
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all'); // all | inbound | chat
 
@@ -231,7 +232,11 @@ export default function AgentsList() {
     (async () => {
       try {
         const r = await api('/api/numbers');
-        if (!cancelled) setNumbers(r.numbers || []);
+        const next = r.numbers || [];
+        if (!cancelled) {
+          setNumbers(next);
+          writeCache('agentsList.numbers', currentUser?.id, next);
+        }
       } catch {}
     })();
     return () => { cancelled = true; };

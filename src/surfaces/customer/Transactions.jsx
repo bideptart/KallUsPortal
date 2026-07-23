@@ -4,6 +4,7 @@ import { Receipt, Wallet, CheckCircle2 } from 'lucide-react';
 import { api } from '../../api.js';
 import { useApp } from '../../AppContext.jsx';
 import DateRangePicker, { todayRange } from '../../components/DateRangePicker.jsx';
+import { readCache, writeCache } from '../../utils/swrCache.js';
 
 // =============================================================================
 // Transactions — the customer's payment history. Combines plan purchases (per
@@ -212,7 +213,7 @@ const STATUS_PILL = {
 
 export default function Transactions() {
   const { currentUser } = useApp();
-  const [txns, setTxns]       = useState(null);
+  const [txns, setTxns]       = useState(() => readCache('transactions.txns', currentUser?.id));
   const [err, setErr]         = useState('');
   const [loading, setLoading] = useState(true);
   const [showAddFunds, setShowAddFunds] = useState(false);
@@ -236,10 +237,12 @@ export default function Transactions() {
     setLoading(true); setErr('');
     try {
       const r = await api('/api/transactions');
-      setTxns(r.transactions || []);
+      const next = r.transactions || [];
+      setTxns(next);
+      writeCache('transactions.txns', currentUser?.id, next);
     } catch (e) {
       setErr(e.message || 'Could not load transactions');
-      setTxns([]);
+      setTxns((prev) => prev ?? []);
     } finally {
       setLoading(false);
     }
@@ -322,6 +325,7 @@ export default function Transactions() {
       <div className="flex items-start justify-between flex-wrap gap-3">
         <p className="text-base font-semibold tracking-wide animate-fade-up" style={{ color: 'var(--ink-2)' }}>
           Every payment from this account — plan purchases, plan changes, restarts, and wallet top-ups.
+          {loading && txns !== null && <span className="font-normal text-xs text-mute ml-2">Refreshing…</span>}
         </p>
         <div className="flex items-center gap-2">
           <button
@@ -409,10 +413,10 @@ export default function Transactions() {
             </tr>
           </thead>
           <tbody>
-            {loading && (
+            {txns === null && (
               <tr><td colSpan={7} className="text-center text-mute py-10">Loading transactions…</td></tr>
             )}
-            {!loading && filtered.length === 0 && (
+            {txns !== null && filtered.length === 0 && (
               <tr>
                 <td colSpan={7} className="p-0">
                   {(txns && txns.length === 0) ? (
@@ -462,7 +466,7 @@ export default function Transactions() {
                 </td>
               </tr>
             )}
-            {!loading && filtered.map((t) => {
+            {txns !== null && filtered.map((t) => {
               const meta = kindMeta(t.type);
               return (
                 <tr key={t.id} className="border-b border-slate-50 dark:border-slate-800/60 last:border-0">

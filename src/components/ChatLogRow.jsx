@@ -52,7 +52,7 @@ export default function ChatLogRow({ session, open, onToggle }) {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-sm text-slate-900 font-medium">{fmtDuration(s.duration)}</span>
-          <span className="px-2.5 py-1 rounded-md border border-black bg-white text-xs font-medium text-slate-700">
+          <span className="px-2.5 py-1 rounded-md border border-red-200 bg-red-50 text-xs font-medium text-red-700">
             hang up
           </span>
         </div>

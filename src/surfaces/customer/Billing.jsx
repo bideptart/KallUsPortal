@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Wallet, Star, Phone, Calendar, RefreshCw, Lightbulb, Tag, CreditCard } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
+import { readCache, writeCache } from '../../utils/swrCache.js';
 import AddMinutesModal from '../../components/AddMinutesModal.jsx';
 // Re-using the modals defined on the Numbers page so the buy/upgrade flows
 // behave identically here (single source of truth for the catalog UI).
@@ -94,15 +95,15 @@ export default function Billing() {
   const tabParam = searchParams.get('tab');
   const [tab, setTab] = useState(TABS.some((t) => t.id === tabParam) ? tabParam : 'my-plans');
 
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState(() => readCache('billing.stats', currentUser?.id) ?? null);
   const [statsErr, setStatsErr] = useState('');
-  const [wallet, setWallet] = useState(null);
+  const [wallet, setWallet] = useState(() => readCache('billing.wallet', currentUser?.id) ?? null);
   const [transactions, setTransactions] = useState([]);
-  const [packs, setPacks] = useState([]);
-  const [numbers, setNumbers] = useState([]);
-  const [cards, setCards] = useState([]);        // saved Stripe cards (payment_methods)
-  const [calls, setCalls] = useState([]);
-  const [plans, setPlans] = useState([]);
+  const [packs, setPacks] = useState(() => readCache('billing.packs', currentUser?.id) ?? []);
+  const [numbers, setNumbers] = useState(() => readCache('billing.numbers', currentUser?.id) ?? []);
+  const [cards, setCards] = useState(() => readCache('billing.paymentMethods', currentUser?.id) ?? []);        // saved Stripe cards (payment_methods)
+  const [calls, setCalls] = useState(() => readCache('billing.calls', currentUser?.id) ?? []);
+  const [plans, setPlans] = useState(() => readCache('billing.plans', currentUser?.id) ?? []);
   const [err, setErr] = useState('');
 
   // Modal state shared across tabs.
@@ -146,13 +147,20 @@ export default function Billing() {
       ]);
       if (!mountedRef.current) return;
       setWallet(w.wallet);
+      writeCache('billing.wallet', currentUser?.id, w.wallet);
       setTransactions(w.transactions);
       setPacks(packsRes.packs || []);
-      if (s) setStats(s);
+      writeCache('billing.packs', currentUser?.id, packsRes.packs || []);
+      if (s) { setStats(s); writeCache('billing.stats', currentUser?.id, s); }
       setNumbers(nums.numbers || []);
+      writeCache('billing.numbers', currentUser?.id, nums.numbers || []);
       setCards(cardsRes.cards || []);
+      writeCache('billing.paymentMethods', currentUser?.id, cardsRes.cards || []);
       setCalls(callsRes.calls || []);
-      setPlans((plansRes.plans || []).slice().sort((a, b) => (a.amount || 0) - (b.amount || 0)));
+      writeCache('billing.calls', currentUser?.id, callsRes.calls || []);
+      const sortedPlans = (plansRes.plans || []).slice().sort((a, b) => (a.amount || 0) - (b.amount || 0));
+      setPlans(sortedPlans);
+      writeCache('billing.plans', currentUser?.id, sortedPlans);
     } catch (e) {
       setErr(e.message);
     }

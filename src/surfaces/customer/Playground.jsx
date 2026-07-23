@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
+import { readCache, writeCache } from '../../utils/swrCache.js';
 import { useVoicePreview } from '../../hooks/useVoicePreview.js';
 import { VOICES, gradientFor } from './KbAgent.jsx';
 
@@ -83,8 +84,15 @@ export default function Playground() {
   const navigate = useNavigate();
   const { playingVoice, error: previewError, play } = useVoicePreview();
 
-  const [numbers, setNumbers] = useState([]);
+  const [numbers, setNumbers] = useState(() => readCache('playground.numbers', currentUser?.id) ?? []);
   const [loaded, setLoaded] = useState(false);
+  // Snapshot at mount: true only when a cache hit already gave us real
+  // numbers to decide with. The mode/selection effect below normally waits
+  // for `loaded` (the real fetch) before picking an agent — but if we
+  // already have cached data, waiting anyway just shows a false "No voice
+  // agent yet" flash every time this page opens, defeating the whole point
+  // of caching it.
+  const hadCachedNumbersRef = useRef(numbers.length > 0);
   const [mode, setMode] = useState('voice');
   const [selectedId, setSelectedId] = useState(null);
   const [configOpen, setConfigOpen] = useState(true);
@@ -168,7 +176,11 @@ export default function Playground() {
     (async () => {
       try {
         const r = await api('/api/numbers');
-        if (!cancelled) setNumbers(r.numbers || []);
+        if (!cancelled) {
+          const next = r.numbers || [];
+          setNumbers(next);
+          writeCache('playground.numbers', currentUser?.id, next);
+        }
       } catch {}
       if (!cancelled) setLoaded(true);
     })();
@@ -194,7 +206,7 @@ export default function Playground() {
   // always exists — default to chat mode instead of falling through to the
   // "No voice agent yet" empty state just because 'voice' is the default.
   useEffect(() => {
-    if (!loaded) return;
+    if (!loaded && !hadCachedNumbersRef.current) return;
     const effectiveMode = mode === 'voice' && voiceAgents.length === 0 ? 'chat' : mode;
     if (effectiveMode !== mode) setMode(effectiveMode);
     const wantType = effectiveMode === 'chat' ? 'chat' : 'voice';
@@ -330,7 +342,7 @@ export default function Playground() {
           </div>
           <AgentPicker agents={agents.filter((a) => a.type === mode)} selectedId={selectedId} onChange={setSelectedId} />
         </div>
-        <button type="button" className="btn-ghost text-sm inline-flex items-center gap-1.5" onClick={() => setConfigOpen((v) => !v)}>
+        <button type="button" className="btn-ghost btn-ghost-accent text-sm inline-flex items-center gap-1.5" onClick={() => setConfigOpen((v) => !v)}>
           <SlidersHorizontal size={14} /> {configOpen ? 'Hide config' : 'Show config'}
         </button>
       </div>

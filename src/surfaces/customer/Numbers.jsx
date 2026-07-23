@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Star } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
+import { readCache, writeCache } from '../../utils/swrCache.js';
 
 // Stripe Checkout loader — duplicated from Billing.jsx so the per-number
 // plan-change dropdown can open the same payment modal without forcing the
@@ -54,7 +55,7 @@ const StatusBadge = ({ status }) => {
 
 export default function Numbers() {
   const { currentUser } = useApp();
-  const [data, setData] = useState(null);
+  const [data, setData] = useState(() => readCache('numbers.list', currentUser?.id) ?? null);
   const [err, setErr] = useState('');
   const [actionMsg, setActionMsg] = useState('');
   const [changePlanFor, setChangePlanFor] = useState(null);   // number row being upgraded
@@ -63,6 +64,7 @@ export default function Numbers() {
     try {
       const r = await api('/api/numbers');
       setData(r);
+      writeCache('numbers.list', currentUser?.id, r);
       setErr('');
     } catch (e) {
       setErr(e.message);

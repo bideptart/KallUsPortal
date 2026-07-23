@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AlarmClock, Zap, Phone, AlertTriangle, LayoutDashboard, RefreshCw, TrendingUp } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
+import { readCache, writeCache } from '../../utils/swrCache.js';
 
 const fmtDuration = (s) => {
   if (!s) return '0s';
@@ -23,29 +24,30 @@ const fmtDate = (iso) => {
 export default function Overview({ rechargeOn }) {
   const { currentUser } = useApp();
   const navigate = useNavigate();
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState(() => readCache('overview.stats', currentUser?.id));
   const [statsErr, setStatsErr] = useState('');
   const [statsLoading, setStatsLoading] = useState(true);
 
-  const [wallet, setWallet] = useState(null);
+  const [wallet, setWallet] = useState(() => readCache('overview.wallet', currentUser?.id));
   const [topupBusy, setTopupBusy] = useState(false);
   const [topupMsg, setTopupMsg] = useState('');
-  const [numbers, setNumbers] = useState([]);
+  const [numbers, setNumbers] = useState(() => readCache('overview.numbers', currentUser?.id) ?? []);
   const [numbersLoading, setNumbersLoading] = useState(true);
 
   // Call analytics card — call-statistics / sentiment / call-volume are all
   // auto-scoped to this customer's own agent server-side (PER_AGENT_TOOLS in
   // server/index.js), so they're safe to call directly, unlike /api/mcp/overview
   // which is tenant-wide and stays admin-only.
-  const [callStats, setCallStats] = useState(null);
-  const [sentiment, setSentiment] = useState(null);
-  const [volume, setVolume] = useState(null);
+  const [callStats, setCallStats] = useState(() => readCache('overview.callStats', currentUser?.id));
+  const [sentiment, setSentiment] = useState(() => readCache('overview.sentiment', currentUser?.id));
+  const [volume, setVolume] = useState(() => readCache('overview.volume', currentUser?.id));
   const [animateBars, setAnimateBars] = useState(false);
 
   const refreshWallet = async () => {
     try {
       const w = await api('/api/wallet');
       setWallet(w.wallet);
+      writeCache('overview.wallet', currentUser?.id, w.wallet);
     } catch {}
   };
 
@@ -57,16 +59,29 @@ export default function Overview({ rechargeOn }) {
     // e.g. the numbers table paints as soon as /api/numbers is back instead
     // of waiting on /api/twilio/stats, which is the slowest of the six.
     api('/api/twilio/stats')
-      .then((data) => { if (!cancelled) setStats(data); })
+      .then((data) => {
+        if (cancelled) return;
+        setStats(data);
+        writeCache('overview.stats', currentUser?.id, data);
+      })
       .catch((e) => { if (!cancelled) setStatsErr(e.message); })
       .finally(() => { if (!cancelled) setStatsLoading(false); });
 
     api('/api/wallet')
-      .then((w) => { if (!cancelled) setWallet(w.wallet); })
+      .then((w) => {
+        if (cancelled) return;
+        setWallet(w.wallet);
+        writeCache('overview.wallet', currentUser?.id, w.wallet);
+      })
       .catch(() => {});
 
     api('/api/numbers')
-      .then((r) => { if (!cancelled) setNumbers(r.numbers || []); })
+      .then((r) => {
+        if (cancelled) return;
+        const next = r.numbers || [];
+        setNumbers(next);
+        writeCache('overview.numbers', currentUser?.id, next);
+      })
       .catch(() => {})
       .finally(() => { if (!cancelled) setNumbersLoading(false); });
 
@@ -76,9 +91,15 @@ export default function Overview({ rechargeOn }) {
       api('/api/mcp/call-volume?days=14').catch(() => null),
     ]).then(([cs, sent, vol]) => {
       if (cancelled) return;
-      setCallStats(cs?.data || null);
-      setSentiment(sent?.data || null);
-      setVolume(vol?.data || null);
+      const csData = cs?.data || null;
+      const sentData = sent?.data || null;
+      const volData = vol?.data || null;
+      setCallStats(csData);
+      setSentiment(sentData);
+      setVolume(volData);
+      writeCache('overview.callStats', currentUser?.id, csData);
+      writeCache('overview.sentiment', currentUser?.id, sentData);
+      writeCache('overview.volume', currentUser?.id, volData);
     });
 
     return () => { cancelled = true; };

@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
 import { useVoicePreview } from '../../hooks/useVoicePreview.js';
+import { readCache, writeCache } from '../../utils/swrCache.js';
 
 // Google Gemini TTS voices (multilingual — speak any of the languages below
 // natively, not phonetically). Kore is the calm, articulate default.
@@ -87,7 +88,7 @@ export default function KbAgent() {
   const { playingVoice, error: previewError, play } = useVoicePreview();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [numbers, setNumbers] = useState([]);
+  const [numbers, setNumbers] = useState(() => readCache('kbAgent.numbers', currentUser?.id) ?? []);
   const [selectedId, setSelectedId] = useState(searchParams.get('n') || '');
   const [draft, setDraft] = useState(emptyDraft);
   const [voicePrompt, setVoicePrompt] = useState(null);   // voice being considered in the apply/preview popup
@@ -117,7 +118,9 @@ export default function KbAgent() {
   const loadNumbers = async () => {
     try {
       const r = await api('/api/numbers');
-      setNumbers(r.numbers || []);
+      const next = r.numbers || [];
+      setNumbers(next);
+      writeCache('kbAgent.numbers', currentUser?.id, next);
       setLoadErr('');
       // Only auto-select when deep-linked via ?n=<id>. Otherwise leave nothing
       // selected so the page shows the agent cards + a "pick an agent"

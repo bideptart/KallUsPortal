@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
+import { readCache, writeCache } from '../../utils/swrCache.js';
 import { AddNumberModal } from '../customer/Numbers.jsx';
 import Logo from '../../components/Logo.jsx';
 import Footer from '../../components/Footer.jsx';
@@ -351,8 +352,9 @@ export default function Admin() {
 }
 
 function Usage() {
-  const [vol, setVol] = useState(null);
-  const [perf, setPerf] = useState(null);
+  const { currentUser } = useApp();
+  const [vol, setVol] = useState(() => readCache('admin.usage.volume', currentUser?.id));
+  const [perf, setPerf] = useState(() => readCache('admin.usage.performance', currentUser?.id));
   const [days, setDays] = useState(7);
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(true);
@@ -364,11 +366,16 @@ function Usage() {
         api(`/api/mcp/call-volume?days=${d}`),
         api(`/api/mcp/agent-performance?days=${d}`),
       ]);
-      setVol(v.data || null);
-      setPerf(Array.isArray(p.data) ? p.data : (p.data?.agents || []));
+      const nextVol = v.data || null;
+      const nextPerf = Array.isArray(p.data) ? p.data : (p.data?.agents || []);
+      setVol(nextVol);
+      setPerf(nextPerf);
+      writeCache('admin.usage.volume', currentUser?.id, nextVol);
+      writeCache('admin.usage.performance', currentUser?.id, nextPerf);
     } catch (e) {
       setErr(e.message);
-      setVol(null); setPerf([]);
+      setVol((prev) => prev ?? null);
+      setPerf((prev) => prev ?? []);
     } finally {
       setLoading(false);
     }
@@ -390,7 +397,10 @@ function Usage() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Usage analytics</h1>
-          <p className="text-mute mt-2">Per-agent performance pulled live from 9278 via MCP.</p>
+          <p className="text-mute mt-2">
+            Per-agent performance pulled live from 9278 via MCP.
+            {loading && perf !== null && <span className="text-xs text-mute ml-2">Refreshing…</span>}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <select
@@ -443,8 +453,8 @@ function Usage() {
         <table>
           <thead><tr><th>Agent</th><th>Calls</th><th>Answered</th><th>Avg duration</th><th>Success</th></tr></thead>
           <tbody>
-            {loading && <tr><td colSpan={5} className="text-center text-mute py-6">Loading…</td></tr>}
-            {!loading && (perf?.length ?? 0) === 0 && (
+            {perf === null && <tr><td colSpan={5} className="text-center text-mute py-6">Loading…</td></tr>}
+            {perf !== null && (perf?.length ?? 0) === 0 && (
               <tr><td colSpan={5} className="text-center text-mute py-6">No agent activity in the last {days}d.</td></tr>
             )}
             {(perf || []).map((a, i) => (

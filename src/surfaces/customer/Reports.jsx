@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Phone, MessageSquare } from 'lucide-react';
 import { api, getToken } from '../../api.js';
 import { useApp } from '../../AppContext.jsx';
@@ -189,6 +189,19 @@ export default function Reports() {
   };
   const toggleChat = (id) => setOpenChats((m) => ({ ...m, [id]: !m[id] }));
 
+  // Quick actions behind the "Logs overview" sidebar card's keywords — jump
+  // straight to what each word describes instead of it being static copy.
+  const filterCardRef = useRef(null);
+  const searchInputRef = useRef(null);
+  const scrollToFilters = () => filterCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const focusSearch = () => {
+    filterCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    searchInputRef.current?.focus();
+  };
+  const jumpToRecording = () => { setLogsTab('call'); setViewTab('recording'); };
+  const jumpToTranscript = () => { setLogsTab('call'); setViewTab('transcript'); };
+  const exportNow = () => downloadCsv(logsTab === 'call' ? filteredRecordings : filteredChats);
+
   const toggleTranscript = async (callId) => {
     const existing = transcripts[callId];
     if (existing && (existing.messages || existing.error)) {
@@ -245,7 +258,7 @@ export default function Reports() {
       <div className="mt-5 grid lg:grid-cols-[1fr_260px] gap-5 items-start">
         {/* ============ MAIN COLUMN ============ */}
         <div className="min-w-0 space-y-5">
-          <div className="form-card">
+          <div className="form-card" ref={filterCardRef}>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-slate-900">
@@ -259,6 +272,7 @@ export default function Reports() {
                 <div className="relative group">
                   <SearchIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-[#3a5a0c] transition-colors duration-200 pointer-events-none" />
                   <input
+                    ref={searchInputRef}
                     type="text"
                     inputMode={logsTab === 'call' ? 'tel' : 'text'}
                     placeholder={logsTab === 'call' ? 'Search by number' : 'Search by session or agent'}
@@ -619,10 +633,15 @@ export default function Reports() {
             </div>
             <p className="mt-2 text-xs text-mute leading-relaxed">
               A complete record of every conversation your agents handled — voice calls and
-              website chats alike. Each entry keeps the full <strong>transcript</strong>, the AI{' '}
-              <strong>summary</strong>, the call <strong>recording</strong>, exact timestamps,
-              duration, and the reason the session ended. Use the filters and search to find a
-              specific call or chat, expand any row to read what was said, and export the results
+              website chats alike. Each entry keeps the full{' '}
+              <button type="button" onClick={jumpToTranscript} className="inline bg-transparent border-0 p-0 m-0 font-bold text-[#3a5a0c] hover:underline underline-offset-2 cursor-pointer">transcript</button>, the AI{' '}
+              <button type="button" onClick={jumpToTranscript} className="inline bg-transparent border-0 p-0 m-0 font-bold text-[#3a5a0c] hover:underline underline-offset-2 cursor-pointer">summary</button>, the call{' '}
+              <button type="button" onClick={jumpToRecording} className="inline bg-transparent border-0 p-0 m-0 font-bold text-[#3a5a0c] hover:underline underline-offset-2 cursor-pointer">recording</button>, exact timestamps,
+              duration, and the reason the session ended. Use the{' '}
+              <button type="button" onClick={scrollToFilters} className="inline bg-transparent border-0 p-0 m-0 font-bold text-[#3a5a0c] hover:underline underline-offset-2 cursor-pointer">filters</button> and{' '}
+              <button type="button" onClick={focusSearch} className="inline bg-transparent border-0 p-0 m-0 font-bold text-[#3a5a0c] hover:underline underline-offset-2 cursor-pointer">search</button> to find a
+              specific call or chat, expand any row to read what was said, and{' '}
+              <button type="button" onClick={exportNow} className="inline bg-transparent border-0 p-0 m-0 font-bold text-[#3a5a0c] hover:underline underline-offset-2 cursor-pointer">export</button> the results
               to CSV.
             </p>
           </div>
