@@ -38,10 +38,9 @@ const PLAN_OPTIONS = [
 ];
 const planPillClass = (id) => (PLAN_OPTIONS.find((p) => p.id === id) || PLAN_OPTIONS[0]).pill;
 
-// Plan-card header band — black to the brand lime so these cards match the
-// app shell's accent color.
+// Plan-card header band — green like the "+ Add plan / number" button
 const planHeaderClass = () =>
-  'bg-[linear-gradient(135deg,#0b0b0c_0%,#171717_45%,#4d7c0f_100%)]';
+  'bg-lime-600';
 
 const StatusBadge = ({ status }) => {
   const map = {
@@ -57,7 +56,6 @@ export default function Numbers() {
   const { currentUser } = useApp();
   const [data, setData] = useState(null);
   const [err, setErr] = useState('');
-  const [showAdd, setShowAdd] = useState(false);
   const [actionMsg, setActionMsg] = useState('');
   const [changePlanFor, setChangePlanFor] = useState(null);   // number row being upgraded
 
@@ -105,15 +103,6 @@ export default function Numbers() {
   return (
     <div>
       {/* "Plan and Numbers" title now lives in the sticky top bar instead of here. */}
-      <div className="flex items-start justify-end flex-wrap gap-3">
-        <button
-          className="btn-teal text-sm"
-          onClick={() => setShowAdd(true)}
-        >
-          + Add Plan/Number
-        </button>
-      </div>
-
       {actionMsg && (
         <div className="mt-3 text-xs text-mute">{actionMsg}</div>
       )}
@@ -177,14 +166,6 @@ export default function Numbers() {
           </div>
         ))}
       </div>
-
-      {showAdd && (
-        <AddNumberModal
-          currentUser={currentUser}
-          onClose={() => setShowAdd(false)}
-          onAdded={async () => { setShowAdd(false); await load(); }}
-        />
-      )}
 
       {changePlanFor && (
         <ChangePlanModal

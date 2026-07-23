@@ -111,7 +111,10 @@ export default function ChatAgentDetail() {
       </div>
 
       {subTab === 'configure' && (
-        <div className="mt-4 grid lg:grid-cols-[1fr_320px] gap-6 items-start">
+        <div
+          className="mt-4 grid lg:grid-cols-[1fr_var(--preview-col-w)] gap-6 items-start"
+          style={{ '--preview-col-w': cfg.size === 'large' ? '400px' : '320px' }}
+        >
           <div className="space-y-6">
             <Section title="Basics">
               <div className="flex items-start gap-4">
@@ -237,7 +240,7 @@ export default function ChatAgentDetail() {
             <div className="text-xs font-mono uppercase tracking-wide font-semibold" style={{ color: 'var(--primary)' }}>Live preview</div>
             <div
               className="mt-3 rounded-2xl border shadow-lg overflow-hidden transition-all duration-200 ease-out"
-              style={{ borderColor: 'var(--line)', background: cfg.theme === 'dark' ? '#1a2030' : '#fff', width: cfg.size === 'large' ? 360 : 300 }}
+              style={{ borderColor: 'var(--line)', background: cfg.theme === 'dark' ? '#1a2030' : '#fff', width: '100%' }}
             >
               <div className={cfg.size === 'large' ? 'px-5 py-4' : 'px-4 py-3'} style={{ background: cfg.accentColor }}>
                 <div className={`text-white font-semibold ${cfg.size === 'large' ? 'text-base' : 'text-sm'}`}>{cfg.widgetTitle || 'Chat with us'}</div>

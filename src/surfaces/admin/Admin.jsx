@@ -112,7 +112,16 @@ const LEGACY_TABS = [
   { id: 'ticket-detail',     label: 'Ticket' },
 ];
 
-const VALID_TABS = new Set([...NAV_TABS, CALL_ACTIVITY, ...CALL_ACTIVITY_CHILDREN, ...LEGACY_TABS].map((t) => t.id));
+const VALID_TABS = new Set([
+  ...NAV_TABS, 
+  CALL_ACTIVITY, 
+  ...CALL_ACTIVITY_CHILDREN, 
+  ...LEGACY_TABS,
+  // Explicitly add tabs used by the New Agent menu to ensure they are included
+  { id: 'numbers' },
+  { id: 'agent-detail-chat' },
+  { id: 'templates' },
+].map((t) => t.id));
 
 export default function Admin() {
   const { currentUser, signoutUser } = useApp();
