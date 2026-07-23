@@ -113,15 +113,19 @@ const LEGACY_TABS = [
 ];
 
 const VALID_TABS = new Set([
-  ...NAV_TABS, 
-  CALL_ACTIVITY, 
-  ...CALL_ACTIVITY_CHILDREN, 
-  ...LEGACY_TABS,
-  // Explicitly add tabs used by the New Agent menu to ensure they are included
-  { id: 'numbers' },
-  { id: 'agent-detail-chat' },
-  { id: 'templates' },
-].map((t) => t.id));
+  // NAV_TABS
+  'overview', 'agents', 'playground', 'kb', 'analytics',
+  'reports', 'billing', 'pricing', 'transactions', 'account', 
+  'numbers', 'mcp', 'settings',
+  // CALL_ACTIVITY
+  'calls',
+  // CALL_ACTIVITY_CHILDREN
+  'booking-history', 'tools', 'tickets',
+  // LEGACY_TABS
+  'signups', 'customers', 'resellers', 'payments', 'bulk', 
+  'logs', 'usage', 'health', 'plans', 'profile', 
+  'agent-detail', 'agent-detail-chat', 'templates', 'ticket-detail'
+]);
 
 export default function Admin() {
   const { currentUser, signoutUser } = useApp();
