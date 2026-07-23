@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
+import { readCache, writeCache } from '../../utils/swrCache.js';
 import { useVoicePreview } from '../../hooks/useVoicePreview.js';
 import { VOICES, LANGUAGES, gradientFor, statusMeta } from './KbAgent.jsx';
 import { TEMPLATES } from './Templates.jsx';
@@ -151,7 +152,7 @@ export default function AgentDetail() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { playingVoice, error: previewError, play } = useVoicePreview();
 
-  const [numbers, setNumbers] = useState([]);
+  const [numbers, setNumbers] = useState(() => readCache('agentDetail.numbers', currentUser?.id) ?? []);
   const [loaded, setLoaded] = useState(false);
   const [draft, setDraft] = useState(emptyDraft);
   const [savedDraft, setSavedDraft] = useState(emptyDraft());
@@ -250,7 +251,11 @@ export default function AgentDetail() {
     (async () => {
       try {
         const r = await api('/api/numbers');
-        if (!cancelled) setNumbers(r.numbers || []);
+        const next = r.numbers || [];
+        if (!cancelled) {
+          setNumbers(next);
+          writeCache('agentDetail.numbers', currentUser?.id, next);
+        }
       } catch {}
       if (!cancelled) setLoaded(true);
     })();

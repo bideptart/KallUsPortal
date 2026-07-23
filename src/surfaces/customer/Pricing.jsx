@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Star, Check, Pencil, X } from 'lucide-react';
 import { api } from '../../api.js';
 import { useApp } from '../../AppContext.jsx';
+import { readCache, writeCache } from '../../utils/swrCache.js';
 // The app's real buy-a-plan flow — the same modal the global
 // "+ Add plan / number" button opens. Reused rather than reimplemented so
 // there's only one purchase path to keep working.
@@ -40,8 +41,8 @@ const COMPARE_ROWS = [
 export default function Pricing() {
   const { currentUser } = useApp();
   const navigate = useNavigate();
-  const [plans, setPlans] = useState([]);
-  const [numbers, setNumbers] = useState([]);
+  const [plans, setPlans] = useState(() => readCache('pricing.plans', currentUser?.id) ?? []);
+  const [numbers, setNumbers] = useState(() => readCache('pricing.numbers', currentUser?.id) ?? []);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
   const [cycle, setCycle] = useState('monthly');
@@ -62,14 +63,24 @@ export default function Pricing() {
     // auth:false — /api/plans is public and works with no DB attached,
     // so the catalog renders even when everything else is offline.
     api('/api/plans', { auth: false })
-      .then((r) => { if (!cancelled) setPlans(r.plans || []); })
+      .then((r) => {
+        if (cancelled) return;
+        const nextPlans = r.plans || [];
+        setPlans(nextPlans);
+        writeCache('pricing.plans', currentUser?.id, nextPlans);
+      })
       .catch((e) => { if (!cancelled) setErr(e.message || 'Could not load plans'); })
       .finally(() => { if (!cancelled) setLoading(false); });
 
     // Only used to mark tiers the customer already owns. Optional — a
     // failure here just means no "Current plan" badges.
     api('/api/numbers')
-      .then((n) => { if (!cancelled) setNumbers(n.numbers || []); })
+      .then((n) => {
+        if (cancelled) return;
+        const nextNumbers = n.numbers || [];
+        setNumbers(nextNumbers);
+        writeCache('pricing.numbers', currentUser?.id, nextNumbers);
+      })
       .catch(() => {});
 
     return () => { cancelled = true; };

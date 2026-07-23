@@ -3,6 +3,7 @@ import { api } from '../../api.js';
 import { useApp } from '../../AppContext.jsx';
 import CallDetailModal from '../../components/CallDetailModal.jsx';
 import DateRangePicker, { todayRange } from '../../components/DateRangePicker.jsx';
+import { readCache, writeCache } from '../../utils/swrCache.js';
 
 const STATUS_PILL = {
   completed: 'pill bg-lime-500/20 text-lime-400',
@@ -62,9 +63,9 @@ const NUMBER_TINTS = [
 
 export default function Calls() {
   const { currentUser } = useApp();
-  const [calls, setCalls] = useState(null);
-  const [numbers, setNumbers] = useState([]);
-  const [recordingsByCallId, setRecordingsByCallId] = useState({});
+  const [calls, setCalls] = useState(() => readCache('calls.calls', currentUser?.id));
+  const [numbers, setNumbers] = useState(() => readCache('calls.numbers', currentUser?.id) ?? []);
+  const [recordingsByCallId, setRecordingsByCallId] = useState(() => readCache('calls.recordings', currentUser?.id) ?? {});
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(true);
   const [filterNumber, setFilterNumber] = useState('all');
@@ -82,16 +83,21 @@ export default function Calls() {
         api('/api/numbers').catch(() => ({ numbers: [] })),
         api('/api/recordings?limit=500').catch(() => ({ recordings: [] })),
       ]);
-      setCalls(callsRes.calls || []);
-      setNumbers(numbersRes.numbers || []);
+      const nextCalls = callsRes.calls || [];
+      setCalls(nextCalls);
+      writeCache('calls.calls', currentUser?.id, nextCalls);
+      const nextNumbers = numbersRes.numbers || [];
+      setNumbers(nextNumbers);
+      writeCache('calls.numbers', currentUser?.id, nextNumbers);
       // Index recordings by callId so we can attach audioUrl + hasTranscript
       // when the user clicks a row to open the modal.
       const idx = {};
       (recsRes.recordings || []).forEach((r) => { idx[r.callId] = r; });
       setRecordingsByCallId(idx);
+      writeCache('calls.recordings', currentUser?.id, idx);
     } catch (e) {
       setErr(e.message || 'Could not load calls');
-      setCalls([]);
+      setCalls((prev) => prev ?? []);
     } finally {
       setLoading(false);
     }
@@ -153,6 +159,7 @@ export default function Calls() {
             : currentUser?.number?.value
               ? <> · for <span className="font-mono text-lime-600">{currentUser.number.value}</span></>
               : null}
+          {loading && calls !== null && <span className="font-normal text-xs text-mute ml-2">Refreshing…</span>}
         </p>
         <div className="flex items-center gap-2">
           {numbers.length > 1 && (
@@ -216,10 +223,10 @@ export default function Calls() {
             </tr>
           </thead>
           <tbody>
-            {loading && (
+            {calls === null && (
               <tr><td colSpan={numbers.length > 1 ? 8 : 7} className="text-center text-mute py-6">Loading calls…</td></tr>
             )}
-            {!loading && total === 0 && (
+            {calls !== null && total === 0 && (
               <tr><td colSpan={numbers.length > 1 ? 8 : 7} className="text-center text-mute py-6">No calls yet. Dial one of your numbers to test the agent.</td></tr>
             )}
             {filteredCalls.map((c) => {

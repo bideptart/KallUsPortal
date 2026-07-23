@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../api.js';
+import { useApp } from '../../AppContext.jsx';
+import { readCache, writeCache } from '../../utils/swrCache.js';
 
 const fmtDate = (iso) => {
   if (!iso) return '—';
@@ -23,7 +25,8 @@ const emptyForm = () => ({
 // is auto-seeded with the platform's default Starter / Growth / Scale plans.
 // =============================================================================
 export default function Resellers() {
-  const [list, setList]       = useState(null);
+  const { currentUser } = useApp();
+  const [list, setList]       = useState(() => readCache('admin.resellers', currentUser?.id) ?? null);
   const [err, setErr]         = useState('');
   const [showForm, setShowForm] = useState(false);
   const [form, setForm]       = useState(emptyForm);
@@ -37,7 +40,9 @@ export default function Resellers() {
     setErr('');
     try {
       const r = await api('/api/admin/resellers');
-      setList(r.resellers || []);
+      const next = r.resellers || [];
+      setList(next);
+      writeCache('admin.resellers', currentUser?.id, next);
     } catch (e) {
       setErr(e.message);
     }

@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../api.js';
+import { useApp } from '../../AppContext.jsx';
+import { readCache, writeCache } from '../../utils/swrCache.js';
 
 const inr = (n) => '$' + Number(n || 0).toLocaleString('en-US');
 
 export default function Plans() {
+  const { currentUser } = useApp();
   // Subscription plans (source of truth: server/plans.js → GET /api/plans).
-  const [plans, setPlans] = useState(null);
+  const [plans, setPlans] = useState(() => readCache('admin.plans.plans', currentUser?.id) ?? null);
   const [plansMeta, setPlansMeta] = useState({ perDidPriceInr: 400, yearlyDiscountPercent: 20 });
   // Wallet top-up packs (server/wallet.js → GET /api/wallet/packs).
-  const [packs, setPacks] = useState(null);
+  const [packs, setPacks] = useState(() => readCache('admin.plans.packs', currentUser?.id) ?? null);
   const [err, setErr] = useState('');
 
   useEffect(() => {
@@ -18,12 +21,16 @@ export default function Plans() {
           api('/api/plans', { auth: false }),
           api('/api/wallet/packs', { auth: false }),
         ]);
-        setPlans(p.plans || []);
+        const nextPlans = p.plans || [];
+        const nextPacks = w.packs || [];
+        setPlans(nextPlans);
         setPlansMeta({
           perDidPriceInr: Number(p.perDidPriceInr) || 400,
           yearlyDiscountPercent: Number(p.yearlyDiscountPercent) || 20,
         });
-        setPacks(w.packs || []);
+        setPacks(nextPacks);
+        writeCache('admin.plans.plans', currentUser?.id, nextPlans);
+        writeCache('admin.plans.packs', currentUser?.id, nextPacks);
       } catch (e) {
         setErr(e.message);
         setPlans([]); setPacks([]);

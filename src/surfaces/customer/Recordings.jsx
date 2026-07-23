@@ -3,6 +3,7 @@ import { api, getToken } from '../../api.js';
 import { useApp } from '../../AppContext.jsx';
 import CallDetailModal from '../../components/CallDetailModal.jsx';
 import DateRangePicker, { todayRange } from '../../components/DateRangePicker.jsx';
+import { readCache, writeCache } from '../../utils/swrCache.js';
 
 const fmtNumber = (s) => {
   if (!s) return '—';
@@ -48,8 +49,8 @@ const NUMBER_TINTS = [
 
 export default function Recordings() {
   const { currentUser } = useApp();
-  const [recordings, setRecordings] = useState(null);
-  const [numbers, setNumbers] = useState([]);
+  const [recordings, setRecordings] = useState(() => readCache('recordings.recordings', currentUser?.id));
+  const [numbers, setNumbers] = useState(() => readCache('recordings.numbers', currentUser?.id) ?? []);
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(true);
   const [filterNumber, setFilterNumber] = useState('all');
@@ -79,12 +80,16 @@ export default function Recordings() {
         api(`/api/recordings?limit=500${force ? '&refresh=1' : ''}`),
         api('/api/numbers').catch(() => ({ numbers: [] })),
       ]);
-      setRecordings(recsRes.recordings || []);
+      const nextRecordings = recsRes.recordings || [];
+      setRecordings(nextRecordings);
+      writeCache('recordings.recordings', currentUser?.id, nextRecordings);
       setDashboardBase(recsRes.dashboardBase || 'https://dashboard.9278.ai');
-      setNumbers(numbersRes.numbers || []);
+      const nextNumbers = numbersRes.numbers || [];
+      setNumbers(nextNumbers);
+      writeCache('recordings.numbers', currentUser?.id, nextNumbers);
     } catch (e) {
       setErr(e.message || 'Could not load recordings');
-      setRecordings([]);
+      setRecordings((prev) => prev ?? []);
     } finally {
       setLoading(false);
     }
@@ -199,6 +204,7 @@ export default function Recordings() {
           <h1 className="text-2xl font-bold text-slate-900">🎙 Recordings</h1>
           <p className="text-mute">
             Every call we recorded — with transcripts and a direct playback link on the dashboard.
+            {loading && recordings !== null && <span className="font-normal text-xs text-mute ml-2">Refreshing…</span>}
           </p>
         </div>
         <button className="btn-ghost text-sm" onClick={() => load(true)} disabled={loading}>
@@ -269,10 +275,10 @@ export default function Recordings() {
 
 
       <div className="mt-6 space-y-3">
-        {loading && (
+        {recordings === null && (
           <div className="form-card text-center text-mute">Loading recordings…</div>
         )}
-        {!loading && total === 0 && (
+        {recordings !== null && total === 0 && (
           <div className="form-card text-center text-mute">
             No recordings yet. As soon as a call comes in, it'll show up here.
           </div>

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../api.js';
+import { useApp } from '../../AppContext.jsx';
+import { readCache, writeCache } from '../../utils/swrCache.js';
 
 const fmtRelative = (iso) => {
   if (!iso) return '—';
@@ -35,8 +37,9 @@ const didsFor = (u) => {
 };
 
 export default function Signups() {
-  const [stats, setStats] = useState(null);
-  const [users, setUsers] = useState(null);
+  const { currentUser } = useApp();
+  const [stats, setStats] = useState(() => readCache('admin.signups.stats', currentUser?.id) ?? null);
+  const [users, setUsers] = useState(() => readCache('admin.signups.users', currentUser?.id) ?? null);
   const [err, setErr] = useState('');
 
   const load = async () => {
@@ -46,8 +49,11 @@ export default function Signups() {
         api('/api/admin/stats'),
         api('/api/admin/users'),
       ]);
+      const nextUsers = u.users.filter((x) => x.role === 'customer');
       setStats(s);
-      setUsers(u.users.filter((x) => x.role === 'customer'));
+      setUsers(nextUsers);
+      writeCache('admin.signups.stats', currentUser?.id, s);
+      writeCache('admin.signups.users', currentUser?.id, nextUsers);
     } catch (e) {
       setErr(e.message);
       setUsers([]);

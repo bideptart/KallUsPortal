@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Phone, MessageSquare } from 'lucide-react';
 import { api, getToken } from '../../api.js';
+import { useApp } from '../../AppContext.jsx';
 import DateRangePicker from '../../components/DateRangePicker.jsx';
 import ChatLogRow from '../../components/ChatLogRow.jsx';
 import SearchIcon from '../../components/SearchIcon.jsx';
 import { buildMockChatSessions } from '../../utils/mockChatLogs.js';
+import { readCache, writeCache } from '../../utils/swrCache.js';
 
 // =============================================================================
 // Admin Reports — same Call Logs UI as the customer dashboard's Reports page,
@@ -77,7 +79,8 @@ const downloadCsv = (rows) => {
 };
 
 export default function Reports() {
-  const [recordings, setRecordings] = useState(null);
+  const { currentUser } = useApp();
+  const [recordings, setRecordings] = useState(() => readCache('admin.reports.recordings', currentUser?.id));
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -106,10 +109,12 @@ export default function Reports() {
     setLoading(true); setErr('');
     try {
       const recsRes = await api(`/api/recordings?limit=500${force ? '&refresh=1' : ''}`);
-      setRecordings(recsRes.recordings || []);
+      const nextRecordings = recsRes.recordings || [];
+      setRecordings(nextRecordings);
+      writeCache('admin.reports.recordings', currentUser?.id, nextRecordings);
     } catch (e) {
       setErr(e.message || 'Could not load calls');
-      setRecordings([]);
+      setRecordings((prev) => prev ?? []);
     } finally {
       setLoading(false);
     }
@@ -195,6 +200,7 @@ export default function Reports() {
       {/* Icon + "Reports" title now live in the sticky top bar instead of here. */}
       <p className="text-base font-semibold tracking-wide animate-fade-up" style={{ color: 'var(--ink-2)' }}>
         Call and chat history across every customer — recordings, transcripts, and AI summaries per record.
+        {loading && recordings !== null && <span className="font-normal text-xs text-mute ml-2">Refreshing…</span>}
       </p>
 
       {err && (
@@ -310,7 +316,7 @@ export default function Reports() {
           <>
           {/* Call list */}
           <div className="space-y-3">
-            {loading && (
+            {recordings === null && (
               <>
                 {[0, 1, 2, 3, 4].map((i) => (
                   <div key={i} className="form-card animate-pulse">
@@ -329,12 +335,12 @@ export default function Reports() {
                 ))}
               </>
             )}
-            {!loading && filteredRecordings.length === 0 && (
+            {recordings !== null && filteredRecordings.length === 0 && (
               <div className="form-card text-center text-mute">
                 No calls match the current filter.
               </div>
             )}
-            {!loading && filteredRecordings.map((r) => {
+            {recordings !== null && filteredRecordings.map((r) => {
               const t = transcripts[r.callId];
               const s = summaries[r.callId];
               const transcriptOpen = t?.open;

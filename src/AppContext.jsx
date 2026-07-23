@@ -4,6 +4,31 @@ import { api, getToken, setToken } from './api.js';
 
 const AppContext = createContext(null);
 
+// Stale-while-revalidate cache for the bootstrap user — without it, EVERY
+// protected page (including one whose own data is already SWR-cached, e.g.
+// Overview) still sits behind RequireAuth's blocking <Loading/> until
+// GET /api/me resolves, on every single open. Keyed by token (not userId,
+// since we don't know the userId until we've read this) and session-scoped
+// to match the token's own per-tab lifetime (see api.js) — a stale entry
+// from a since-replaced token is simply ignored. The bootstrap effect below
+// still always calls /api/me in the background and self-heals (updates or
+// signs out) once it resolves; this only removes the blocking wait on the
+// common case of a still-valid session.
+const BOOT_CACHE_KEY = 'kallus.bootstrap.user';
+const readBootCache = (token) => {
+  if (!token) return null;
+  try {
+    const parsed = JSON.parse(sessionStorage.getItem(BOOT_CACHE_KEY) || 'null');
+    return parsed && parsed.token === token ? parsed.user : null;
+  } catch {
+    return null;
+  }
+};
+const writeBootCache = (token, user) => {
+  try { sessionStorage.setItem(BOOT_CACHE_KEY, JSON.stringify({ token, user })); } catch {}
+};
+const clearBootCache = () => { try { sessionStorage.removeItem(BOOT_CACHE_KEY); } catch {} };
+
 const emptySignup = () => ({
   plan: null, planAmount: 0, planMin: 0, planRate: 0, planAgents: 0, planLabel: '',
   planCycle: 'monthly',
@@ -16,8 +41,14 @@ const emptySignup = () => ({
 
 export function AppProvider({ children }) {
   const navigate = useNavigate();
-  const [currentUser, setCurrentUser] = useState(null);
-  const [bootstrapping, setBootstrapping] = useState(true);
+  const [currentUser, setCurrentUser] = useState(() => readBootCache(getToken()));
+  // Only block on the network when there's a token but no cached user for
+  // it yet (first-ever load in this tab) — a cache hit skips the wait, a
+  // missing token skips it too (nothing to bootstrap).
+  const [bootstrapping, setBootstrapping] = useState(() => {
+    const t = getToken();
+    return !!t && !readBootCache(t);
+  });
   const [signup, setSignup] = useState(emptySignup);
   const [authError, setAuthError] = useState('');
 
@@ -46,8 +77,10 @@ export function AppProvider({ children }) {
         const { user } = await api('/api/me');
         if (cancelled) return;
         setCurrentUser(user);
+        writeBootCache(t, user);
       } catch {
         setToken('');
+        clearBootCache();
       } finally {
         if (!cancelled) setBootstrapping(false);
       }
@@ -62,6 +95,7 @@ export function AppProvider({ children }) {
   const establishSession = ({ token, user }) => {
     setToken(token);
     setCurrentUser(user);
+    writeBootCache(token, user);
     setAuthError('');
   };
 
@@ -80,6 +114,7 @@ export function AppProvider({ children }) {
     const { token, user } = result;
     setToken(token);
     setCurrentUser(user);
+    writeBootCache(token, user);
     setAuthError('');
     // Honor ?next= so route guards round-trip correctly.
     const params = new URLSearchParams(window.location.search);
@@ -91,6 +126,7 @@ export function AppProvider({ children }) {
   const signoutUser = async () => {
     try { await api('/api/signout', { method: 'POST' }); } catch {}
     setToken('');
+    clearBootCache();
     setCurrentUser(null);
     navigate('/', { replace: true });
   };
@@ -107,6 +143,7 @@ export function AppProvider({ children }) {
     try { await api('/api/signout', { method: 'POST' }); } catch {}
     try { localStorage.removeItem(IDLE_KEY); } catch {}
     setToken('');
+    clearBootCache();
     setCurrentUser(null);
     navigate('/signin?timeout=1', { replace: true });
   };
@@ -148,6 +185,7 @@ export function AppProvider({ children }) {
     try {
       const { user } = await api('/api/me', { method: 'PATCH', body: patch });
       setCurrentUser(user);
+      writeBootCache(getToken(), user);
       return true;
     } catch (e) {
       setAuthError(e.message || 'Update failed');
@@ -170,6 +208,7 @@ export function AppProvider({ children }) {
     try { await api('/api/twilio/number', { method: 'DELETE' }); } catch {}
     try { await api('/api/me', { method: 'DELETE' }); } catch {}
     setToken('');
+    clearBootCache();
     setCurrentUser(null);
     navigate('/', { replace: true });
   };

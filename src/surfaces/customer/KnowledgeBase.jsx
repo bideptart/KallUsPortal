@@ -4,6 +4,7 @@ import { BookOpen, Bot, Info, Copy, Plus, X, Link2, Upload, Loader2 } from 'luci
 import { useApp } from '../../AppContext.jsx';
 import { api, getToken } from '../../api.js';
 import { loadKbTemplates as loadSaved, persistKbTemplates as persistSaved, qaCount } from './kbTemplatesStore.js';
+import { readCache, writeCache } from '../../utils/swrCache.js';
 
 // =============================================================================
 // Knowledge Base — a library view on top of the per-agent knowledge editor
@@ -21,7 +22,7 @@ export default function KnowledgeBase() {
   const isAdminTier = currentUser?.userType === 'superadmin' || currentUser?.userType === 'admin';
   const basePath = isAdminTier ? '/admin' : '/dashboard';
 
-  const [numbers, setNumbers] = useState([]);
+  const [numbers, setNumbers] = useState(() => readCache('knowledgeBase.numbers', currentUser?.id) ?? []);
   const [saved, setSaved] = useState(() => loadSaved());
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ name: '', kbCompany: '', kbFaqs: '' });
@@ -48,7 +49,9 @@ export default function KnowledgeBase() {
     (async () => {
       try {
         const r = await api('/api/numbers');
-        setNumbers(r.numbers || []);
+        const next = r.numbers || [];
+        setNumbers(next);
+        writeCache('knowledgeBase.numbers', currentUser?.id, next);
       } catch {}
     })();
   }, []);

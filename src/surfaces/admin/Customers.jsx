@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../api.js';
+import { useApp } from '../../AppContext.jsx';
+import { readCache, writeCache } from '../../utils/swrCache.js';
 
 const fmtDate = (iso) => {
   if (!iso) return '—';
@@ -9,7 +11,8 @@ const fmtDate = (iso) => {
 };
 
 export default function Customers() {
-  const [users, setUsers] = useState(null);
+  const { currentUser } = useApp();
+  const [users, setUsers] = useState(() => readCache('admin.customers', currentUser?.id) ?? null);
   const [err, setErr] = useState('');
   const [busyId, setBusyId] = useState(null);
 
@@ -17,7 +20,9 @@ export default function Customers() {
     setErr('');
     try {
       const data = await api('/api/admin/users');
-      setUsers(data.users.filter((u) => u.role === 'customer'));
+      const next = data.users.filter((u) => u.role === 'customer');
+      setUsers(next);
+      writeCache('admin.customers', currentUser?.id, next);
     } catch (e) {
       setErr(e.message);
       setUsers([]);

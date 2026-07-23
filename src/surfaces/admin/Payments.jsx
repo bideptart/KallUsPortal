@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../api.js';
+import { useApp } from '../../AppContext.jsx';
+import { readCache, writeCache } from '../../utils/swrCache.js';
 
 const fmtCurrency = (n) => `$${Number(n || 0).toLocaleString('en-US')}`;
 
@@ -29,8 +31,9 @@ const monthlyFor = (did) => {
 };
 
 export default function Payments() {
-  const [stats, setStats] = useState(null);
-  const [users, setUsers] = useState(null);
+  const { currentUser } = useApp();
+  const [stats, setStats] = useState(() => readCache('admin.payments.stats', currentUser?.id) ?? null);
+  const [users, setUsers] = useState(() => readCache('admin.payments.users', currentUser?.id) ?? null);
   const [err, setErr] = useState('');
 
   const load = async () => {
@@ -40,8 +43,11 @@ export default function Payments() {
         api('/api/admin/stats'),
         api('/api/admin/users'),
       ]);
+      const nextUsers = u.users.filter((x) => x.role === 'customer');
       setStats(s);
-      setUsers(u.users.filter((x) => x.role === 'customer'));
+      setUsers(nextUsers);
+      writeCache('admin.payments.stats', currentUser?.id, s);
+      writeCache('admin.payments.users', currentUser?.id, nextUsers);
     } catch (e) {
       setErr(e.message);
       setUsers([]);
