@@ -4,21 +4,13 @@ import { api } from '../../api.js';
 import { useApp } from '../../AppContext.jsx';
 import { readCache, writeCache } from '../../utils/swrCache.js';
 
-const fmtDate = (iso) => {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
-};
-
-const EXPORT_COLUMNS = ['DID', 'Status', 'Owner', 'Source', 'Locality', 'Added Date'];
+const EXPORT_COLUMNS = ['DID', 'Status', 'Owner', 'Source'];
 
 const toExportRow = (n) => [
   n.value,
   n.status === 'busy' ? 'Busy' : 'Free',
   n.owner ? (n.owner.label || n.owner.email) : '—',
   n.source === 'env' ? 'ENV' : 'DB',
-  [n.locality, n.region].filter(Boolean).join(' · ') || '—',
-  n.addedAt ? fmtDate(n.addedAt) : '—',
 ];
 
 const csvEscape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
@@ -306,17 +298,15 @@ export default function Numbers() {
               <th>Status</th>
               <th>Owner</th>
               <th>Source</th>
-              <th>Locality</th>
-              <th>Added</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             {data === null && (
-              <tr><td colSpan={7} className="text-center text-mute py-6">Loading…</td></tr>
+              <tr><td colSpan={5} className="text-center text-mute py-6">Loading…</td></tr>
             )}
             {data && filtered.length === 0 && (
-              <tr><td colSpan={7} className="text-center text-mute py-6">No DIDs match the current filter.</td></tr>
+              <tr><td colSpan={5} className="text-center text-mute py-6">No DIDs match the current filter.</td></tr>
             )}
             {filtered.map((n) => (
               <tr key={n.value}>
@@ -342,12 +332,6 @@ export default function Numbers() {
                   }`}>
                     {n.source === 'env' ? 'ENV' : 'DB'}
                   </span>
-                </td>
-                <td className="text-xs text-mute">
-                  {[n.locality, n.region].filter(Boolean).join(' · ') || '—'}
-                </td>
-                <td className="text-xs text-mute">
-                  {n.addedAt ? <>{fmtDate(n.addedAt)}<br /><span className="text-[10px]">by {n.addedBy || '—'}</span></> : '—'}
                 </td>
                 <td>
                   {n.source === 'db' && n.status === 'free' && (
