@@ -17,7 +17,7 @@ import BookingIcon from '../../components/BookingIcon.jsx';
 const Signups = lazy(() => import('./Signups.jsx'));
 const Customers = lazy(() => import('./Customers.jsx'));
 const Resellers = lazy(() => import('./Resellers.jsx'));
-const Numbers = lazy(() => import('../customer/Numbers.jsx'));
+const Numbers = lazy(() => import('./Numbers.jsx'));
 const Payments = lazy(() => import('./Payments.jsx'));
 const Bulk = lazy(() => import('./Bulk.jsx'));
 const Logs = lazy(() => import('./Logs.jsx'));
@@ -67,7 +67,7 @@ const NAV_TABS_AFTER_CALLS = [
   // Platform-wide ops tools — previously legacy-only (URL-reachable but not
   // in the visible nav); promoted back per explicit request since they were
   // the two things missing that this tier actually needs day to day.
-  { id: 'numbers',      label: 'Plan and Numbers',  Icon: List },
+  { id: 'numbers',      label: 'Numbers Inventory', Icon: List },
   { id: 'mcp',          label: 'MCP Browser',       Icon: Terminal },
   { id: 'settings',     label: 'Settings',          Icon: UserCircle },
 ];
