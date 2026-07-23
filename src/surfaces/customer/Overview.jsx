@@ -40,6 +40,7 @@ export default function Overview({ rechargeOn }) {
   const [callStats, setCallStats] = useState(null);
   const [sentiment, setSentiment] = useState(null);
   const [volume, setVolume] = useState(null);
+  const [animateBars, setAnimateBars] = useState(false);
 
   const refreshWallet = async () => {
     try {
@@ -82,6 +83,11 @@ export default function Overview({ rechargeOn }) {
 
     return () => { cancelled = true; };
   }, [currentUser?.role]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setAnimateBars(true), 150);
+    return () => clearTimeout(timer);
+  }, []);
 
   const quickTopUp = async () => {
     setTopupBusy(true);
@@ -324,9 +330,31 @@ export default function Overview({ rechargeOn }) {
               </div>
             </div>
             <div className="mt-2 h-2 rounded overflow-hidden flex" style={{ background: 'var(--line-2)' }}>
-              <div className="h-2 bg-lime-500" style={{ width: `${displaySentiment.sentiment_percentages?.positive ?? 0}%` }} />
-              <div className="h-2" style={{ width: `${displaySentiment.sentiment_percentages?.neutral ?? 0}%`, background: 'var(--ink-4)' }} />
-              <div className="h-2 bg-red-400" style={{ width: `${displaySentiment.sentiment_percentages?.negative ?? 0}%` }} />
+              <div
+                className="h-2 bg-lime-500"
+                style={{
+                  '--bar-final-width': `${displaySentiment.sentiment_percentages?.positive ?? 0}%`,
+                  width: animateBars ? `${displaySentiment.sentiment_percentages?.positive ?? 0}%` : '0%',
+                  transition: 'width 700ms ease-out',
+                }}
+              />
+              <div
+                className="h-2"
+                style={{
+                  '--bar-final-width': `${displaySentiment.sentiment_percentages?.neutral ?? 0}%`,
+                  width: animateBars ? `${displaySentiment.sentiment_percentages?.neutral ?? 0}%` : '0%',
+                  background: 'var(--ink-4)',
+                  transition: 'width 850ms ease-out',
+                }}
+              />
+              <div
+                className="h-2 bg-red-400"
+                style={{
+                  '--bar-final-width': `${displaySentiment.sentiment_percentages?.negative ?? 0}%`,
+                  width: animateBars ? `${displaySentiment.sentiment_percentages?.negative ?? 0}%` : '0%',
+                  transition: 'width 1000ms ease-out',
+                }}
+              />
             </div>
             <div className="mt-2 text-xs text-mute">
               {displaySentiment.total_calls != null ? (
@@ -347,7 +375,7 @@ export default function Overview({ rechargeOn }) {
           <div className="mt-6 pt-5 border-t" style={{ borderColor: 'var(--line-2)' }}>
             <div className="text-xs font-mono uppercase tracking-wide text-mute mb-3">Call volume · last 14 days</div>
             <div className="flex items-end gap-2">
-              {displayVolume.daily_breakdown.map((d) => {
+              {displayVolume.daily_breakdown.map((d, index) => {
                 const max = Math.max(1, ...displayVolume.daily_breakdown.map((x) => Number(x.count || x.calls || 0)));
                 const v = Number(d.count || d.calls || 0);
                 // Fixed pixel track (not a %) — a % height only resolves against
@@ -357,7 +385,13 @@ export default function Overview({ rechargeOn }) {
                 return (
                   <div key={d.date} className="flex-1 flex flex-col items-center gap-1" title={`${d.date}: ${v} calls`}>
                     <div className="w-full flex items-end" style={{ height: 80 }}>
-                      <div className="w-full rounded-t bg-lime-400" style={{ height: barPx }} />
+                      <div
+                        className="w-full rounded-t bg-lime-400"
+                        style={{
+                          height: animateBars ? barPx : 0,
+                          transition: `height 700ms ease-out ${index * 45}ms`,
+                        }}
+                      />
                     </div>
                     <div className="text-[9px] text-mute">{new Date(d.date).getDate()}</div>
                   </div>
