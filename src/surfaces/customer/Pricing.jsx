@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Star, Check } from 'lucide-react';
+import { Star, Check, Pencil, X } from 'lucide-react';
 import { api } from '../../api.js';
 import { useApp } from '../../AppContext.jsx';
 // The app's real buy-a-plan flow — the same modal the global
@@ -47,6 +47,12 @@ export default function Pricing() {
   const [cycle, setCycle] = useState('monthly');
   const [showAddPlan, setShowAddPlan] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [editingPlan, setEditingPlan] = useState(null);
+
+  // Matches the server's own check (requireAdmin: req.user.role !== 'admin')
+  // exactly, so the pencil never shows for someone whose PATCH would 403 —
+  // e.g. a superadmin whose role happens to still read 'user'/'customer'.
+  const canEditPlans = currentUser?.role === 'admin';
 
   useEffect(() => {
     let cancelled = false;
@@ -155,6 +161,18 @@ export default function Pricing() {
                   <Star className="w-3 h-3 fill-current" /> {p.tag}
                 </span>
               )}
+              {/* Admin-only — PATCH /api/admin/base-plans/:id. Hidden for
+                  everyone else; the customer-facing card is unchanged. */}
+              {canEditPlans && (
+                <button
+                  type="button"
+                  onClick={() => setEditingPlan(p)}
+                  title={`Edit ${p.label}`}
+                  className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full grid place-items-center bg-white border border-neutral-200 text-neutral-500 shadow-sm hover:border-lime-400 hover:text-lime-700 transition"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              )}
               <div className="rounded-xl overflow-hidden">
                 <div className={`px-5 py-4 border-b ${popular ? 'bg-lime-100 border-lime-200' : 'bg-lime-50 border-lime-100'}`}>
                   <div className="flex items-center justify-between gap-2">
@@ -257,6 +275,179 @@ export default function Pricing() {
           onAdded={() => { setShowAddPlan(false); setReloadKey((k) => k + 1); }}
         />
       )}
+
+      {editingPlan && (
+        <EditPlanModal
+          plan={editingPlan}
+          onClose={() => setEditingPlan(null)}
+          onSaved={() => { setEditingPlan(null); setReloadKey((k) => k + 1); }}
+        />
+      )}
+    </div>
+  );
+}
+
+// =============================================================================
+// EditPlanModal — admin-only. Every field maps 1:1 to a column on base_plans
+// (server/plans.js EDITABLE_PLAN_FIELDS) and to a real card/table field
+// above; nothing here is decorative. PATCHes only the fields the admin
+// touched isn't necessary — the backend accepts a full or partial patch, so
+// this always sends the complete editable set for simplicity.
+// =============================================================================
+function EditPlanModal({ plan, onClose, onSaved }) {
+  const [form, setForm] = useState({
+    label: plan.label || '',
+    sub: plan.sub || '',
+    tag: plan.tag || '',
+    amount: plan.amount ?? '',
+    yearlyAmount: plan.yearlyAmount ?? '',
+    min: plan.min ?? '',
+    rate: plan.rate ?? '',
+    overage: plan.overage ?? '',
+    dids: plan.dids ?? '',
+    concurrent: plan.concurrent ?? '',
+    agents: plan.agents ?? '',
+    voiceStack: plan.voiceStack || '',
+    support: plan.support || '',
+    perks: (plan.perks || []).join('\n'),
+  });
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+
+  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  const save = async (e) => {
+    e.preventDefault();
+    setBusy(true); setErr('');
+    try {
+      await api(`/api/admin/base-plans/${plan.id}`, {
+        method: 'PATCH',
+        body: {
+          label: form.label,
+          sub: form.sub,
+          tag: form.tag,
+          amount: form.amount,
+          // Blank clears the override so the server auto-derives yearly again.
+          yearlyAmount: form.yearlyAmount === '' ? null : form.yearlyAmount,
+          min: form.min,
+          rate: form.rate,
+          overage: form.overage,
+          dids: form.dids,
+          concurrent: form.concurrent,
+          agents: form.agents,
+          voiceStack: form.voiceStack,
+          support: form.support,
+          perks: form.perks.split('\n').map((s) => s.trim()).filter(Boolean),
+        },
+      });
+      onSaved();
+    } catch (ex) {
+      setErr(ex.message || 'Could not save');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+      <div
+        className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-slate-200 p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="text-lg font-bold text-slate-900">Edit {plan.label}</div>
+            <div className="text-xs text-mute mt-1">Changes apply immediately — display, checkout, and quotes.</div>
+          </div>
+          <button onClick={onClose} aria-label="Close" className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-500">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <form onSubmit={save} className="mt-4 space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="field-label">Label</label>
+              <input className="input" value={form.label} onChange={set('label')} required />
+            </div>
+            <div>
+              <label className="field-label">Badge tag</label>
+              <input className="input" placeholder="e.g. MOST POPULAR" value={form.tag} onChange={set('tag')} />
+            </div>
+          </div>
+
+          <div>
+            <label className="field-label">Tagline</label>
+            <input className="input" value={form.sub} onChange={set('sub')} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="field-label">Price / month (USD)</label>
+              <input className="input" type="number" min="0" step="1" value={form.amount} onChange={set('amount')} required />
+            </div>
+            <div>
+              <label className="field-label">Price / year (USD)</label>
+              <input className="input" type="number" min="0" step="1" placeholder="auto (20% off)" value={form.yearlyAmount} onChange={set('yearlyAmount')} />
+              <div className="field-help">Blank = auto-derived from monthly.</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="field-label">Included min</label>
+              <input className="input" type="number" min="0" step="1" value={form.min} onChange={set('min')} required />
+            </div>
+            <div>
+              <label className="field-label">Rate ($/min)</label>
+              <input className="input" type="number" min="0" step="0.01" value={form.rate} onChange={set('rate')} required />
+            </div>
+            <div>
+              <label className="field-label">Overage ($/min)</label>
+              <input className="input" type="number" min="0" step="0.01" value={form.overage} onChange={set('overage')} required />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="field-label">Numbers</label>
+              <input className="input" type="number" min="0" step="1" value={form.dids} onChange={set('dids')} required />
+            </div>
+            <div>
+              <label className="field-label">Concurrent calls</label>
+              <input className="input" type="number" min="0" step="1" value={form.concurrent} onChange={set('concurrent')} required />
+            </div>
+            <div>
+              <label className="field-label">Agents</label>
+              <input className="input" type="number" min="0" step="1" value={form.agents} onChange={set('agents')} required />
+              <div className="field-help">999 = unlimited.</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="field-label">Voice stack</label>
+              <input className="input" value={form.voiceStack} onChange={set('voiceStack')} />
+            </div>
+            <div>
+              <label className="field-label">Support</label>
+              <input className="input" value={form.support} onChange={set('support')} />
+            </div>
+          </div>
+
+          <div>
+            <label className="field-label">Perks (one per line)</label>
+            <textarea className="input" rows={6} value={form.perks} onChange={set('perks')} />
+          </div>
+
+          {err && <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{err}</div>}
+
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <button type="button" className="btn-ghost" onClick={onClose} disabled={busy}>Cancel</button>
+            <button type="submit" className="btn-teal" disabled={busy}>{busy ? 'Saving…' : 'Save changes'}</button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

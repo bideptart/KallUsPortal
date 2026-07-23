@@ -21,7 +21,11 @@ import {
 } from './dashboardWeb.js';
 import { Readable } from 'node:stream';
 import { sendMail, mailConfigured } from './mail.js';
-import { PLANS as PUBLIC_PLANS, withYearly as withYearlyPlans, yearlyPriceUsd } from './plans.js';
+import {
+  PLANS as DEFAULT_PLANS, withYearly as withYearlyPlans, yearlyPriceUsd,
+  getBasePlansSync, getBasePlansForAdmin, updateBasePlan, refreshBasePlans,
+  EDITABLE_PLAN_FIELDS,
+} from './plans.js';
 import {
   setNumberLanguage, getActiveAgentForNumber, setAgentLanguage, applyDefaultBehavior,
   ensureLiveAgent, syncAgentForUser, computeBaseSlug, startupAgentSweep,
@@ -517,7 +521,7 @@ const runMigrations = async () => {
 
   // Seed default plans for any reseller that doesn't have a catalog yet.
   // Runs every boot, idempotent via ON CONFLICT (reseller_id, base_plan_id).
-  for (const basePlan of PUBLIC_PLANS) {
+  for (const basePlan of getBasePlansSync()) {
     await q(
       `INSERT INTO reseller_plans (reseller_id, base_plan_id, label, amount, rate, min, agents)
        SELECT u.id, $1, $2, $3, $4, $5, $6
@@ -606,6 +610,44 @@ const runMigrations = async () => {
       AND un.is_primary = true
       AND (un.agent_id IS NULL OR un.greeting IS NULL OR un.prompt IS NULL)
   `);
+
+  // Admin-editable base plan catalog (Scale/Growth/Starter). Seeded once from
+  // the hardcoded PLANS in plans.js via ON CONFLICT DO NOTHING, so re-running
+  // migrations never clobbers an admin's saved edits.
+  await q(`
+    CREATE TABLE IF NOT EXISTS base_plans (
+      id            TEXT PRIMARY KEY,
+      label         TEXT NOT NULL,
+      sub           TEXT,
+      amount        NUMERIC(12,2) NOT NULL,
+      yearly_amount NUMERIC(12,2),
+      min           INTEGER NOT NULL,
+      rate          NUMERIC(12,4) NOT NULL,
+      overage       NUMERIC(12,4) NOT NULL,
+      dids          INTEGER NOT NULL,
+      concurrent    INTEGER NOT NULL,
+      agents        INTEGER NOT NULL,
+      voice_stack   TEXT,
+      support       TEXT,
+      tag           TEXT,
+      perks         JSONB NOT NULL DEFAULT '[]'::jsonb,
+      sort_order    INTEGER NOT NULL DEFAULT 0,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  for (let i = 0; i < DEFAULT_PLANS.length; i++) {
+    const p = DEFAULT_PLANS[i];
+    await q(
+      `INSERT INTO base_plans
+         (id, label, sub, amount, yearly_amount, min, rate, overage, dids, concurrent, agents, voice_stack, support, tag, perks, sort_order)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15::jsonb,$16)
+       ON CONFLICT (id) DO NOTHING`,
+      [p.id, p.label, p.sub, p.amount, p.yearlyAmount ?? null, p.min, p.rate, p.overage,
+       p.dids, p.concurrent, p.agents, p.voiceStack, p.support, p.tag, JSON.stringify(p.perks || []), i],
+    );
+  }
+  await refreshBasePlans();
 };
 
 // Per-plan number limit. Falls back to 1 (the Starter cap) for any unknown
@@ -685,10 +727,10 @@ app.get('/api/health', async (_req, res) => {
 // `?portal=<slug>` returns the reseller's edited catalog (label/amount/rate
 // from reseller_plans) so the reseller's branded signup page shows the
 // prices THEY set. Without a portal param, falls back to the canonical
-// PUBLIC_PLANS so direct hits on voice.9278.ai still work.
+// getBasePlansSync() so direct hits on voice.9278.ai still work.
 app.get('/api/plans', async (req, res) => {
   const portalSlug = String(req.query?.portal || '').trim().toLowerCase();
-  let basePlans = PUBLIC_PLANS;
+  let basePlans = getBasePlansSync();
   let currency  = 'USD';
 
   if (portalSlug) {
@@ -715,7 +757,7 @@ app.get('/api/plans', async (req, res) => {
       // the perks / tag / voiceStack / yearly maths still apply, but rewrite
       // currency-dependent fields so they match the reseller's storefront.
       const byId = new Map(r.rows.map((rp) => [rp.base_plan_id, rp]));
-      basePlans = PUBLIC_PLANS.map((p) => {
+      basePlans = getBasePlansSync().map((p) => {
         const override = byId.get(p.id);
         if (!override) return p;
         const amount = Number(override.amount) || p.amount;
@@ -1533,8 +1575,8 @@ const inr = (n) => '$' + Number(n || 0).toLocaleString('en-US');
 const RENTAL_DAYS = 30;
 const computePlanChangeQuote = (numberRow, target) => {
   const currentPlanId = String(numberRow.plan_id || 'starter').toLowerCase();
-  const currentPlan = PUBLIC_PLANS.find((p) => p.id === currentPlanId)
-    || PUBLIC_PLANS.find((p) => p.id === 'starter');
+  const currentPlan = getBasePlansSync().find((p) => p.id === currentPlanId)
+    || getBasePlansSync().find((p) => p.id === 'starter');
 
   // Cycle anchor — last_rented_at if present (set on plan changes / new
   // purchases), otherwise created_at. Matches publicNumber's `activatedAt`.
@@ -1576,7 +1618,7 @@ app.get('/api/numbers/:id/change-plan-quote', auth, async (req, res) => {
   const numberId = Number(req.params.id);
   const requested = String(req.query?.planId || '').toLowerCase();
   if (!numberId) return res.status(400).json({ error: 'numberId required' });
-  const target = PUBLIC_PLANS.find((p) => p.id === requested);
+  const target = getBasePlansSync().find((p) => p.id === requested);
   if (!target) return res.status(400).json({ error: 'Unknown plan id' });
 
   const own = await q(
@@ -1606,7 +1648,7 @@ app.post('/api/razorpay/order/number-plan', auth, async (req, res) => {
   const requested = String(req.body?.planId || '').toLowerCase();
   if (!numberId) return res.status(400).json({ error: 'numberId required' });
 
-  const target = PUBLIC_PLANS.find((p) => p.id === requested);
+  const target = getBasePlansSync().find((p) => p.id === requested);
   if (!target) return res.status(400).json({ error: 'Unknown plan id' });
 
   // Ownership + same-plan guard. Customers can't "buy" the plan their DID
@@ -1656,7 +1698,7 @@ app.post('/api/razorpay/verify/number-plan', auth, async (req, res) => {
     return res.status(400).json({ error: 'razorpay_order_id, razorpay_payment_id, razorpay_signature, numberId and planId required' });
   }
   const numberId = Number(rawNumberId);
-  const target = PUBLIC_PLANS.find((p) => p.id === String(rawPlanId).toLowerCase());
+  const target = getBasePlansSync().find((p) => p.id === String(rawPlanId).toLowerCase());
   if (!target) return res.status(400).json({ error: 'Unknown plan id' });
 
   if (!rzpVerifySignature({
@@ -1751,7 +1793,7 @@ app.post('/api/razorpay/order/restart-plan', auth, async (req, res) => {
   );
   if (!own.rowCount) return res.status(404).json({ error: 'Number not found' });
   const row = own.rows[0];
-  const plan = PUBLIC_PLANS.find((p) => p.id === (row.plan_id || 'starter'));
+  const plan = getBasePlansSync().find((p) => p.id === (row.plan_id || 'starter'));
 
   let order;
   try {
@@ -1850,7 +1892,7 @@ const findAvailableDid = async () => {
 app.post('/api/razorpay/order/new-number-plan', auth, async (req, res) => {
   if (!stripeConfigured) return res.status(503).json({ error: 'Payment not configured' });
   const requested = String(req.body?.planId || '').toLowerCase();
-  const target = PUBLIC_PLANS.find((p) => p.id === requested);
+  const target = getBasePlansSync().find((p) => p.id === requested);
   if (!target) return res.status(400).json({ error: 'Unknown plan id' });
 
   // Auto-assign — customer no longer has to pick a DID from a list. The
@@ -1902,7 +1944,7 @@ app.post('/api/razorpay/verify/new-number-plan', auth, async (req, res) => {
   if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !rawPlanId || !rawPhone) {
     return res.status(400).json({ error: 'razorpay_order_id, razorpay_payment_id, razorpay_signature, planId and phoneNumber required' });
   }
-  const target = PUBLIC_PLANS.find((p) => p.id === String(rawPlanId).toLowerCase());
+  const target = getBasePlansSync().find((p) => p.id === String(rawPlanId).toLowerCase());
   if (!target) return res.status(400).json({ error: 'Unknown plan id' });
   const normalized = formatManualNumber(rawPhone);
   // DID must come from either the env pool OR the DB-added inventory.
@@ -2455,7 +2497,7 @@ app.delete('/api/admin/users/:id', auth, requireAdmin, async (req, res) => {
 // Seed the 3 platform-default plan rows for a newly created reseller.
 // Idempotent — ON CONFLICT in SQL means it's safe to call repeatedly.
 const seedResellerPlans = async (resellerId) => {
-  for (const basePlan of PUBLIC_PLANS) {
+  for (const basePlan of getBasePlansSync()) {
     await q(
       `INSERT INTO reseller_plans (reseller_id, base_plan_id, label, amount, rate, min, agents)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -3166,7 +3208,7 @@ app.get('/api/reseller/plans', auth, requireReseller, async (req, res) => {
 // they owe the platform (per product rule).
 app.patch('/api/reseller/plans/:basePlanId', auth, requireReseller, async (req, res) => {
   const basePlanId = String(req.params.basePlanId || '').toLowerCase();
-  const base = PUBLIC_PLANS.find((p) => p.id === basePlanId);
+  const base = getBasePlansSync().find((p) => p.id === basePlanId);
   if (!base) return res.status(400).json({ error: 'Unknown base plan id' });
 
   // Currency in which THIS reseller serves its plans (USD for 9278.ai etc.).
@@ -3262,6 +3304,63 @@ app.patch('/api/admin/settings', auth, requireAdmin, async (req, res) => {
     res.json({ sections });
   } catch (e) {
     res.status(400).json({ error: e.message });
+  }
+});
+
+// Base plan catalog editor — Scale/Growth/Starter, the same three cards
+// GET /api/plans serves to customers. Admin-only; edits persist to the
+// base_plans table and take effect immediately everywhere getBasePlansSync()
+// is read (checkout, quotes, plan lookups), not just this display page.
+app.get('/api/admin/base-plans', auth, requireAdmin, async (_req, res) => {
+  try {
+    res.json({ plans: await getBasePlansForAdmin() });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.patch('/api/admin/base-plans/:id', auth, requireAdmin, async (req, res) => {
+  const id = String(req.params.id || '').toLowerCase();
+  const body = req.body || {};
+  const patch = {};
+  try {
+    for (const key of EDITABLE_PLAN_FIELDS) {
+      if (!(key in body)) continue;
+      const v = body[key];
+      if (['amount', 'min', 'rate', 'overage', 'dids', 'concurrent', 'agents'].includes(key)) {
+        const n = Number(v);
+        if (!Number.isFinite(n) || n < 0) throw new Error(`${key} must be a non-negative number`);
+        patch[key] = n;
+      } else if (key === 'yearlyAmount') {
+        // Empty/null clears the override so withYearly() auto-derives from amount again.
+        if (v === null || v === '' || v === undefined) {
+          patch.yearlyAmount = null;
+        } else {
+          const n = Number(v);
+          if (!Number.isFinite(n) || n < 0) throw new Error('yearlyAmount must be a non-negative number');
+          patch.yearlyAmount = n;
+        }
+      } else if (key === 'perks') {
+        if (!Array.isArray(v)) throw new Error('perks must be an array of strings');
+        patch.perks = v.map((s) => String(s).trim()).filter(Boolean);
+      } else if (key === 'tag') {
+        patch.tag = v ? String(v).trim() : null;
+      } else {
+        // label, sub, voiceStack, support
+        patch[key] = String(v ?? '').trim();
+      }
+    }
+  } catch (e) {
+    return res.status(400).json({ error: e.message });
+  }
+  if (!Object.keys(patch).length) return res.status(400).json({ error: 'No editable fields provided' });
+
+  try {
+    const updated = await updateBasePlan(id, patch);
+    if (!updated) return res.status(404).json({ error: 'Plan not found' });
+    res.json({ plan: updated });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 
@@ -3453,7 +3552,7 @@ app.post('/api/twilio/purchase', auth, handleNumberAttach);
 // Look up a plan catalog entry by id (defaults to starter on unknown ids).
 const findPlanById = (planId) => {
   const id = String(planId || 'starter').toLowerCase();
-  return PUBLIC_PLANS.find((p) => p.id === id) || PUBLIC_PLANS.find((p) => p.id === 'starter');
+  return getBasePlansSync().find((p) => p.id === id) || getBasePlansSync().find((p) => p.id === 'starter');
 };
 
 const publicNumber = (row) => {
@@ -3739,7 +3838,7 @@ app.patch('/api/numbers/:id', auth, async (req, res) => {
       });
     }
     const requested = String(b.planId ?? b.plan ?? '').toLowerCase();
-    const known = PUBLIC_PLANS.find((p) => p.id === requested);
+    const known = getBasePlansSync().find((p) => p.id === requested);
     if (!known) return res.status(400).json({ error: 'Unknown plan id' });
     sets.push(`plan_id = $${i++}`);
     vals.push(known.id);
