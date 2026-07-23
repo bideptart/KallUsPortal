@@ -256,11 +256,14 @@ export default function KnowledgeBase() {
       </div>
       )}
 
-      <div className="mt-8 flex items-center gap-2">
-        <h2 className="font-bold text-slate-900 dark:text-slate-100">Saved knowledge bases</h2>
-        <span className="pill bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 text-xs">{saved.length}</span>
+      <div className="mt-8 flex items-start justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <h2 className="font-bold text-slate-900 dark:text-slate-100">Saved knowledge bases</h2>
+          <span className="pill bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 text-xs">{saved.length}</span>
+        </div>
+        {saved.length > 0 && <NewButton className="text-sm py-2 px-4" />}
       </div>
-      <p className="text-sm text-mute mt-0.5">Reusable templates you can apply to any agent.</p>
+      <p className="text-sm text-mute mt-0.5">Reusable templates you can apply to any agent — save as many as your plan allows.</p>
 
       {saved.length === 0 ? (
         <div className="mt-4 rounded-xl border-2 border-dashed py-14 px-6 text-center animate-fade-up animate-border-glow transition duration-300 ease-out hover:-translate-y-0.5">

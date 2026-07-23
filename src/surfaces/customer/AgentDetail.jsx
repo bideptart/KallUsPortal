@@ -10,7 +10,7 @@ import { api } from '../../api.js';
 import { useVoicePreview } from '../../hooks/useVoicePreview.js';
 import { VOICES, LANGUAGES, gradientFor, statusMeta } from './KbAgent.jsx';
 import { TEMPLATES } from './Templates.jsx';
-import { loadKbTemplates, persistKbTemplates, qaCount } from './kbTemplatesStore.js';
+import { loadKbTemplates, qaCount } from './kbTemplatesStore.js';
 
 const TABS = [
   { id: 'identity', label: 'Identity', Icon: IdCard },
@@ -231,42 +231,16 @@ export default function AgentDetail() {
 
   // "Your knowledge bases" — reusable templates (name + company info + FAQs)
   // shared with the Knowledge Base page via localStorage (kbTemplatesStore.js).
+  // Creating/deleting templates lives on that page; here we only apply one —
+  // picking a new one always overwrites the Company info/FAQ fields directly,
+  // there's no separate "list" to manage on this page.
   const [kbTemplates, setKbTemplates] = useState(() => loadKbTemplates());
-  const [creatingKb, setCreatingKb] = useState(false);
-  const [kbTemplateName, setKbTemplateName] = useState('');
 
   const applyKbTemplate = (t) => {
     set({ kbCompany: t.kbCompany || '', kbFaqs: t.kbFaqs || '' });
     setSourcePicker(false);
+    setBrowsingKb(false);
     setNotice(`✓ Applied "${t.name}" to this agent's knowledge base.`);
-  };
-
-  const openCreateKb = () => {
-    setKbTemplateName(`${name} knowledge base`);
-    setCreatingKb(true);
-  };
-
-  const saveKbTemplate = (e) => {
-    e.preventDefault();
-    if (!kbTemplateName.trim()) return;
-    const tpl = {
-      id: `tpl-${Date.now()}`,
-      name: kbTemplateName.trim(),
-      kbCompany: draft.kbCompany || '',
-      kbFaqs: draft.kbFaqs || '',
-      prompt: draft.prompt || '',
-    };
-    const next = [tpl, ...kbTemplates];
-    setKbTemplates(next);
-    persistKbTemplates(next);
-    setCreatingKb(false);
-    setNotice(`✓ Saved "${tpl.name}" — reuse it from any agent.`);
-  };
-
-  const deleteKbTemplate = (id) => {
-    const next = kbTemplates.filter((t) => t.id !== id);
-    setKbTemplates(next);
-    persistKbTemplates(next);
   };
 
   const [expandedRule, setExpandedRule] = useState(null);
@@ -347,6 +321,11 @@ export default function AgentDetail() {
     || draft.language !== savedDraft.language
     || draft.kbCompany !== savedDraft.kbCompany
     || draft.kbFaqs !== savedDraft.kbFaqs;
+
+  // Whether a knowledge base is currently applied — just the Knowledge tab's
+  // own fields having content, not a separate id to track (picking a new
+  // one always overwrites these directly, so this stays accurate for free).
+  const hasKb = (draft.kbCompany || '').trim().length > 0 || (draft.kbFaqs || '').trim().length > 0;
 
   const save = async () => {
     if (!selected) return;
@@ -697,48 +676,20 @@ export default function AgentDetail() {
                     Manage →
                   </button>
                 </div>
-                {kbTemplates.length === 0 ? (
-                  <div className="mt-3 rounded-xl border-2 border-dashed p-8 text-center" style={{ borderColor: 'var(--line)' }}>
-                    <Database size={22} className="mx-auto text-mute" />
-                    <div className="mt-2 font-semibold text-sm" style={{ color: 'var(--ink)' }}>No knowledge bases yet</div>
-                    <div className="text-xs text-mute mt-1">Create one on the Knowledge Base page, then reuse it on any agent.</div>
-                    <button type="button" className="btn-teal text-sm mt-4" onClick={openCreateKb}>
-                      + Create a knowledge base
-                    </button>
+                <div className="mt-3 rounded-xl border-2 border-dashed p-8 text-center" style={{ borderColor: 'var(--line)' }}>
+                  <Database size={22} className="mx-auto text-mute" />
+                  <div className="mt-2 font-semibold text-sm" style={{ color: 'var(--ink)' }}>
+                    {hasKb ? 'Knowledge base applied' : 'No knowledge base yet'}
                   </div>
-                ) : (
-                  <div className="mt-3 space-y-2">
-                    {kbTemplates.map((t) => (
-                      <div
-                        key={t.id}
-                        onClick={() => applyKbTemplate(t)}
-                        className="flex items-center justify-between gap-3 p-3 rounded-xl border cursor-pointer transition duration-150 ease-out hover:border-lime-300 hover:bg-[var(--surface-2)]"
-                        style={{ borderColor: 'var(--line)' }}
-                      >
-                        <div className="min-w-0 flex items-center gap-2.5">
-                          <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--surface-2)' }}>
-                            <Database size={14} className="text-lime-600" />
-                          </span>
-                          <div className="min-w-0">
-                            <div className="font-semibold text-sm truncate" style={{ color: 'var(--ink)' }}>{t.name}</div>
-                            <div className="text-xs text-mute mt-0.5">{(t.kbCompany || '').length.toLocaleString()} chars info · {qaCount(t.kbFaqs)} Q&amp;A</div>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); deleteKbTemplate(t.id); }}
-                          className="text-mute hover:text-slate-900 dark:hover:text-slate-100 p-1 shrink-0"
-                          title="Delete this template"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                    <button type="button" className="btn-ghost text-sm w-full" onClick={openCreateKb}>
-                      + Create a knowledge base
-                    </button>
+                  <div className="text-xs text-mute mt-1">
+                    {hasKb
+                      ? 'Pick another to replace it, or manage your saved templates.'
+                      : 'Create one on the Knowledge Base page, then reuse it on any agent.'}
                   </div>
-                )}
+                  <button type="button" className="btn-teal text-sm mt-4" onClick={() => { setSourcePicker(true); setBrowsingKb(true); }}>
+                    {hasKb ? '+ Add more' : 'Import a knowledge base'}
+                  </button>
+                </div>
               </div>
           </div>
 
@@ -1012,39 +963,6 @@ export default function AgentDetail() {
               </div>
             )}
           </div>
-        </div>
-      )}
-
-      {/* Save this agent's current company info + FAQs as a reusable
-          template (kbTemplatesStore.js) — pickable from any other agent. */}
-      {creatingKb && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-backdrop-in"
-          onClick={() => setCreatingKb(false)}
-        >
-          <form
-            onSubmit={saveKbTemplate}
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-xl bg-white border border-slate-200 shadow-xl p-6 animate-modal-in"
-          >
-            <div className="text-lg font-bold" style={{ color: 'var(--ink)' }}>Create a knowledge base</div>
-            <p className="mt-1 text-sm text-mute">
-              Saves this agent's current Company info ({draft.kbCompany.length.toLocaleString()} chars) and FAQ pairs ({(draft.kbFaqs.match(/^Q:/gm) || []).length} Q&amp;A) as a reusable template.
-            </p>
-            <label className="field-label mt-4">Name *</label>
-            <input
-              className="input"
-              required
-              autoFocus
-              value={kbTemplateName}
-              onChange={(e) => setKbTemplateName(e.target.value)}
-              placeholder="e.g. Support desk template"
-            />
-            <div className="mt-5 flex items-center justify-end gap-2">
-              <button type="button" onClick={() => setCreatingKb(false)} className="btn-ghost text-sm py-2 px-4 transition duration-200 ease-out hover:scale-105 active:scale-95">Cancel</button>
-              <button type="submit" className="btn-teal text-sm py-2 px-4 transition duration-200 ease-out hover:scale-105 active:scale-95">Save Knowledge Base</button>
-            </div>
-          </form>
         </div>
       )}
 

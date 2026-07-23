@@ -227,6 +227,10 @@ export default function Transactions() {
   const [provider, setProvider] = useState('Razorpay');
 
   const portal = currentUser?.resellerPortal || 'kallus.io';
+  // This page is reused as-is under /admin (Admin.jsx also renders it) — the
+  // empty-state links below must resolve against whichever shell is mounted.
+  const isAdminTier = currentUser?.userType === 'superadmin' || currentUser?.userType === 'admin';
+  const basePath = isAdminTier ? '/admin' : '/dashboard';
 
   const load = async () => {
     setLoading(true); setErr('');
@@ -428,17 +432,32 @@ export default function Transactions() {
 
                       <div className="mt-6 flex items-center gap-3 flex-wrap justify-center">
                         <button type="button" onClick={() => setShowAddFunds(true)} className="btn-teal text-sm">+ Add Funds</button>
-                        <Link to="/dashboard/billing?tab=plans" className="btn-ghost text-sm">Browse Plans</Link>
+                        <Link to={`${basePath}/billing?tab=plans`} className="btn-ghost text-sm">Browse Plans</Link>
                       </div>
 
                       <div className="mt-4 flex items-center gap-3 text-xs text-mute">
-                        <Link to="/dashboard/billing?tab=plans" className="hover:text-lime-700 hover:underline">View Pricing</Link>
+                        <Link to={`${basePath}/billing?tab=plans`} className="hover:text-lime-700 hover:underline">View Pricing</Link>
                         <span aria-hidden="true">•</span>
-                        <Link to="/dashboard/billing" className="hover:text-lime-700 hover:underline">Learn about Billing</Link>
+                        <Link to={`${basePath}/billing`} className="hover:text-lime-700 hover:underline">Learn about Billing</Link>
                       </div>
                     </div>
                   ) : (
-                    <div className="text-center text-mute py-10">No transactions in this date range yet.</div>
+                    <div className="animate-fade-up flex flex-col items-center text-center px-6 py-12">
+                      <div className="w-14 h-14 flex items-center justify-center rounded-full" style={{ background: 'var(--surface-tint)' }}>
+                        <Receipt className="w-6 h-6" style={{ color: 'var(--primary)' }} strokeWidth={1.5} />
+                      </div>
+                      <h3 className="mt-3 text-sm font-bold text-slate-900">No transactions in this date range</h3>
+                      <p className="mt-1 text-xs text-mute max-w-xs">
+                        {txns?.length ? `You have ${txns.length} transaction${txns.length === 1 ? '' : 's'} outside this range.` : 'Try widening the range to see more.'}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setRange({ from: '', to: '' })}
+                        className="btn-ghost text-sm mt-4"
+                      >
+                        View all time
+                      </button>
+                    </div>
                   )}
                 </td>
               </tr>
