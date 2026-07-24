@@ -206,7 +206,7 @@ export default function Billing() {
         <p className="text-base font-semibold tracking-wide animate-fade-up" style={{ color: 'var(--ink-2)' }}>
           <strong>KallUS</strong> Voice AI — plans per number, instant upgrades, shared wallet.
         </p>
-        <Link to="/dashboard/transactions" className={`text-sm !rounded-lg px-[22px] py-[11px] text-white font-semibold ${BRAND_GRADIENT} hover:brightness-110`}>
+        <Link to="/dashboard/transactions" className="btn-ghost btn-ghost-accent text-sm !rounded-lg px-[22px] py-[11px] font-semibold">
           Transaction history
         </Link>
       </div>
@@ -859,7 +859,7 @@ function WalletTab({ wallet, transactions, packs, currentUser, onSaved }) {
             <button
               onClick={saveThreshold}
               disabled={thresholdBusy}
-              className={`ml-auto px-4 py-2 rounded-lg text-white text-sm font-semibold ${BRAND_GRADIENT} disabled:opacity-60`}
+              className="ml-auto btn-ghost btn-ghost-accent px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-60"
             >
               {thresholdBusy ? 'Saving…' : 'Save'}
             </button>

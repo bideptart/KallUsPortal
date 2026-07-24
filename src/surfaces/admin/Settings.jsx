@@ -131,7 +131,7 @@ function SectionCard({ section, refresh }) {
           <div className="font-semibold text-sm text-slate-900 dark:text-slate-100">{name}</div>
         </div>
         {!editing ? (
-          <button className="btn-ghost text-xs inline-flex items-center gap-1.5" onClick={startEdit}>
+          <button className="btn-ghost btn-ghost-accent text-xs inline-flex items-center gap-1.5" onClick={startEdit}>
             <Pencil size={12} /> Edit
           </button>
         ) : (
@@ -189,7 +189,7 @@ export default function Settings() {
           the env value.
           {refreshing && sections != null && <span className="text-xs text-mute ml-2">Refreshing…</span>}
         </p>
-        <button className="btn-ghost text-sm inline-flex items-center gap-1.5 shrink-0" onClick={load}>
+        <button className="btn-ghost btn-ghost-accent text-sm inline-flex items-center gap-1.5 shrink-0" onClick={load}>
           <RefreshCw size={13} /> Refresh
         </button>
       </div>

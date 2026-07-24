@@ -521,11 +521,13 @@ function ServiceCard({ svc }) {
 }
 
 function Health() {
-  const [health, setHealth] = useState(null);
-  const [mcpStatus, setMcpStatus] = useState(null);
-  const [services, setServices] = useState(null);
-  const [twilio, setTwilio] = useState(null);
-  const [db, setDb] = useState(null);
+  const { currentUser } = useApp();
+  const cached = readCache('admin.health', currentUser?.id);
+  const [health, setHealth] = useState(cached?.health ?? null);
+  const [mcpStatus, setMcpStatus] = useState(cached?.mcpStatus ?? null);
+  const [services, setServices] = useState(cached?.services ?? null);
+  const [twilio, setTwilio] = useState(cached?.twilio ?? null);
+  const [db, setDb] = useState(cached?.db ?? null);
   const [err, setErr] = useState('');
 
   const load = async () => {
@@ -538,10 +540,12 @@ function Health() {
         api('/api/health', { auth: false }),
         api('/api/mcp/status').catch(() => null),
       ]);
-      setHealth(h?.data || null);
-      setMcpStatus(ms);
-      setServices(s?.data || null);
-      setTwilio(t); setDb(d);
+      const next = { health: h?.data || null, mcpStatus: ms, services: s?.data || null, twilio: t, db: d };
+      setHealth(next.health);
+      setMcpStatus(next.mcpStatus);
+      setServices(next.services);
+      setTwilio(next.twilio); setDb(next.db);
+      writeCache('admin.health', currentUser?.id, next);
     } catch (e) { setErr(e.message); }
   };
   useEffect(() => { load(); }, []);
@@ -681,7 +685,8 @@ function InfoItem({ label, value, valueClass }) {
 }
 
 function McpBrowser() {
-  const [endpoints, setEndpoints] = useState(null);    // list of { key, label, url, portal, source }
+  const { currentUser } = useApp();
+  const [endpoints, setEndpoints] = useState(() => readCache('admin.mcp.endpoints', currentUser?.id) ?? null);    // list of { key, label, url, portal, source }
   const [endpoint, setEndpoint]   = useState('env');   // selected endpoint key
   const [tools, setTools]   = useState(null);
   const [filter, setFilter] = useState('');
@@ -707,12 +712,15 @@ function McpBrowser() {
     (async () => {
       try {
         const r = await api('/api/admin/mcp/endpoints');
-        setEndpoints(r.endpoints || []);
+        const next = r.endpoints || [];
+        setEndpoints(next);
+        writeCache('admin.mcp.endpoints', currentUser?.id, next);
       } catch (e) {
         setEndpoints([]);
         setErr(e.message);
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Re-fetch the tool catalog whenever the picked endpoint changes. Guards
@@ -898,7 +906,7 @@ function McpBrowser() {
       <div className="mt-6 grid lg:grid-cols-[300px_1fr] gap-6">
         <div>
           <input
-            className="input"
+            className="input animate-fade-up transition duration-200 ease-out focus:shadow-md"
             placeholder="Filter tools…"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}

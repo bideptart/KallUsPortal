@@ -307,8 +307,15 @@ export default function KnowledgeBase() {
       {creating && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-backdrop-in">
           <form onSubmit={createTemplate} className="w-full max-w-xl rounded-xl bg-white dark:bg-slate-900 border p-6 animate-modal-in animate-modal-border-shadow max-h-[85vh] overflow-y-auto">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">New knowledge base</h2>
-            <p className="mt-1 text-sm text-mute">A reusable template you can apply to any agent later.</p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">New knowledge base</h2>
+                <p className="mt-1 text-sm text-mute">A reusable template you can apply to any agent later.</p>
+              </div>
+              <button type="button" onClick={closeCreate} className="text-mute hover:text-slate-900 dark:hover:text-slate-100">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
             <div className={`mt-4 rounded-lg border p-3 transition-colors ${importBusy ? 'animate-import-glow' : 'border-slate-200 dark:border-slate-700'}`}>
               <div className="text-[11px] uppercase tracking-wider text-mute font-semibold">Import from</div>
