@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
-  LayoutDashboard, Bot, FlaskConical, BookOpen, TrendingUp, Zap,
-  FileText, CreditCard, Receipt, User, UserCircle, Menu, Wrench, Ticket, DoorOpen, Tag,
+  LayoutDashboard, FlaskConical, BookOpen, TrendingUp, Zap,
+  CreditCard, Receipt, User, UserCircle, Menu, Wrench, Ticket, DoorOpen, Tag,
   List, Terminal, Server, Check, Copy, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
@@ -49,8 +49,9 @@ const KnowledgeBase = lazy(() => import('../customer/KnowledgeBase.jsx'));
 // and Reports) instead of at the end of the list.
 const NAV_TABS_BEFORE_CALLS = [
   { id: 'overview',    label: 'Signups',        Icon: LayoutDashboard },
-  { id: 'agents',      label: 'Agents',         Icon: Bot },
-  { id: 'playground',  label: 'Customer at risk',     Icon: FlaskConical },
+  { id: 'agents',      label: 'Customers',      Icon: User },
+  { id: 'playground',  label: 'Customer at risk', Icon: FlaskConical },
+  { id: 'kb',          label: 'Knowledge Base', Icon: BookOpen },
   { id: 'resellers',   label: 'Resellers',      Icon: UserCircle },
   { id: 'analytics',   label: 'Analytics',      Icon: TrendingUp },
 ];
@@ -289,7 +290,7 @@ export default function Admin() {
         <Suspense fallback={<div className="text-sm text-mute py-10 text-center">Loading…</div>}>
         {tab === 'overview'                             && <Signups />}
         {tab === 'signups'                              && <Signups />}
-        {tab === 'agents'                                && <AgentsList />}
+        {tab === 'agents'                                && <Customers />}
         {tab === 'customers'                             && <Customers />}
         {tab === 'tools'                                 && <Tools />}
         {tab === 'playground'                            && <Playground />}

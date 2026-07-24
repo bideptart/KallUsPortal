@@ -20,7 +20,7 @@ export default function Customers() {
     setErr('');
     try {
       const data = await api('/api/admin/users');
-      const next = data.users.filter((u) => u.role === 'customer');
+      const next = data.users.filter((u) => u.role === 'customer' && (u.plan || u.number)); // Only active plan/number users
       setUsers(next);
       writeCache('admin.customers', currentUser?.id, next);
     } catch (e) {
@@ -61,22 +61,21 @@ export default function Customers() {
     <div>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Customers</h1>
-          <p className="text-mute">All live customers + technical IDs.</p>
+          <p className="text-slate-800 font-semibold text-base">All live customers.</p>
         </div>
-        <button className="btn-ghost btn-ghost-accent text-sm" onClick={load}>↻ Refresh</button>
+        <button className="text-sm text-white font-semibold" style={{ backgroundColor: '#4D7C0F', padding: '10px 20px', borderRadius: '9999px' }} onClick={load}>↻ Refresh</button>
       </div>
 
       {err && <div className="mt-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">{err}</div>}
 
       <div className="mt-6 form-card p-0 overflow-x-auto">
-        <table>
+        <table className="w-full whitespace-nowrap">
           <thead>
-            <tr><th>Customer</th><th>Type</th><th>Portal</th><th>Phone</th><th>Plan</th><th>Twilio SID</th><th>Min used</th><th>Status</th><th>Joined</th><th></th></tr>
+            <tr><th>Customer</th><th>Type</th><th>Portal</th><th>Phone</th><th>Plan</th><th>Min used</th><th>Status</th><th>Joined</th><th></th></tr>
           </thead>
           <tbody>
-            {users === null && <tr><td colSpan={10} className="text-center text-mute py-6">Loading…</td></tr>}
-            {users?.length === 0 && <tr><td colSpan={10} className="text-center text-mute py-6">No customers yet.</td></tr>}
+            {users === null && <tr><td colSpan={9} className="text-center text-mute py-6">Loading…</td></tr>}
+            {users?.length === 0 && <tr><td colSpan={9} className="text-center text-mute py-6">No customers yet.</td></tr>}
             {(users || []).map((c) => {
               const typeClass = c.userType === 'superadmin' ? 'bg-purple-500/15 text-purple-700'
                               : c.userType === 'reseller'   ? 'bg-amber-500/15 text-amber-700'
@@ -101,7 +100,6 @@ export default function Customers() {
                 </td>
                 <td className="font-mono text-sm">{c.number || '—'}</td>
                 <td>{c.plan ? `$${Number(c.plan.amount).toLocaleString("en-US")} / ${c.plan.min} min` : '—'}</td>
-                <td className="font-mono text-[11px] text-mute">{c.twilioSid || '—'}</td>
                 <td>{c.minutesUsed.toFixed(1)} / {c.plan?.min || 0}</td>
                 <td>
                   <span className={c.number

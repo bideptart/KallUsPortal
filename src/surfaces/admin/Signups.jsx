@@ -72,18 +72,19 @@ export default function Signups() {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <p className="text-mute">Every customer who completed signup — with every DID + plan they bought.</p>
-        <button className="btn-ghost btn-ghost-accent text-sm" onClick={load}>↻ Refresh</button>
+        <div>
+          <p className="text-slate-800 font-semibold text-base">Every customer who completed signup — with every DID + plan they bought.</p>
+        </div>
+        <button className="text-sm text-white font-semibold" style={{ backgroundColor: '#4D7C0F', padding: '10px 20px', borderRadius: '9999px' }} onClick={load}>↻ Refresh</button>
       </div>
 
       {err && <div className="mt-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">{err}</div>}
 
-      <div className="mt-6 grid sm:grid-cols-5 gap-3">
+      <div className="mt-6 grid sm:grid-cols-4 gap-3">
         <div className="form-card"><div className="text-xs text-mute uppercase">Total customers</div><div className="mt-1 text-2xl font-semibold">{stats?.customers ?? '—'}</div></div>
         <div className="form-card"><div className="text-xs text-mute uppercase">Last 24 hr</div><div className="mt-1 text-2xl font-semibold">{stats?.signupsLast24h ?? '—'}</div></div>
         <div className="form-card"><div className="text-xs text-mute uppercase">Last 7 days</div><div className="mt-1 text-2xl font-semibold">{stats?.signupsLast7d ?? '—'}</div></div>
         <div className="form-card"><div className="text-xs text-mute uppercase">Live (with #)</div><div className="mt-1 text-2xl font-semibold text-lime-400">{liveCount}</div></div>
-        <div className="form-card"><div className="text-xs text-mute uppercase">Plans sold</div><div className="mt-1 text-2xl font-semibold text-lime-400">{totalDids}</div></div>
       </div>
 
       <div className="mt-6 form-card p-0 overflow-x-auto">
@@ -91,7 +92,6 @@ export default function Signups() {
           <thead>
             <tr>
               <th>Customer</th>
-              <th>User ID</th>
               <th>Number</th>
               <th>Plan</th>
               <th>Cycle</th>
@@ -100,8 +100,8 @@ export default function Signups() {
             </tr>
           </thead>
           <tbody>
-            {users === null && <tr><td colSpan={7} className="text-center text-mute py-6">Loading…</td></tr>}
-            {users?.length === 0 && <tr><td colSpan={7} className="text-center text-mute py-6">No signups yet.</td></tr>}
+            {users === null && <tr><td colSpan={6} className="text-center text-mute py-6">Loading…</td></tr>}
+            {users?.length === 0 && <tr><td colSpan={6} className="text-center text-mute py-6">No signups yet.</td></tr>}
             {(users || []).flatMap((u) => {
               const dids = didsFor(u);
               if (dids.length === 0) {
@@ -111,7 +111,6 @@ export default function Signups() {
                       <div className="font-medium">{u.company || u.name}</div>
                       <div className="text-xs text-mute">{u.email}</div>
                     </td>
-                    <td className="font-mono text-xs text-mute">{u.id}</td>
                     <td colSpan={3} className="text-mute text-sm italic">— No DID provisioned —</td>
                     <td>
                       <span className="pill bg-amber-500/15 text-amber-700 text-[10px] uppercase tracking-wider font-semibold">
@@ -133,11 +132,6 @@ export default function Signups() {
                           {dids.length} plans
                         </div>
                       )}
-                    </td>
-                  ) : null}
-                  {i === 0 ? (
-                    <td rowSpan={dids.length} className="align-top font-mono text-xs text-mute">
-                      {u.id}
                     </td>
                   ) : null}
                   <td className="font-mono text-sm">
