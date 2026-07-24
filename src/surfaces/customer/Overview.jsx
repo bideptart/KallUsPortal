@@ -41,6 +41,7 @@ export default function Overview({ rechargeOn }) {
   const [callStats, setCallStats] = useState(() => readCache('overview.callStats', currentUser?.id));
   const [sentiment, setSentiment] = useState(() => readCache('overview.sentiment', currentUser?.id));
   const [volume, setVolume] = useState(() => readCache('overview.volume', currentUser?.id));
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
 
   const refreshWallet = async () => {
     try {
@@ -84,22 +85,38 @@ export default function Overview({ rechargeOn }) {
       .catch(() => {})
       .finally(() => { if (!cancelled) setNumbersLoading(false); });
 
-    Promise.all([
-      api('/api/mcp/call-statistics?days=30').catch(() => null),
-      api('/api/mcp/sentiment?days=30').catch(() => null),
-      api('/api/mcp/call-volume?days=14').catch(() => null),
-    ]).then(([cs, sent, vol]) => {
-      if (cancelled) return;
-      const csData = cs?.data || null;
-      const sentData = sent?.data || null;
-      const volData = vol?.data || null;
-      setCallStats(csData);
-      setSentiment(sentData);
-      setVolume(volData);
-      writeCache('overview.callStats', currentUser?.id, csData);
-      writeCache('overview.sentiment', currentUser?.id, sentData);
-      writeCache('overview.volume', currentUser?.id, volData);
-    });
+    // These three were previously grouped in one Promise.all, so the volume
+    // chart couldn't paint until call-statistics AND sentiment also
+    // finished — even when call-volume itself came back fast. Now each
+    // fires independently and updates its own state the instant it
+    // resolves, same as the four requests above.
+    api('/api/mcp/call-statistics?days=30')
+      .then((cs) => {
+        if (cancelled) return;
+        const csData = cs?.data || null;
+        setCallStats(csData);
+        writeCache('overview.callStats', currentUser?.id, csData);
+      })
+      .catch(() => {});
+
+    api('/api/mcp/sentiment?days=30')
+      .then((sent) => {
+        if (cancelled) return;
+        const sentData = sent?.data || null;
+        setSentiment(sentData);
+        writeCache('overview.sentiment', currentUser?.id, sentData);
+      })
+      .catch(() => {});
+
+    api('/api/mcp/call-volume?days=14')
+      .then((vol) => {
+        if (cancelled) return;
+        const volData = vol?.data || null;
+        setVolume(volData);
+        writeCache('overview.volume', currentUser?.id, volData);
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setAnalyticsLoading(false); });
 
     return () => { cancelled = true; };
   }, [currentUser?.role]);
@@ -331,7 +348,6 @@ export default function Overview({ rechargeOn }) {
             <div className="flex items-start justify-between">
               <div className="text-xs font-mono uppercase tracking-wide text-mute">Caller sentiment · last 30 days</div>
               <div className="flex flex-col items-end gap-1.5">
-                <Link to={`${basePath}/analytics`} className="text-xs text-lime-700 hover:underline">Details →</Link>
                 {!!displaySentiment.needFollowUp && (
                   <span className="pill" style={{ background: 'rgba(248,113,113,0.14)', color: '#b91c1c' }}>
                     {displaySentiment.needFollowUp} need follow-up
@@ -360,6 +376,27 @@ export default function Overview({ rechargeOn }) {
               ) : (
                 <>{(displaySentiment.sentiment_percentages?.positive ?? 0)}% positive</>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Reserves the chart's space immediately (instead of rendering
+            nothing) so the section doesn't pop in and shove the rest of the
+            page down once these calls — the slowest of the six on this
+            page — resolve. Only shows while there's genuinely no data yet
+            (no cache hit either); a cache hit renders the real bars right
+            away with no skeleton. */}
+        {analyticsLoading && !displayVolume?.daily_breakdown?.length && (
+          <div className="mt-6 pt-5 border-t animate-pulse" style={{ borderColor: 'var(--line-2)' }}>
+            <div className="h-3 w-40 bg-lime-100 rounded mb-3" />
+            <div className="flex items-end gap-2">
+              {Array.from({ length: 14 }, (_, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                  <div className="w-full flex items-end" style={{ height: 80 }}>
+                    <div className="w-full rounded-t bg-lime-200" style={{ height: 12 + (i % 5) * 12 }} />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

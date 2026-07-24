@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
 import { useVoicePreview } from '../../hooks/useVoicePreview.js';
-import { readCache, writeCache } from '../../utils/swrCache.js';
+import { readCache, writeCache, invalidateNumbersCaches } from '../../utils/swrCache.js';
 
 // Google Gemini TTS voices (multilingual — speak any of the languages below
 // natively, not phonetically). Kore is the calm, articulate default.
@@ -191,6 +191,7 @@ export default function KbAgent() {
     try {
       const r = await api(`/api/numbers/${selected.id}`, { method: 'PATCH', body: fields });
       setNumbers((ns) => ns.map((n) => (n.id === selected.id ? r.number : n)));
+      invalidateNumbersCaches();
       setSavedMsg((m) => ({ ...m, [which]: '✓ Saved · syncing' }));
       // Start the propagation countdown — 120 s for both language and other changes.
       const total = languageChanged ? PROPAGATION_SECONDS : PROPAGATION_GENERAL;

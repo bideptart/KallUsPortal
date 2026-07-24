@@ -107,8 +107,8 @@ const NEW_AGENT_OPTIONS = [
   {
     id: 'voice',
     Icon: Mic,
-    title: 'Voice Agent',
-    desc: 'For phone calls and voice interactions.',
+    title: 'Configure number',
+    desc: 'Add or set up a phone number for your agent.',
     preview: false,
   },
   {

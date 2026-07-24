@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { RefreshCw, Pencil, ShieldAlert, ShieldCheck, CircleDot } from 'lucide-react';
 import { api } from '../../api.js';
+import { useApp } from '../../AppContext.jsx';
+import { readCache, writeCache } from '../../utils/swrCache.js';
 
 const SOURCE_META = {
   db:    { label: 'Override', cls: 'bg-lime-100 text-lime-700' },
@@ -153,17 +155,23 @@ function SectionCard({ section, refresh }) {
 }
 
 export default function Settings() {
-  const [sections, setSections] = useState(null);
+  const { currentUser } = useApp();
+  const [sections, setSections] = useState(() => readCache('admin.settings', currentUser?.id));
   const [err, setErr] = useState('');
+  const [refreshing, setRefreshing] = useState(true);
 
   const load = async () => {
     setErr('');
+    setRefreshing(true);
     try {
       const d = await api('/api/admin/settings');
       setSections(d.sections);
+      writeCache('admin.settings', currentUser?.id, d.sections);
     } catch (e) {
       setErr(e.message);
-      setSections([]);
+      setSections((prev) => prev ?? []);
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -179,6 +187,7 @@ export default function Settings() {
           <strong className="text-slate-900">Credentials</strong> — edit secrets and external-service URLs. Values you save here are stored
           encrypted in the database and override <code>.env</code>. Clearing a field falls back to
           the env value.
+          {refreshing && sections != null && <span className="text-xs text-mute ml-2">Refreshing…</span>}
         </p>
         <button className="btn-ghost text-sm inline-flex items-center gap-1.5 shrink-0" onClick={load}>
           <RefreshCw size={13} /> Refresh

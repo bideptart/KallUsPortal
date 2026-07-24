@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
-import { readCache, writeCache } from '../../utils/swrCache.js';
+import { readCache, writeCache, invalidateNumbersCaches } from '../../utils/swrCache.js';
 import { useVoicePreview } from '../../hooks/useVoicePreview.js';
 import { VOICES, gradientFor } from './KbAgent.jsx';
 
@@ -274,6 +274,7 @@ export default function Playground() {
         body: { greeting: draft.greeting, prompt: draft.prompt, kbCompany: draft.kbCompany, kbFaqs: draft.kbFaqs, voice: draft.voice },
       });
       setNumbers((ns) => ns.map((n) => (n.id === selected.id ? r.number : n)));
+      invalidateNumbersCaches();
       setSavedDraft(draft);
     } catch {
       // Save bar below shows dirty state persisting on failure — same

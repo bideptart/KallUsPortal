@@ -4,7 +4,7 @@ import { BookOpen, Bot, Info, Copy, Plus, X, Link2, Upload, Loader2 } from 'luci
 import { useApp } from '../../AppContext.jsx';
 import { api, getToken } from '../../api.js';
 import { loadKbTemplates as loadSaved, persistKbTemplates as persistSaved, qaCount } from './kbTemplatesStore.js';
-import { readCache, writeCache } from '../../utils/swrCache.js';
+import { readCache, writeCache, invalidateNumbersCaches } from '../../utils/swrCache.js';
 
 // =============================================================================
 // Knowledge Base — a library view on top of the per-agent knowledge editor
@@ -157,6 +157,7 @@ export default function KnowledgeBase() {
     try {
       await api(`/api/numbers/${editingId}`, { method: 'PATCH', body: editForm });
       setNumbers((prev) => prev.map((n) => (n.id === editingId ? { ...n, ...editForm } : n)));
+      invalidateNumbersCaches();
       setEditMsg('✓ Saved — the agent picks this up on its next call.');
     } catch (err) {
       setEditMsg(`⚠ ${err.message || 'Could not save'}`);

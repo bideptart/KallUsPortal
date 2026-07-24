@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Star } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
-import { readCache, writeCache } from '../../utils/swrCache.js';
+import { readCache, writeCache, invalidateNumbersCaches } from '../../utils/swrCache.js';
 
 // Stripe Checkout loader — duplicated from Billing.jsx so the per-number
 // plan-change dropdown can open the same payment modal without forcing the
@@ -84,6 +84,7 @@ export default function Numbers() {
     try {
       await api(`/api/numbers/${n.id}`, { method: 'DELETE' });
       setActionMsg(`✓ ${n.value} released`);
+      invalidateNumbersCaches();
       await load();
     } catch (e) {
       setActionMsg(`✗ ${e.message}`);

@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
-import { readCache, writeCache } from '../../utils/swrCache.js';
+import { readCache, writeCache, invalidateNumbersCaches } from '../../utils/swrCache.js';
 import { useVoicePreview } from '../../hooks/useVoicePreview.js';
 import { VOICES, LANGUAGES, gradientFor, statusMeta } from './KbAgent.jsx';
 import { TEMPLATES } from './Templates.jsx';
@@ -342,6 +342,7 @@ export default function AgentDetail() {
     try {
       const r = await api(`/api/numbers/${selected.id}`, { method: 'PATCH', body: draft });
       setNumbers((ns) => ns.map((n) => (n.id === selected.id ? r.number : n)));
+      invalidateNumbersCaches();
       setSavedDraft(draft);
     } catch (e) {
       setSaveErr(e.message || 'Could not save');
