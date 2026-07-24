@@ -628,6 +628,21 @@ h1, h2, h3, h4, h5, h6 {
   }
   .animate-today-ring { animation: today-ring-pulse 2s ease-in-out infinite; }
 
+  @keyframes bar-grow-height {
+    from { height: 0; }
+    to   { height: var(--bar-final-height); }
+  }
+  @keyframes bar-grow-width {
+    from { width: 0; }
+    to   { width: var(--bar-final-width); }
+  }
+  .bar-animate-height {
+    animation: bar-grow-height 0.7s cubic-bezier(.2,.8,.2,1) both;
+  }
+  .bar-animate-width {
+    animation: bar-grow-width 0.7s cubic-bezier(.2,.8,.2,1) both;
+  }
+
   /* === GENERIC UTILITIES ======================================== */
   .divider { height: 1px; background: var(--line); }
   .soft-card { background: #ffffff; border: 1px solid var(--line); border-radius: 14px;

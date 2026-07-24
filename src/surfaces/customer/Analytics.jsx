@@ -84,6 +84,7 @@ export default function Analytics() {
   const [sentimentAgg, setSentimentAgg] = useState(() => readAnalyticsCache(currentUser?.id)?.sentimentAgg ?? null);
   const [refreshing, setRefreshing] = useState(true);
   const [err, setErr] = useState('');
+  const [animateBars, setAnimateBars] = useState(false);
 
   const [typeFilter, setTypeFilter] = useState('all');
   const [{ from: dateFrom, to: dateTo }, setRange] = useState(() => PRESETS[2].range());
@@ -109,6 +110,11 @@ export default function Analytics() {
       }
     })();
     return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setAnimateBars(true), 150);
+    return () => clearTimeout(timer);
   }, []);
 
   const rawCalls = calls || [];
@@ -268,9 +274,28 @@ export default function Analytics() {
         </div>
 
         <div className="mt-2 h-2.5 rounded-full overflow-hidden flex bg-slate-100">
-          <div className="h-full" style={{ width: `${positivePct}%`, background: GREEN }} />
-          <div className="h-full bg-slate-300" style={{ width: `${neutralPct}%` }} />
-          <div className="h-full bg-red-500" style={{ width: `${negativePct}%` }} />
+          <div
+            className="h-full"
+            style={{
+              width: animateBars ? `${positivePct}%` : '0%',
+              background: GREEN,
+              transition: 'width 700ms ease-out',
+            }}
+          />
+          <div
+            className="h-full bg-slate-300"
+            style={{
+              width: animateBars ? `${neutralPct}%` : '0%',
+              transition: 'width 850ms ease-out',
+            }}
+          />
+          <div
+            className="h-full bg-red-500"
+            style={{
+              width: animateBars ? `${negativePct}%` : '0%',
+              transition: 'width 1000ms ease-out',
+            }}
+          />
         </div>
 
         {needFollowUp > 0 && (
@@ -306,7 +331,8 @@ export default function Analytics() {
                     style={{
                       width: '70%',
                       maxWidth: 30,
-                      height: barPx,
+                      height: animateBars ? barPx : 0,
+                      transition: `height 700ms ease-out ${i * 45}ms, background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease`,
                       background: isSelected ? '#6fa524' : VOLUME_BAR_GREEN,
                       ...(isSelected ? {
                         border: '2px solid #4d7c0f',

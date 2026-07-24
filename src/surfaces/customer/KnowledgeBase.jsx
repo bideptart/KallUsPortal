@@ -180,8 +180,8 @@ export default function KnowledgeBase() {
       {/* Icon + "Knowledge Base" title now live in the sticky top bar instead of here. */}
       <p className="font-semibold text-base tracking-wide" style={{ color: 'var(--ink-2)' }}>Reusable templates — a greeting, company info, and behavior you can apply to any agent.</p>
 
-      <div className="mt-4 rounded-xl border border-lime-200 bg-lime-50 dark:border-lime-500/30 dark:bg-lime-500/10 p-4 flex gap-3">
-        <Info className="w-4 h-4 text-lime-600 dark:text-lime-400 shrink-0 mt-0.5" />
+      <div className="mt-4 rounded-xl border border-lime-200 bg-lime-50 dark:border-lime-500/30 dark:bg-lime-500/10 p-3 flex gap-2.5">
+        <Info className="w-3.5 h-3.5 text-lime-600 dark:text-lime-400 shrink-0 mt-0.5" />
         <p className="text-sm text-slate-700 dark:text-slate-300">
           Every agent already has its own knowledge base. Save one here to <strong>reuse it across numbers</strong> — then
           apply it from the <Link to={`${basePath}/agents`} className="text-lime-600 dark:text-lime-400 font-semibold hover:underline">Agents</Link> page
@@ -196,38 +196,38 @@ export default function KnowledgeBase() {
       <p className="text-sm text-mute mt-0.5">Each agent's live knowledge — click a card to edit it, or save a copy to reuse elsewhere.</p>
 
       {numbers.length === 0 ? (
-        <div className="mt-4 rounded-xl border-2 border-dashed py-14 px-6 text-center">
-          <div className="mx-auto w-12 h-12 rounded-xl bg-lime-100 dark:bg-lime-500/20 flex items-center justify-center text-lime-600 dark:text-lime-400">
-            <Bot className="w-5 h-5" />
+        <div className="mt-4 rounded-xl border-2 border-dashed py-10 px-6 text-center">
+          <div className="mx-auto w-10 h-10 rounded-xl bg-lime-100 dark:bg-lime-500/20 flex items-center justify-center text-lime-600 dark:text-lime-400">
+            <Bot className="w-4 h-4" />
           </div>
-          <div className="mt-4 font-bold text-slate-900 dark:text-slate-100">No agents yet</div>
+          <div className="mt-3 font-bold text-slate-900 dark:text-slate-100">No agents yet</div>
           <p className="mt-1 text-sm text-mute max-w-md mx-auto">
             Add a plan to get an agent, then its knowledge base shows up here.
           </p>
         </div>
       ) : (
-      <div className="mt-4 space-y-3">
+      <div className="mt-4 space-y-2">
         {numbers.map((n, i) => (
           <div
             key={n.id}
             onClick={() => openEdit(n)}
-            className="form-card ring-1 ring-lime-500/10 animate-fade-up animate-border-glow transition hover:shadow-md hover:-translate-y-0.5 cursor-pointer"
+            className="form-card !p-4 ring-1 ring-lime-500/10 animate-fade-up animate-border-glow transition hover:shadow-md hover:-translate-y-0.5 cursor-pointer"
             style={{ animationDelay: `${i * 60}ms` }}
           >
             <div className="flex items-start justify-between">
-              <div className="w-9 h-9 rounded-lg bg-lime-100 dark:bg-lime-500/20 flex items-center justify-center text-lime-600 dark:text-lime-400">
-                <Bot className="w-4 h-4" />
+              <div className="w-8 h-8 rounded-lg bg-lime-100 dark:bg-lime-500/20 flex items-center justify-center text-lime-600 dark:text-lime-400">
+                <Bot className="w-3.5 h-3.5" />
               </div>
               <span className="pill bg-lime-100 text-lime-700 dark:bg-lime-500/20 dark:text-lime-300 text-xs">
                 <span className="live-dot" /> Live
               </span>
             </div>
-            <div className="mt-2 font-bold text-slate-900 dark:text-slate-100">{n.agentName || 'Unnamed agent'}</div>
+            <div className="mt-1.5 font-bold text-slate-900 dark:text-slate-100">{n.agentName || 'Unnamed agent'}</div>
             <a href={`tel:${n.value}`} onClick={(e) => e.stopPropagation()} className="text-sm text-lime-600 dark:text-lime-400 font-mono hover:underline">{n.value}</a>
             {n.prompt && (
-              <p className="mt-2 text-sm text-mute italic line-clamp-2">“{n.prompt}”</p>
+              <p className="mt-1.5 text-sm text-mute italic line-clamp-2">“{n.prompt}”</p>
             )}
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-2 flex flex-wrap gap-2">
               <span className="pill bg-white text-slate-700 border border-slate-200 dark:bg-transparent dark:text-slate-300 dark:border-slate-700 text-xs">
                 {(n.kbCompany || '').length.toLocaleString()} chars info
               </span>
@@ -240,7 +240,7 @@ export default function KnowledgeBase() {
                 </span>
               )}
             </div>
-            <div className="mt-3 flex items-center justify-between">
+            <div className="mt-2 flex items-center justify-between">
               <Link
                 to={`${basePath}/agents`}
                 onClick={(e) => e.stopPropagation()}
@@ -270,27 +270,27 @@ export default function KnowledgeBase() {
       <p className="text-sm text-mute mt-0.5">Reusable templates you can apply to any agent — save as many as your plan allows.</p>
 
       {saved.length === 0 ? (
-        <div className="mt-4 rounded-xl border-2 border-dashed py-14 px-6 text-center animate-fade-up animate-border-glow transition duration-300 ease-out hover:-translate-y-0.5">
-          <div className="mx-auto w-12 h-12 rounded-xl bg-lime-100 dark:bg-lime-500/20 flex items-center justify-center text-lime-600 dark:text-lime-400 transition duration-300 ease-out hover:scale-110 hover:shadow-md">
-            <BookOpen className="w-5 h-5" />
+        <div className="mt-4 rounded-xl border-2 border-dashed py-10 px-6 text-center animate-fade-up animate-border-glow transition duration-300 ease-out hover:-translate-y-0.5">
+          <div className="mx-auto w-10 h-10 rounded-xl bg-lime-100 dark:bg-lime-500/20 flex items-center justify-center text-lime-600 dark:text-lime-400 transition duration-300 ease-out hover:scale-110 hover:shadow-md">
+            <BookOpen className="w-4 h-4" />
           </div>
-          <div className="mt-4 font-bold text-slate-900 dark:text-slate-100">No saved knowledge bases yet</div>
+          <div className="mt-3 font-bold text-slate-900 dark:text-slate-100">No saved knowledge bases yet</div>
           <p className="mt-1 text-sm text-mute max-w-md mx-auto">
             Build one from scratch, or hit <strong>Save a copy</strong> on an agent above to turn its setup into a reusable template.
           </p>
           <NewButton className="mt-4" />
         </div>
       ) : (
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 space-y-2">
           {saved.map((t, i) => (
-            <div key={t.id} className="form-card animate-fade-up animate-border-glow transition hover:shadow-md hover:-translate-y-0.5" style={{ animationDelay: `${i * 60}ms` }}>
+            <div key={t.id} className="form-card !p-4 animate-fade-up animate-border-glow transition hover:shadow-md hover:-translate-y-0.5" style={{ animationDelay: `${i * 60}ms` }}>
               <div className="flex items-start justify-between gap-3">
                 <div className="font-bold text-slate-900 dark:text-slate-100">{t.name}</div>
                 <button onClick={() => deleteTemplate(t.id)} className="text-mute hover:text-slate-900 dark:hover:text-slate-100">
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="mt-1.5 flex flex-wrap gap-2">
                 <span className="pill bg-white text-slate-700 border border-slate-200 dark:bg-transparent dark:text-slate-300 dark:border-slate-700 text-xs">
                   {(t.kbCompany || '').length.toLocaleString()} chars info
                 </span>
