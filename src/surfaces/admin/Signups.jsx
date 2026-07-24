@@ -94,6 +94,7 @@ export default function Signups() {
           <thead>
             <tr>
               <th>Customer</th>
+              <th>User ID</th>
               <th>Number</th>
               <th>Plan</th>
               <th>Cycle</th>
@@ -102,8 +103,8 @@ export default function Signups() {
             </tr>
           </thead>
           <tbody>
-            {users === null && <tr><td colSpan={6} className="text-center text-mute py-6">Loading…</td></tr>}
-            {users?.length === 0 && <tr><td colSpan={6} className="text-center text-mute py-6">No signups yet.</td></tr>}
+            {users === null && <tr><td colSpan={7} className="text-center text-mute py-6">Loading…</td></tr>}
+            {users?.length === 0 && <tr><td colSpan={7} className="text-center text-mute py-6">No signups yet.</td></tr>}
             {(users || []).flatMap((u) => {
               const dids = didsFor(u);
               if (dids.length === 0) {
@@ -113,6 +114,7 @@ export default function Signups() {
                       <div className="font-medium">{u.company || u.name}</div>
                       <div className="text-xs text-mute">{u.email}</div>
                     </td>
+                    <td className="font-mono text-xs text-mute">{u.id}</td>
                     <td colSpan={3} className="text-mute text-sm italic">— No DID provisioned —</td>
                     <td>
                       <span className="pill bg-amber-500/15 text-amber-700 text-[10px] uppercase tracking-wider font-semibold">
@@ -134,6 +136,11 @@ export default function Signups() {
                           {dids.length} plans
                         </div>
                       )}
+                    </td>
+                  ) : null}
+                  {i === 0 ? (
+                    <td rowSpan={dids.length} className="align-top font-mono text-xs text-mute">
+                      {u.id}
                     </td>
                   ) : null}
                   <td className="font-mono text-sm">
