@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
-  LayoutDashboard, Bot, FlaskConical, BookOpen, TrendingUp, Zap,
+  LayoutDashboard, Bot, FlaskConical, TrendingUp, Zap,
   FileText, CreditCard, Receipt, User, UserCircle, Menu, Wrench, Ticket, DoorOpen, Tag,
   List, Terminal, Server, Check, Copy, ChevronDown, ChevronUp,
 } from 'lucide-react';
@@ -51,7 +51,7 @@ const NAV_TABS_BEFORE_CALLS = [
   { id: 'overview',    label: 'Overview',       Icon: LayoutDashboard },
   { id: 'agents',      label: 'Agents',         Icon: Bot },
   { id: 'playground',  label: 'Playground',     Icon: FlaskConical },
-  { id: 'kb',          label: 'Knowledge Base', Icon: BookOpen },
+  { id: 'resellers',   label: 'Resellers',      Icon: UserCircle },
   { id: 'analytics',   label: 'Analytics',      Icon: TrendingUp },
 ];
 const NAV_TABS_AFTER_CALLS = [
@@ -79,6 +79,9 @@ const NAV_TABS = [...NAV_TABS_BEFORE_CALLS, ...NAV_TABS_AFTER_CALLS];
 // Tools page as the customer dashboard; the MCP tool browser stays
 // reachable at its legacy /admin/mcp link (distinct from the "Playground"
 // nav entry above, which is the agent test/tune page shared with Customer).
+const ACTIVITY_LOG = { id: 'logs', label: 'Activity Log', Icon: Zap };
+
+// Legacy Call Activity routes remain valid for existing deep links.
 const CALL_ACTIVITY = { id: 'calls', label: 'Call Activity', Icon: Zap };
 const CALL_ACTIVITY_CHILDREN = [
   { id: 'booking-history', label: 'Booking History', Icon: BookingIcon },
@@ -208,28 +211,7 @@ export default function Admin() {
         <div className="sidenav-section">Manage</div>
         <Side list={NAV_TABS_BEFORE_CALLS} />
 
-        <div className="nav-group">
-          <button
-            type="button"
-            onClick={() => setCallActivityOpen((v) => !v)}
-            className={`nav-group-toggle ${tab === CALL_ACTIVITY.id ? 'active' : ''}`}
-            aria-expanded={callActivityOpen}
-          >
-            <CALL_ACTIVITY.Icon size={16} strokeWidth={2} />
-            <span className="flex-1">{CALL_ACTIVITY.label}</span>
-            <span
-              className={`nav-group-chevron ${callActivityOpen ? 'is-open' : ''}`}
-              aria-label={callActivityOpen ? 'Collapse Call Activity' : 'Expand Call Activity'}
-            >
-              ⌄
-            </span>
-          </button>
-          {callActivityOpen && (
-            <div className="nav-group-children">
-              <Side list={CALL_ACTIVITY_CHILDREN} />
-            </div>
-          )}
-        </div>
+        <Side list={[ACTIVITY_LOG]} />
 
         <Side list={NAV_TABS_AFTER_CALLS} />
 

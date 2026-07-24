@@ -111,8 +111,14 @@ export default function Playground() {
   const [transcript, setTranscript] = useState([]);
   const transcriptScrollRef = useRef(null);
   const transcriptTimers = useRef([]);
+  const recognitionRef = useRef(null);
+  const [isListening, setIsListening] = useState(false);
+  const [speechError, setSpeechError] = useState('');
 
-  useEffect(() => () => { transcriptTimers.current.forEach(clearTimeout); }, []);
+  useEffect(() => () => {
+    transcriptTimers.current.forEach(clearTimeout);
+    try { recognitionRef.current?.abort(); } catch {}
+  }, []);
 
   useEffect(() => {
     if (transcriptScrollRef.current) {
@@ -287,9 +293,56 @@ export default function Playground() {
     setTranscript((t) => [...t, { from, text, time: new Date() }]);
   };
 
+  const stopSpeechRecognition = () => {
+    try { recognitionRef.current?.stop(); } catch {}
+  };
+
+  const startSpeechRecognition = () => {
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!Recognition) {
+      setSpeechError('Live transcription requires Chrome or another browser that supports speech recognition.');
+      return;
+    }
+    try { recognitionRef.current?.abort(); } catch {}
+    const recognition = new Recognition();
+    recognition.lang = selected.language || 'en-US';
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.onstart = () => {
+      setSpeechError('');
+      setIsListening(true);
+      setVoiceStatus('listening');
+    };
+    recognition.onresult = (event) => {
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const result = event.results[i];
+        if (result.isFinal) {
+          const text = result[0]?.transcript?.trim();
+          if (text) appendTranscript('user', text);
+        }
+      }
+    };
+    recognition.onerror = (event) => {
+      if (event.error === 'no-speech' || event.error === 'aborted') return;
+      const messages = {
+        'not-allowed': 'Microphone permission was denied. Allow microphone access and try again.',
+        'audio-capture': 'No microphone was found. Connect one and try again.',
+        network: 'Speech recognition could not reach the service. Check your connection.',
+      };
+      setSpeechError(messages[event.error] || 'Speech recognition error: ' + event.error);
+    };
+    recognition.onend = () => {
+      if (recognitionRef.current === recognition) recognitionRef.current = null;
+      setIsListening(false);
+    };
+    recognitionRef.current = recognition;
+    recognition.start();
+  };
+
   const startVoiceTest = () => {
     setTesting(true);
     setVoiceStatus('listening');
+    startSpeechRecognition();
     play(draft.voice, selected.language || 'en-US');
 
     clearTimeout(listeningTimerRef.current);
@@ -303,12 +356,6 @@ export default function Playground() {
     transcriptTimers.current.push(setTimeout(() => {
       appendTranscript('agent', draft.greeting || 'Hello! How can I help you today?');
     }, 300));
-    transcriptTimers.current.push(setTimeout(() => {
-      appendTranscript('user', "I'd like to book an appointment.");
-    }, 1800));
-    transcriptTimers.current.push(setTimeout(() => {
-      appendTranscript('agent', 'Sure! What date would you prefer?');
-    }, 3200));
   };
 
   const sendChatMessage = () => {
@@ -397,7 +444,7 @@ export default function Playground() {
                   {voiceStatus === 'listening' && <div>Waiting for user input</div>}
                   {voiceStatus === 'processing' && <div>Generating response</div>}
                   {voiceStatus === 'speaking' && <div>AI is responding</div>}
-                  {voiceStatus === 'error' && <div>{previewError || 'Please connect your microphone.'}</div>}
+                  {voiceStatus === 'error' && <div>{speechError || previewError || 'Please connect your microphone.'}</div>}
                 </div>
                 {voiceStatus !== 'ready' && (
                   <div className="mt-1.5 pt-1.5 border-t text-[11px] text-mute space-y-0.5" style={{ borderColor: 'var(--line-2)' }}>
@@ -455,13 +502,15 @@ export default function Playground() {
               <button
                 type="button"
                 className="btn-teal mt-3 inline-flex items-center gap-2"
-                onClick={startVoiceTest}
+                onClick={isListening ? stopSpeechRecognition : startVoiceTest}
                 disabled={!draft.voice}
               >
-                <Phone size={15} /> {testing ? 'Playing…' : 'Start voice test'}
+                <Phone size={15} /> {isListening ? 'Stop listening' : testing ? 'Playing…' : 'Start voice test'}
               </button>
               <p className="mt-2 text-xs text-mute max-w-xs">
-                Plays a sample of {draft.voice}'s voice — live two-way voice testing from your browser isn't wired up yet.
+                {isListening
+                  ? 'Listening now — speak after the greeting to add your words to the transcript.'
+                  : 'Plays a sample of ' + draft.voice + '\'s voice and transcribes your microphone in supported browsers.'}
               </p>
               {/* Space is always reserved (not just when an error exists) so
                   the panel's total height stays constant whether or not
@@ -469,7 +518,7 @@ export default function Playground() {
                   used to change the panel's height, which (since both grid
                   columns share one row) could make it taller than the
                   Configure panel and eliminate the room sticky needs. */}
-              <p className="mt-1 text-xs text-red-600 min-h-[1em]">{previewError || ' '}</p>
+              <p className="mt-1 text-xs text-red-600 min-h-[1em]">{speechError || previewError || ' '}</p>
             </div>
           ) : (
             <div className="mt-5">

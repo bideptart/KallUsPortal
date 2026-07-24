@@ -10,8 +10,6 @@ const fmtDate = (iso) => {
   return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-const BRAND_GRADIENT = 'bg-[linear-gradient(135deg,#0ea5e9_0%,#6366f1_55%,#8b5cf6_110%)]';
-
 const emptyForm = () => ({
   name: '', company: '', email: '', phone: '',
   username: '', password: '',
@@ -80,7 +78,7 @@ export default function Resellers() {
         </div>
         <button
           onClick={() => { setShowForm((v) => !v); setFormErr(''); }}
-          className={`px-4 py-2 rounded-lg text-white text-sm font-semibold ${BRAND_GRADIENT}`}
+          className="btn-teal text-sm whitespace-nowrap"
         >
           {showForm ? '× Cancel' : '+ Register new reseller'}
         </button>
@@ -186,7 +184,7 @@ export default function Resellers() {
             <button
               type="submit"
               disabled={busy}
-              className={`px-5 py-2 rounded-lg text-white text-sm font-semibold ${BRAND_GRADIENT}`}
+              className="btn-teal text-sm whitespace-nowrap"
             >
               {busy ? 'Registering…' : 'Register reseller'}
             </button>
