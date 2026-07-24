@@ -59,17 +59,17 @@ const NAV_TABS_AFTER_CALLS = [
   { id: 'billing',      label: 'Billing & minutes', Icon: CreditCard },
   { id: 'pricing',      label: 'Plans & pricing',   Icon: Tag },
   { id: 'transactions', label: 'Transactions',      Icon: Receipt },
+  // Platform-wide ops tools — previously legacy-only (URL-reachable but not
+  // in the visible nav); promoted back per explicit request since they were
+  // the two things missing that this tier actually needs day to day.
+  { id: 'numbers',      label: 'Numbers Inventory', Icon: List },
+  { id: 'mcp',          label: 'MCP Browser',       Icon: Terminal },
   // "Profile" and "Account" used to be two tabs whose labels were swapped
   // relative to what they rendered (Profile -> <Account />, Account ->
   // <Settings />). Now Account is the single place for your own profile,
   // password, and danger zone; the credentials page keeps its own honest
   // "Settings" label.
   { id: 'account',      label: 'Account',           Icon: User },
-  // Platform-wide ops tools — previously legacy-only (URL-reachable but not
-  // in the visible nav); promoted back per explicit request since they were
-  // the two things missing that this tier actually needs day to day.
-  { id: 'numbers',      label: 'Numbers Inventory', Icon: List },
-  { id: 'mcp',          label: 'MCP Browser',       Icon: Terminal },
   { id: 'settings',     label: 'Settings',          Icon: UserCircle },
 ];
 const NAV_TABS = [...NAV_TABS_BEFORE_CALLS, ...NAV_TABS_AFTER_CALLS];
@@ -215,7 +215,7 @@ export default function Admin() {
 
         <Side list={NAV_TABS_AFTER_CALLS} />
 
-        <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+        <div className="mt-2 pt-2 border-t border-black">
           <button type="button" onClick={signoutUser} className="nav-group-toggle nav-logout">
             <DoorOpen size={16} strokeWidth={2} /> Log out
           </button>
