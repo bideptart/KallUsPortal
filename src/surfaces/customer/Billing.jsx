@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Wallet, Star, Phone, Calendar, RefreshCw, Lightbulb, Tag, CreditCard } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
-import { readCache, writeCache } from '../../utils/swrCache.js';
+import { readCache, writeCache, invalidateNumbersCaches } from '../../utils/swrCache.js';
 import AddMinutesModal from '../../components/AddMinutesModal.jsx';
 // Re-using the modals defined on the Numbers page so the buy/upgrade flows
 // behave identically here (single source of truth for the catalog UI).
@@ -1189,6 +1189,7 @@ function AutoRechargeTab({ numbers, cards = [], onSaved, onGoWallet }) {
     setPending((p) => ({ ...p, [n.id]: false }));
     try {
       await api(`/api/numbers/${n.id}`, { method: 'PATCH', body: { autoRechargeEnabled: false } });
+      invalidateNumbersCaches();
       await onSaved?.();
     } catch (e) {
       setErr(e.message || 'Could not update auto-recharge');
@@ -1202,6 +1203,7 @@ function AutoRechargeTab({ numbers, cards = [], onSaved, onGoWallet }) {
       method: 'PATCH',
       body: { autoRechargeEnabled: true, autoRechargePmId: pmId },
     });
+    invalidateNumbersCaches();
     setChooserFor(null);
     await onSaved?.();
   };

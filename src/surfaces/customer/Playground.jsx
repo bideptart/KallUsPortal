@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
-import { readCache, writeCache } from '../../utils/swrCache.js';
+import { readCache, writeCache, invalidateNumbersCaches } from '../../utils/swrCache.js';
 import { useVoicePreview } from '../../hooks/useVoicePreview.js';
 import { VOICES, gradientFor } from './KbAgent.jsx';
 
@@ -103,6 +103,7 @@ export default function Playground() {
   const [testing, setTesting] = useState(false);
   const [chatLog, setChatLog] = useState([]);
   const [chatInput, setChatInput] = useState('');
+  const [chatBusy, setChatBusy] = useState(false);
 
   // Live Conversation transcript — simulated (no live speech-to-text
   // pipeline wired up yet, same "isn't wired up yet" state as the voice
@@ -280,6 +281,7 @@ export default function Playground() {
         body: { greeting: draft.greeting, prompt: draft.prompt, kbCompany: draft.kbCompany, kbFaqs: draft.kbFaqs, voice: draft.voice },
       });
       setNumbers((ns) => ns.map((n) => (n.id === selected.id ? r.number : n)));
+      invalidateNumbersCaches();
       setSavedDraft(draft);
     } catch {
       // Save bar below shows dirty state persisting on failure — same
@@ -358,11 +360,31 @@ export default function Playground() {
     }, 300));
   };
 
-  const sendChatMessage = () => {
+  const sendChatMessage = async () => {
     const text = chatInput.trim();
-    if (!text) return;
-    setChatLog((log) => [...log, { from: 'user', text }, { from: 'system', text: "Live chat testing isn't wired up yet — this agent isn't connected to a model." }]);
+    if (!text || chatBusy) return;
+    const nextLog = [...chatLog, { from: 'user', text }];
+    setChatLog(nextLog);
     setChatInput('');
+    setChatBusy(true);
+    try {
+      const r = await api('/api/chat/message', {
+        method: 'POST',
+        body: {
+          messages: nextLog.map((m) => ({ from: m.from, text: m.text })),
+          prompt: draft.prompt,
+          greeting: draft.greeting,
+          kbCompany: draft.kbCompany,
+          kbFaqs: draft.kbFaqs,
+          agentName: selected.agentName,
+        },
+      });
+      setChatLog((log) => [...log, { from: 'agent', text: r.reply }]);
+    } catch (e) {
+      setChatLog((log) => [...log, { from: 'system', text: `⚠ ${e.message || 'Could not reach the chat model'}` }]);
+    } finally {
+      setChatBusy(false);
+    }
   };
 
   const fullEditorPath = isChatAgent ? `${basePath}/agent-detail-chat?n=${encodeURIComponent(selected.id)}` : `${basePath}/agent-detail?n=${encodeURIComponent(selected.id)}`;
@@ -530,21 +552,33 @@ export default function Playground() {
                   <div
                     key={i}
                     className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${m.from === 'user' ? 'ml-auto rounded-tr-sm text-white' : 'rounded-tl-sm bg-white'}`}
-                    style={m.from === 'user' ? { background: 'var(--primary)' } : { color: 'var(--ink-3)', fontStyle: 'italic' }}
+                    style={
+                      m.from === 'user'
+                        ? { background: 'var(--primary)' }
+                        : m.from === 'system'
+                          ? { color: 'var(--ink-3)', fontStyle: 'italic' }
+                          : { color: 'var(--ink)' }
+                    }
                   >
                     {m.text}
                   </div>
                 ))}
+                {chatBusy && (
+                  <div className="max-w-[85%] rounded-xl rounded-tl-sm px-3 py-2 text-sm bg-white text-mute italic">
+                    Thinking…
+                  </div>
+                )}
               </div>
               <div className="mt-2 flex items-center gap-2">
                 <input
                   className="input flex-1"
                   placeholder="Type a message…"
                   value={chatInput}
+                  disabled={chatBusy}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') sendChatMessage(); }}
                 />
-                <button type="button" className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'var(--primary)' }} onClick={sendChatMessage}>
+                <button type="button" className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-50" style={{ background: 'var(--primary)' }} onClick={sendChatMessage} disabled={chatBusy || !chatInput.trim()}>
                   <Send size={15} color="#fff" />
                 </button>
               </div>

@@ -682,6 +682,25 @@ const getUserNumberDigits = async (userId) => {
   );
 };
 
+// Every phone number registered anywhere on this site (all users, not just
+// one) — used to filter the admin-wide MCP call sweep down to this site's
+// own traffic. The connected MCP dashboard account can carry calls for
+// numbers that were never provisioned through this portal (other tenants on
+// the same MCP account, leftover test numbers, etc.), and an admin's "all
+// calls" view should only show calls actually belonging to a number/agent
+// registered here — not everything sitting in the shared MCP account.
+const getAllNumberDigits = async () => {
+  const r = await q(
+    `SELECT number_value FROM user_numbers
+     UNION
+     SELECT number_value FROM users WHERE number_value IS NOT NULL AND number_value <> ''`,
+  );
+  return new Set(r.rows
+    .map((row) => String(row.number_value || '').replace(/\D+/g, ''))
+    .filter(Boolean),
+  );
+};
+
 // Seed only an admin account on a brand-new install so the portal can be
 // administered. Customers must sign up themselves; nothing else is pre-filled.
 const seedAdminUser = async () => {
@@ -4108,15 +4127,50 @@ const fetchCallsForDid = async (didDigits) => {
 const CALLS_CACHE = new Map();          // key → { ts, calls }
 const CALLS_TTL_MS = 60_000;
 
-const fetchCallsForNumbers = async (digitsList, { fresh = false } = {}) => {
-  if (!digitsList.length) return [];
-  const key = [...digitsList].map(String).sort().join(',');
+// Fallback path for fetchCallsForNumbers below — same list_calls pagination,
+// scoped by agent_id instead of a phone-number substring match.
+const fetchCallsByAgentId = async (agentId) => {
+  const all = [];
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    let out;
+    try {
+      out = unwrapMcp(await callTool('list_calls', {
+        days: LOOKBACK_DAYS, agent_id: agentId, page, per_page: PAGE_SIZE,
+      }));
+    } catch (e) {
+      console.warn(`[list_calls] agent_id=${agentId} page ${page} failed:`, e.message);
+      break;
+    }
+    const rows = Array.isArray(out?.calls) ? out.calls : (Array.isArray(out) ? out : []);
+    if (!rows.length) break;
+    all.push(...rows);
+    if (rows.length < PAGE_SIZE) break;
+  }
+  return all;
+};
+
+const fetchCallsForNumbers = async (digitsList, { fresh = false, agentId = null } = {}) => {
+  const key = digitsList.length ? [...digitsList].map(String).sort().join(',') : `agent:${agentId || 'none'}`;
   if (!fresh) {
     const hit = CALLS_CACHE.get(key);
     if (hit && Date.now() - hit.ts < CALLS_TTL_MS) return hit.calls;
   }
-  const perDid = await Promise.all(digitsList.map((d) => fetchCallsForDid(d)));
-  const flat = perDid.flat();
+  let flat = [];
+  if (digitsList.length) {
+    const perDid = await Promise.all(digitsList.map((d) => fetchCallsForDid(d)));
+    flat = perDid.flat();
+  }
+  // The DID-based search found nothing (or there were no registered DIDs to
+  // search at all) — calls may still be tagged with this customer's
+  // agent_id even when they don't match a stored DID (number reformatting,
+  // a changed number, no DID recorded yet, etc.). The MCP analytics tools
+  // (Overview's call-volume/sentiment, which scope by agent_id) already find
+  // data in this situation, so fall back to the same scoping here instead
+  // of silently returning nothing.
+  if (!flat.length && agentId) {
+    flat = await fetchCallsByAgentId(agentId);
+  }
+  if (!flat.length) return [];
   // Dedupe in case `search` matches the same call under more than one DID.
   const seen = new Set(), unique = [];
   for (const c of flat) {
@@ -4152,8 +4206,16 @@ const fetchAllCallsForAdmin = async ({ fresh = false } = {}) => {
     rows.push(...batch);
     if (batch.length < PAGE_SIZE) break;
   }
-  ADMIN_CALLS_CACHE = { ts: Date.now(), calls: rows };
-  return rows;
+  // Keep only calls touching a number actually registered on this site —
+  // see getAllNumberDigits for why.
+  const known = await getAllNumberDigits();
+  const filtered = rows.filter((c) => {
+    const to = String(c.to_number || '').replace(/\D+/g, '');
+    const from = String(c.from_number || '').replace(/\D+/g, '');
+    return (to && known.has(to)) || (from && known.has(from));
+  });
+  ADMIN_CALLS_CACHE = { ts: Date.now(), calls: filtered };
+  return filtered;
 };
 
 // MCP list_calls doesn't return a money figure, so we derive it from the user's plan.
@@ -4166,14 +4228,14 @@ app.get('/api/twilio/calls', auth, async (req, res) => {
     const ownDigits = req.user.role === 'admin'
       ? null
       : await getUserNumberDigits(req.user.id);
-    if (ownDigits && !ownDigits.size) return res.json({ calls: [] });
+    if (ownDigits && !ownDigits.size && !req.user.agent_id) return res.json({ calls: [] });
 
     // Per-DID fan-out — each call to MCP paginates through that DID's full
     // history (last LOOKBACK_DAYS days, up to MAX_PAGES * PAGE_SIZE rows).
     // Admin path shares the same cached tenant-wide sweep as /api/twilio/stats.
     const fresh = req.query.refresh === '1';
     let rows = ownDigits
-      ? await fetchCallsForNumbers([...ownDigits], { fresh })
+      ? await fetchCallsForNumbers([...ownDigits], { fresh, agentId: req.user.agent_id })
       : await fetchAllCallsForAdmin({ fresh });
     rows = rows.slice(0, limit);
 
@@ -4273,14 +4335,14 @@ app.get('/api/recordings', auth, async (req, res) => {
     const ownDigits = req.user.role === 'admin'
       ? null
       : await getUserNumberDigits(req.user.id);
-    if (ownDigits && !ownDigits.size) return res.json({ recordings: [] });
+    if (ownDigits && !ownDigits.size && !req.user.agent_id) return res.json({ recordings: [] });
 
     // Pull this customer's calls. Recordings are no longer sourced from the
     // (removed) get_recording_url MCP tool — instead each row's audio is
     // streamed on-demand through /api/recordings/:callId/audio, which proxies
     // the dashboard's cookie-authenticated egress download (see dashboardWeb.js).
     const calls = ownDigits
-      ? await fetchCallsForNumbers([...ownDigits], { fresh: skipCache })
+      ? await fetchCallsForNumbers([...ownDigits], { fresh: skipCache, agentId: req.user.agent_id })
       : await fetchAllCallsForAdmin({ fresh: skipCache });
 
     const ratePerMin = Number(req.user.plan_rate) || 0;
@@ -4668,6 +4730,50 @@ if (AI_PROVIDER === 'xai' && XAI_KEY) {
 }
 console.log(`[ai] provider=${xai ? AI_LABEL : 'none'} model=${XAI_MODEL || '-'}`);
 
+// =============================================================================
+// Live chat testing — Playground's Chat mode. The chat agent (preview or
+// real) has no persisted backend row of its own (see Playground.jsx's
+// PREVIEW_CHAT_AGENT / ChatAgentDetail.jsx), so its prompt/greeting/KB config
+// is entirely client-side and sent with each request rather than looked up
+// server-side by id. Reuses the same Gemini/Grok client as call summaries.
+const CHAT_MAX_HISTORY = 20;   // most recent turns sent as context — keeps token cost bounded
+
+app.post('/api/chat/message', auth, async (req, res) => {
+  if (!xai) {
+    return res.status(503).json({ error: 'AI provider not configured — set GOOGLE_API_KEY (Gemini) or XAI_API_KEY in .env' });
+  }
+  const { messages, prompt, greeting, kbCompany, kbFaqs, agentName } = req.body || {};
+  if (!Array.isArray(messages) || !messages.length) {
+    return res.status(400).json({ error: 'messages required' });
+  }
+  try {
+    const systemParts = [
+      (prompt && prompt.trim())
+        || `You are ${agentName || 'a helpful assistant'}, a customer support chat agent. Be concise, friendly, and professional.`,
+    ];
+    if (greeting) systemParts.push(`Your greeting, already shown to the user before this conversation started: "${greeting}"`);
+    if (kbCompany) systemParts.push(`Company info:\n${kbCompany}`);
+    if (kbFaqs) systemParts.push(`FAQ pairs:\n${kbFaqs}`);
+
+    const completion = await xai.chat.completions.create({
+      model: XAI_MODEL,
+      temperature: 0.6,
+      max_tokens: 400,
+      messages: [
+        { role: 'system', content: systemParts.join('\n\n') },
+        ...messages.slice(-CHAT_MAX_HISTORY).map((m) => ({
+          role: m.from === 'user' ? 'user' : 'assistant',
+          content: String(m.text || ''),
+        })),
+      ],
+    });
+    const reply = completion.choices[0]?.message?.content?.trim() || "Sorry, I didn't catch that — could you rephrase?";
+    res.json({ reply });
+  } catch (e) {
+    res.status(502).json({ error: e.message || 'Chat request failed' });
+  }
+});
+
 const SUMMARY_SYSTEM = `You are a precise call-summary engine. Read a phone
 conversation transcript between an AI receptionist ("agent") and a human caller
 ("user") and produce JSON ONLY with these exact keys:
@@ -5011,7 +5117,7 @@ app.get('/api/twilio/stats', auth, async (req, res) => {
     const ownDigits = req.user.role === 'admin'
       ? null
       : await getUserNumberDigits(req.user.id);
-    if (ownDigits && !ownDigits.size) {
+    if (ownDigits && !ownDigits.size && !req.user.agent_id) {
       return res.json({
         callsToday: 0, callsThisMonth: 0, callsAllTime: 0,
         avgDurationSec: 0, minutesUsedThisMonth: 0, minutesUsedAllTime: 0,
@@ -5024,7 +5130,7 @@ app.get('/api/twilio/stats', auth, async (req, res) => {
     // are consistent between Overview's "Total minutes used" and the
     // Call history page's row count.
     const rows = ownDigits
-      ? await fetchCallsForNumbers([...ownDigits])
+      ? await fetchCallsForNumbers([...ownDigits], { agentId: req.user.agent_id })
       : await fetchAllCallsForAdmin();
 
     const todayStart = new Date(); todayStart.setUTCHours(0, 0, 0, 0);
