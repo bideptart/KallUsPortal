@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
-  LayoutDashboard, FlaskConical, BookOpen, CreditCard, Zap,
+  LayoutDashboard, FlaskConical, CreditCard, Zap,
   Receipt, User, UserCircle, Menu, Wrench, Ticket, DoorOpen, Tag,
   List, Terminal, Server, Check, Copy, ChevronDown, ChevronUp,
 } from 'lucide-react';
@@ -39,7 +39,6 @@ const BookingHistory = lazy(() => import('../customer/BookingHistory.jsx'));
 const Tickets = lazy(() => import('../customer/Tickets.jsx'));
 const TicketDetail = lazy(() => import('../customer/TicketDetail.jsx'));
 const Tools = lazy(() => import('../customer/Tools.jsx'));
-const KnowledgeBase = lazy(() => import('../customer/KnowledgeBase.jsx'));
 
 // Sidebar nav — unified across Admin/Customer to a common shape. Each entry
 // maps onto the closest existing admin page; some concepts still don't have
@@ -51,7 +50,6 @@ const NAV_TABS_BEFORE_CALLS = [
   { id: 'overview',    label: 'Signups',        Icon: LayoutDashboard },
   { id: 'agents',      label: 'Customers',      Icon: User },
   { id: 'playground',  label: 'Subscription Alerts', Icon: FlaskConical },
-  { id: 'kb',          label: 'Knowledge Base', Icon: BookOpen },
   { id: 'resellers',   label: 'Resellers',      Icon: UserCircle },
   { id: 'analytics',   label: 'Payments & revenue', Icon: CreditCard },
 ];
@@ -119,7 +117,7 @@ const LEGACY_TABS = [
 
 const VALID_TABS = new Set([
   // NAV_TABS
-  'overview', 'agents', 'playground', 'kb', 'analytics',
+  'overview', 'agents', 'playground', 'analytics',
   'reports', 'billing', 'pricing', 'transactions', 'account', 
   'numbers', 'mcp', 'settings',
   // CALL_ACTIVITY
@@ -295,7 +293,6 @@ export default function Admin() {
         {tab === 'tools'                                 && <Tools />}
         {tab === 'playground'                            && <CustomersAtRisk />}
         {tab === 'mcp'                                    && <McpBrowser />}
-        {tab === 'kb'                                    && <KnowledgeBase />}
         {tab === 'bulk'                                  && <Bulk />}
         {tab === 'analytics'                             && <Payments />}
         {tab === 'usage'                                 && <Usage />}
