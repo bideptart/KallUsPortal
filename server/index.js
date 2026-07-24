@@ -2374,6 +2374,7 @@ app.get('/api/admin/users', auth, requireAdmin, async (_req, res) => {
     `SELECT u.id, u.name, u.company, u.username, u.email, u.phone, u.role,
             u.user_type, u.reseller_portal, u.reseller_id,
             u.plan_label, u.plan_amount, u.plan_min, u.plan_rate, u.plan_agents,
+            u.plan_activated_at, u.plan_expires_at,
             u.number_value, u.number_loc, u.number_price, u.twilio_sid,
             u.voice, u.agent_name, u.minutes_used, u.created_at,
             -- Resolve the portal slug of THIS row's reseller (climbs at
@@ -2394,13 +2395,18 @@ app.get('/api/admin/users', auth, requireAdmin, async (_req, res) => {
   // the second one from staff.
   const numbersRes = await q(
     `SELECT id, user_id, number_value, label, is_primary, plan_id, plan_cycle,
-            provisioning_status, created_at
+            provisioning_status, created_at, last_rented_at, rent_status,
+            auto_recharge_enabled, auto_recharge_pm_id
        FROM user_numbers
       ORDER BY user_id, is_primary DESC, created_at ASC`,
   );
   const numbersByUser = new Map();
   for (const n of numbersRes.rows) {
     const plan = findPlanById(n.plan_id);
+    const rentAnchor = n.last_rented_at || n.created_at;
+    const nextRentalAt = rentAnchor
+      ? new Date(new Date(rentAnchor).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      : null;
     const arr = numbersByUser.get(n.user_id) || [];
     arr.push({
       id:        String(n.id),
@@ -2408,6 +2414,11 @@ app.get('/api/admin/users', auth, requireAdmin, async (_req, res) => {
       label:     n.label || '',
       isPrimary: !!n.is_primary,
       status:    n.provisioning_status || 'unprovisioned',
+      activatedAt: rentAnchor || null,
+      nextRentalAt,
+      rentStatus: n.rent_status || 'active',
+      autoRechargeEnabled: !!n.auto_recharge_enabled,
+      autoRechargePmId: n.auto_recharge_pm_id != null ? String(n.auto_recharge_pm_id) : null,
       planCycle: n.plan_cycle || 'monthly',
       createdAt: n.created_at,
       plan: {
@@ -2481,6 +2492,8 @@ app.get('/api/admin/users', auth, requireAdmin, async (_req, res) => {
             agents: row.plan_agents || 0,
           }
         : null,
+      planActivated: row.plan_activated_at || null,
+      planExpires: row.plan_expires_at || null,
       number: row.number_value || null,
       numberLoc: row.number_loc || null,
       numberPrice: Number(row.number_price) || 0,

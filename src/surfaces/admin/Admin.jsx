@@ -17,6 +17,7 @@ import BookingIcon from '../../components/BookingIcon.jsx';
 // Settings/Bulk-import/Plans code, and vice versa.
 const Signups = lazy(() => import('./Signups.jsx'));
 const Customers = lazy(() => import('./Customers.jsx'));
+const CustomersAtRisk = lazy(() => import('./CustomersAtRisk.jsx'));
 const Resellers = lazy(() => import('./Resellers.jsx'));
 const Numbers = lazy(() => import('./Numbers.jsx'));
 const Payments = lazy(() => import('./Payments.jsx'));
@@ -31,7 +32,7 @@ const AgentsList = lazy(() => import('../customer/AgentsList.jsx'));
 const AgentDetail = lazy(() => import('../customer/AgentDetail.jsx'));
 const ChatAgentDetail = lazy(() => import('../customer/ChatAgentDetail.jsx'));
 const Templates = lazy(() => import('../customer/Templates.jsx'));
-const Playground = lazy(() => import('../customer/Playground.jsx'));
+const Analytics = lazy(() => import('../customer/Analytics.jsx'));
 const Transactions = lazy(() => import('../customer/Transactions.jsx'));
 const Pricing = lazy(() => import('../customer/Pricing.jsx'));
 const BookingHistory = lazy(() => import('../customer/BookingHistory.jsx'));
@@ -49,7 +50,7 @@ const KnowledgeBase = lazy(() => import('../customer/KnowledgeBase.jsx'));
 const NAV_TABS_BEFORE_CALLS = [
   { id: 'overview',    label: 'Signups',        Icon: LayoutDashboard },
   { id: 'agents',      label: 'Customers',      Icon: User },
-  { id: 'playground',  label: 'Customer at risk', Icon: FlaskConical },
+  { id: 'playground',  label: 'Subscription Alerts', Icon: FlaskConical },
   { id: 'kb',          label: 'Knowledge Base', Icon: BookOpen },
   { id: 'resellers',   label: 'Resellers',      Icon: UserCircle },
   { id: 'analytics',   label: 'Payments & revenue', Icon: CreditCard },
@@ -292,7 +293,7 @@ export default function Admin() {
         {tab === 'agents'                                && <Customers />}
         {tab === 'customers'                             && <Customers />}
         {tab === 'tools'                                 && <Tools />}
-        {tab === 'playground'                            && <Playground />}
+        {tab === 'playground'                            && <CustomersAtRisk />}
         {tab === 'mcp'                                    && <McpBrowser />}
         {tab === 'kb'                                    && <KnowledgeBase />}
         {tab === 'bulk'                                  && <Bulk />}
