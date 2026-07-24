@@ -237,19 +237,30 @@ export default function Playground() {
   const basePath = isAdminTier ? '/admin' : '/dashboard';
 
   // Only the chat preview agent always exists — a brand-new account with no
-  // voice agent yet has nothing to test in voice mode.
+  // voice agent yet has nothing to test in voice mode. But `draft` is also
+  // null on a genuine first-ever visit (no cache) while the numbers fetch is
+  // still in flight — showing "No voice agent yet" in that window is a false
+  // reading, not a real empty state, and it flashes as a second "page"
+  // before the real Playground appears. Only show it once `loaded` confirms
+  // the fetch actually finished with nothing to show; until then, a plain
+  // loading placeholder — no "add a number" call to action that might not
+  // even apply once the real data lands.
   if (!draft) {
     return (
       <div>
         {/* Icon + "Playground" title now live in the sticky top bar instead of
             here — matches the main return path below. */}
         <p className="font-semibold text-base tracking-wide" style={{ color: 'var(--ink-2)' }}>Test your agents and tune them right here — no page hopping. Free, no plan minutes used.</p>
-        <div className="mt-8 form-card text-center py-12 text-mute">
-          No voice agent yet.
-          <div className="mt-3">
-            <button type="button" className="btn-teal" onClick={() => navigate(`${basePath}/numbers`)}>Add a number</button>
+        {!loaded ? (
+          <div className="mt-8 form-card text-center py-12 text-mute">Loading…</div>
+        ) : (
+          <div className="mt-8 form-card text-center py-12 text-mute">
+            No voice agent yet.
+            <div className="mt-3">
+              <button type="button" className="btn-teal" onClick={() => navigate(`${basePath}/numbers`)}>Add a number</button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     );
   }

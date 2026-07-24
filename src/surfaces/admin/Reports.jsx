@@ -235,12 +235,12 @@ export default function Reports() {
                   />
                 </div>
                 <button
-                  className="btn-ghost text-xs py-1.5 px-3"
+                  className="btn-ghost btn-ghost-accent text-xs py-1.5 px-3"
                   onClick={() => downloadCsv(logsTab === 'call' ? filteredRecordings : filteredChats)}
                 >
                   ⬇ Export
                 </button>
-                <button className="btn-ghost text-xs py-1.5 px-3" onClick={() => load({ force: true })} disabled={loading}>
+                <button className="btn-ghost btn-ghost-accent text-xs py-1.5 px-3" onClick={() => load({ force: true })} disabled={loading}>
                   {loading ? 'Loading…' : '↻ Refresh'}
                 </button>
               </div>

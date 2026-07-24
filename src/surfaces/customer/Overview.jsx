@@ -41,8 +41,6 @@ export default function Overview({ rechargeOn }) {
   const [callStats, setCallStats] = useState(() => readCache('overview.callStats', currentUser?.id));
   const [sentiment, setSentiment] = useState(() => readCache('overview.sentiment', currentUser?.id));
   const [volume, setVolume] = useState(() => readCache('overview.volume', currentUser?.id));
-  const [analyticsLoading, setAnalyticsLoading] = useState(true);
-  const [animateBars, setAnimateBars] = useState(false);
 
   const refreshWallet = async () => {
     try {
@@ -116,16 +114,10 @@ export default function Overview({ rechargeOn }) {
         setVolume(volData);
         writeCache('overview.volume', currentUser?.id, volData);
       })
-      .catch(() => {})
-      .finally(() => { if (!cancelled) setAnalyticsLoading(false); });
+      .catch(() => {});
 
     return () => { cancelled = true; };
   }, [currentUser?.role]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setAnimateBars(true), 150);
-    return () => clearTimeout(timer);
-  }, []);
 
   const quickTopUp = async () => {
     setTopupBusy(true);
@@ -369,28 +361,15 @@ export default function Overview({ rechargeOn }) {
             <div className="mt-2 h-2 rounded overflow-hidden flex" style={{ background: 'var(--line-2)' }}>
               <div
                 className="h-2 bg-lime-500"
-                style={{
-                  '--bar-final-width': `${displaySentiment.sentiment_percentages?.positive ?? 0}%`,
-                  width: animateBars ? `${displaySentiment.sentiment_percentages?.positive ?? 0}%` : '0%',
-                  transition: 'width 700ms ease-out',
-                }}
+                style={{ width: `${displaySentiment.sentiment_percentages?.positive ?? 0}%` }}
               />
               <div
                 className="h-2"
-                style={{
-                  '--bar-final-width': `${displaySentiment.sentiment_percentages?.neutral ?? 0}%`,
-                  width: animateBars ? `${displaySentiment.sentiment_percentages?.neutral ?? 0}%` : '0%',
-                  background: 'var(--ink-4)',
-                  transition: 'width 850ms ease-out',
-                }}
+                style={{ width: `${displaySentiment.sentiment_percentages?.neutral ?? 0}%`, background: 'var(--ink-4)' }}
               />
               <div
                 className="h-2 bg-red-400"
-                style={{
-                  '--bar-final-width': `${displaySentiment.sentiment_percentages?.negative ?? 0}%`,
-                  width: animateBars ? `${displaySentiment.sentiment_percentages?.negative ?? 0}%` : '0%',
-                  transition: 'width 1000ms ease-out',
-                }}
+                style={{ width: `${displaySentiment.sentiment_percentages?.negative ?? 0}%` }}
               />
             </div>
             <div className="mt-2 text-xs text-mute">
@@ -408,32 +387,11 @@ export default function Overview({ rechargeOn }) {
           </div>
         )}
 
-        {/* Reserves the chart's space immediately (instead of rendering
-            nothing) so the section doesn't pop in and shove the rest of the
-            page down once these calls — the slowest of the six on this
-            page — resolve. Only shows while there's genuinely no data yet
-            (no cache hit either); a cache hit renders the real bars right
-            away with no skeleton. */}
-        {analyticsLoading && !displayVolume?.daily_breakdown?.length && (
-          <div className="mt-6 pt-5 border-t animate-pulse" style={{ borderColor: 'var(--line-2)' }}>
-            <div className="h-3 w-40 bg-lime-100 rounded mb-3" />
-            <div className="flex items-end gap-2">
-              {Array.from({ length: 14 }, (_, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                  <div className="w-full flex items-end" style={{ height: 80 }}>
-                    <div className="w-full rounded-t bg-lime-200" style={{ height: 12 + (i % 5) * 12 }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {displayVolume?.daily_breakdown?.length > 0 && (
           <div className="mt-6 pt-5 border-t" style={{ borderColor: 'var(--line-2)' }}>
             <div className="text-xs font-mono uppercase tracking-wide text-mute mb-3">Call volume · last 14 days</div>
             <div className="flex items-end gap-2">
-              {displayVolume.daily_breakdown.map((d, index) => {
+              {displayVolume.daily_breakdown.map((d) => {
                 const max = Math.max(1, ...displayVolume.daily_breakdown.map((x) => Number(x.count || x.calls || 0)));
                 const v = Number(d.count || d.calls || 0);
                 // Fixed pixel track (not a %) — a % height only resolves against
@@ -443,13 +401,7 @@ export default function Overview({ rechargeOn }) {
                 return (
                   <div key={d.date} className="flex-1 flex flex-col items-center gap-1" title={`${d.date}: ${v} calls`}>
                     <div className="w-full flex items-end" style={{ height: 80 }}>
-                      <div
-                        className="w-full rounded-t bg-lime-400"
-                        style={{
-                          height: animateBars ? barPx : 0,
-                          transition: `height 700ms ease-out ${index * 45}ms`,
-                        }}
-                      />
+                      <div className="w-full rounded-t bg-lime-400" style={{ height: barPx }} />
                     </div>
                     <div className="text-[9px] text-mute">{new Date(d.date).getDate()}</div>
                   </div>

@@ -180,7 +180,7 @@ export default function Calls() {
               })}
             </select>
           )}
-          <button className="btn-ghost text-sm" onClick={load} disabled={loading}>
+          <button className="btn-ghost btn-ghost-accent text-sm" onClick={load} disabled={loading}>
             {loading ? 'Loading…' : '↻ Refresh'}
           </button>
         </div>

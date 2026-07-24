@@ -272,7 +272,7 @@ export default function Admin() {
               the "Menu" button plus the right-side actions leave very little
               room, so the icon shrinks to inline and the title drops back to
               the small uppercase label the mobile header always used. */}
-          <div className="lg:flex-1 flex items-center gap-1.5 lg:gap-2.5 lg:min-w-0">
+          <div className="flex-1 min-w-0 flex items-center gap-1.5 lg:gap-2.5">
             {ActiveIcon && (
               <>
                 <ActiveIcon size={14} strokeWidth={2} className="lg:hidden shrink-0" />
@@ -285,8 +285,11 @@ export default function Admin() {
               {activeLabel}
             </h1>
           </div>
-          <div className="ml-auto flex items-center gap-3">
-            <button type="button" className="btn-teal text-sm whitespace-nowrap" onClick={() => setShowAddPlan(true)}>+ Add plan / number</button>
+          <div className="ml-auto flex items-center gap-3 shrink-0">
+            <button type="button" className="btn-teal text-sm whitespace-nowrap" onClick={() => setShowAddPlan(true)}>
+              <span className="sm:hidden">+ Add</span>
+              <span className="hidden sm:inline">+ Add plan / number</span>
+            </button>
           </div>
           <div className="absolute left-0 bottom-0 h-[3px] bg-lime-500 transition-[width] duration-200 ease-linear" style={{ width: `${scrollPct}%` }} />
         </div>
@@ -414,7 +417,7 @@ function Usage() {
             <option value="30">Last 30 days</option>
             <option value="90">Last 90 days</option>
           </select>
-          <button className="btn-ghost text-sm" onClick={() => load(days)} disabled={loading}>
+          <button className="btn-ghost btn-ghost-accent text-sm" onClick={() => load(days)} disabled={loading}>
             {loading ? '…' : '↻ Refresh'}
           </button>
         </div>

@@ -77,7 +77,7 @@ export default function Customers() {
             Every account that signed up through your portal — with every plan and number they bought.
           </p>
         </div>
-        <button className="btn-ghost text-sm" onClick={load}>↻ Refresh</button>
+        <button className="btn-ghost btn-ghost-accent text-sm" onClick={load}>↻ Refresh</button>
       </div>
 
       {err && (

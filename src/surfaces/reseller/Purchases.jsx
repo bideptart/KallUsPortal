@@ -91,7 +91,7 @@ export default function Purchases() {
             in your portal.
           </p>
         </div>
-        <button className="btn-ghost text-sm" onClick={load}>↻ Refresh</button>
+        <button className="btn-ghost btn-ghost-accent text-sm" onClick={load}>↻ Refresh</button>
       </div>
 
       {err && (

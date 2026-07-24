@@ -64,7 +64,7 @@ export default function Customers() {
           <h1 className="text-2xl font-bold">Customers</h1>
           <p className="text-mute">All live customers + technical IDs.</p>
         </div>
-        <button className="btn-ghost text-sm" onClick={load}>↻ Refresh</button>
+        <button className="btn-ghost btn-ghost-accent text-sm" onClick={load}>↻ Refresh</button>
       </div>
 
       {err && <div className="mt-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">{err}</div>}
