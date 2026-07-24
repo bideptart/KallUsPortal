@@ -4730,6 +4730,50 @@ if (AI_PROVIDER === 'xai' && XAI_KEY) {
 }
 console.log(`[ai] provider=${xai ? AI_LABEL : 'none'} model=${XAI_MODEL || '-'}`);
 
+// =============================================================================
+// Live chat testing — Playground's Chat mode. The chat agent (preview or
+// real) has no persisted backend row of its own (see Playground.jsx's
+// PREVIEW_CHAT_AGENT / ChatAgentDetail.jsx), so its prompt/greeting/KB config
+// is entirely client-side and sent with each request rather than looked up
+// server-side by id. Reuses the same Gemini/Grok client as call summaries.
+const CHAT_MAX_HISTORY = 20;   // most recent turns sent as context — keeps token cost bounded
+
+app.post('/api/chat/message', auth, async (req, res) => {
+  if (!xai) {
+    return res.status(503).json({ error: 'AI provider not configured — set GOOGLE_API_KEY (Gemini) or XAI_API_KEY in .env' });
+  }
+  const { messages, prompt, greeting, kbCompany, kbFaqs, agentName } = req.body || {};
+  if (!Array.isArray(messages) || !messages.length) {
+    return res.status(400).json({ error: 'messages required' });
+  }
+  try {
+    const systemParts = [
+      (prompt && prompt.trim())
+        || `You are ${agentName || 'a helpful assistant'}, a customer support chat agent. Be concise, friendly, and professional.`,
+    ];
+    if (greeting) systemParts.push(`Your greeting, already shown to the user before this conversation started: "${greeting}"`);
+    if (kbCompany) systemParts.push(`Company info:\n${kbCompany}`);
+    if (kbFaqs) systemParts.push(`FAQ pairs:\n${kbFaqs}`);
+
+    const completion = await xai.chat.completions.create({
+      model: XAI_MODEL,
+      temperature: 0.6,
+      max_tokens: 400,
+      messages: [
+        { role: 'system', content: systemParts.join('\n\n') },
+        ...messages.slice(-CHAT_MAX_HISTORY).map((m) => ({
+          role: m.from === 'user' ? 'user' : 'assistant',
+          content: String(m.text || ''),
+        })),
+      ],
+    });
+    const reply = completion.choices[0]?.message?.content?.trim() || "Sorry, I didn't catch that — could you rephrase?";
+    res.json({ reply });
+  } catch (e) {
+    res.status(502).json({ error: e.message || 'Chat request failed' });
+  }
+});
+
 const SUMMARY_SYSTEM = `You are a precise call-summary engine. Read a phone
 conversation transcript between an AI receptionist ("agent") and a human caller
 ("user") and produce JSON ONLY with these exact keys:
