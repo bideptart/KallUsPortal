@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
   LayoutDashboard, Bot, FlaskConical, BookOpen, TrendingUp, Zap,
-  FileText, CreditCard, Receipt, User, UserCircle, Menu, Wrench, Ticket, DoorOpen, Tag,
+  CreditCard, Receipt, User, UserCircle, Menu, Wrench, Ticket, DoorOpen, Tag,
   List, Terminal, Server, Check, Copy, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
@@ -55,7 +55,7 @@ const NAV_TABS_BEFORE_CALLS = [
   { id: 'analytics',   label: 'Analytics',      Icon: TrendingUp },
 ];
 const NAV_TABS_AFTER_CALLS = [
-  { id: 'reports',      label: 'Reports',           Icon: FileText },
+  { id: 'health',       label: 'System health',     Icon: Server },
   { id: 'billing',      label: 'Billing & minutes', Icon: CreditCard },
   { id: 'pricing',      label: 'Plans & pricing',   Icon: Tag },
   { id: 'transactions', label: 'Transactions',      Icon: Receipt },
@@ -98,7 +98,7 @@ const LEGACY_TABS = [
   { id: 'bulk',         label: 'Bulk import' },
   { id: 'logs',         label: 'Activity logs' },
   { id: 'usage',        label: 'Usage analytics' },
-  { id: 'health',       label: 'System health' },
+  { id: 'reports',      label: 'Reports' },
   { id: 'plans',        label: 'Plans & pricing' },
   // 'profile' was its own nav tab until Account absorbed it — keep the id
   // valid so old links/bookmarks land on Account instead of bouncing to
@@ -484,6 +484,57 @@ function Tile({ label, value }) {
   );
 }
 
+function ServiceCard({ svc }) {
+  const running = svc.status === 'running';
+  const memPct = svc.memory_limit_mb ? Math.min(100, (svc.memory_used_mb / svc.memory_limit_mb) * 100) : 0;
+  const cpuPct = svc.cpu_limit_percent ? Math.min(100, (svc.cpu_percent / svc.cpu_limit_percent) * 100) : 0;
+
+  return (
+    <div className="form-card">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="font-semibold text-sm truncate">{svc.display_name || svc.name}</div>
+          {svc.description && <div className="text-xs text-mute mt-0.5">{svc.description}</div>}
+        </div>
+        <span className={`pill text-[10px] shrink-0 inline-flex items-center gap-1 ${running ? 'bg-lime-100 text-lime-700' : 'bg-red-100 text-red-700'}`}>
+          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${running ? 'bg-lime-500 animate-pulse' : 'bg-red-500'}`} />
+          {running ? 'Running' : (svc.status || 'stopped')}
+        </span>
+      </div>
+      <div className="mt-2 text-[11px] text-mute font-mono truncate">{svc.service_type} · {svc.service_name}</div>
+
+      <div className="mt-3 space-y-2.5">
+        <div>
+          <div className="flex items-center justify-between text-[11px] text-mute mb-1">
+            <span>Memory</span>
+            <span>{Number(svc.memory_used_mb ?? 0).toFixed(0)} / {svc.memory_limit_mb ?? '—'} MB</span>
+          </div>
+          <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+            <div className="h-full bg-lime-500 rounded-full transition-all" style={{ width: `${memPct}%` }} />
+          </div>
+        </div>
+        <div>
+          <div className="flex items-center justify-between text-[11px] text-mute mb-1">
+            <span>CPU</span>
+            <span>{svc.cpu_percent ?? 0}% / {svc.cpu_limit_percent ?? 100}%</span>
+          </div>
+          <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+            <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${cpuPct}%` }} />
+          </div>
+        </div>
+      </div>
+
+      {(svc.can_restart || svc.can_edit_limits || svc.can_update) && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {svc.can_restart && <span className="pill text-[9px] bg-slate-100 text-slate-600">Restartable</span>}
+          {svc.can_edit_limits && <span className="pill text-[9px] bg-slate-100 text-slate-600">Editable limits</span>}
+          {svc.can_update && <span className="pill text-[9px] bg-slate-100 text-slate-600">Updatable</span>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Health() {
   const [health, setHealth] = useState(null);
   const [mcpStatus, setMcpStatus] = useState(null);
@@ -518,13 +569,13 @@ function Health() {
     <div>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">System health</h1>
-        <button className="btn-ghost text-sm" onClick={load}>↻ Refresh</button>
+        <button className="btn-ghost btn-ghost-accent text-sm" onClick={load}>↻ Refresh</button>
       </div>
       {err && <div className="mt-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">{err}</div>}
 
       <div className="mt-6 grid sm:grid-cols-3 gap-4">
         <div className="form-card">
-          <div className="text-sm text-mute">9278 MCP</div>
+          <div className="text-sm text-mute">MCP health</div>
           <div className={`mt-1 text-xl font-semibold ${mcpColor}`}>
             {mcpLabel}
           </div>
@@ -538,24 +589,24 @@ function Health() {
           )}
         </div>
         <div className="form-card">
-          <div className="text-sm text-mute">Twilio API</div>
+          <div className="text-sm text-mute">API health</div>
           <div className={`mt-1 text-xl font-semibold ${twilio?.configured ? 'text-lime-400' : 'text-red-400'}`}>
             {twilio?.configured ? '● Healthy' : '○ Down'}
           </div>
-          <div className="text-xs text-mute mt-2">{twilio?.defaultNumber || '—'}</div>
+          <div className="text-xs text-mute mt-2">Twilio · {twilio?.defaultNumber || '—'}</div>
         </div>
         <div className="form-card">
-          <div className="text-sm text-mute">Postgres</div>
+          <div className="text-sm text-mute">Database health</div>
           <div className={`mt-1 text-xl font-semibold ${db?.ok ? 'text-lime-400' : 'text-red-400'}`}>
             {db?.ok ? '● Healthy' : '○ Down'}
           </div>
-          {db?.now && <div className="text-xs text-mute mt-2">{new Date(db.now).toLocaleTimeString()}</div>}
+          {db?.now && <div className="text-xs text-mute mt-2">Postgres · {new Date(db.now).toLocaleTimeString()}</div>}
         </div>
       </div>
 
       {health && (
         <div className="mt-8">
-          <h2 className="text-lg font-semibold">9278 server resources</h2>
+          <h2 className="text-lg font-semibold">Hardware health</h2>
           <div className="mt-3 grid sm:grid-cols-4 gap-4">
             <Tile label="CPU 1m" value={`${health.cpu_avg?.['1min'] ?? '—'}`} />
             <Tile label="Memory" value={`${health.memory?.used_percent ?? '—'}%`} />
@@ -568,14 +619,24 @@ function Health() {
         </div>
       )}
 
-      {services && (
-        <div className="mt-8">
-          <h2 className="text-lg font-semibold">9278 services</h2>
-          <div className="mt-3 form-card">
-            <pre className="text-xs leading-relaxed text-mute whitespace-pre-wrap">{JSON.stringify(services, null, 2)}</pre>
+      {services && (() => {
+        const list = Array.isArray(services) ? services : Array.isArray(services?.services) ? services.services : null;
+        return (
+          <div className="mt-8">
+            <h2 className="text-lg font-semibold">9278 services</h2>
+            {list ? (
+              <div className="mt-3 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {list.map((svc) => <ServiceCard key={svc.name || svc.service_name} svc={svc} />)}
+              </div>
+            ) : (
+              // Unrecognized shape — fall back to raw JSON rather than hiding it.
+              <div className="mt-3 form-card">
+                <pre className="text-xs leading-relaxed text-mute whitespace-pre-wrap">{JSON.stringify(services, null, 2)}</pre>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
