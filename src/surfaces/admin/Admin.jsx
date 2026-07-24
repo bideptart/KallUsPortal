@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
-  LayoutDashboard, Bot, FlaskConical, BookOpen, TrendingUp, Zap,
-  FileText, CreditCard, Receipt, User, UserCircle, Menu, Wrench, Ticket, DoorOpen, Tag,
+  LayoutDashboard, FlaskConical, BookOpen, CreditCard, Zap,
+  Receipt, User, UserCircle, Menu, Wrench, Ticket, DoorOpen, Tag,
   List, Terminal, Server, Check, Copy, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
@@ -32,7 +32,6 @@ const AgentDetail = lazy(() => import('../customer/AgentDetail.jsx'));
 const ChatAgentDetail = lazy(() => import('../customer/ChatAgentDetail.jsx'));
 const Templates = lazy(() => import('../customer/Templates.jsx'));
 const Playground = lazy(() => import('../customer/Playground.jsx'));
-const Analytics = lazy(() => import('../customer/Analytics.jsx'));
 const Transactions = lazy(() => import('../customer/Transactions.jsx'));
 const Pricing = lazy(() => import('../customer/Pricing.jsx'));
 const BookingHistory = lazy(() => import('../customer/BookingHistory.jsx'));
@@ -49,27 +48,28 @@ const KnowledgeBase = lazy(() => import('../customer/KnowledgeBase.jsx'));
 // and Reports) instead of at the end of the list.
 const NAV_TABS_BEFORE_CALLS = [
   { id: 'overview',    label: 'Signups',        Icon: LayoutDashboard },
-  { id: 'agents',      label: 'Agents',         Icon: Bot },
-  { id: 'playground',  label: 'Customer at risk',     Icon: FlaskConical },
+  { id: 'agents',      label: 'Customers',      Icon: User },
+  { id: 'playground',  label: 'Customer at risk', Icon: FlaskConical },
+  { id: 'kb',          label: 'Knowledge Base', Icon: BookOpen },
   { id: 'resellers',   label: 'Resellers',      Icon: UserCircle },
-  { id: 'analytics',   label: 'Analytics',      Icon: TrendingUp },
+  { id: 'analytics',   label: 'Payments & revenue', Icon: CreditCard },
 ];
 const NAV_TABS_AFTER_CALLS = [
   { id: 'health',       label: 'System health',     Icon: Server },
   { id: 'billing',      label: 'Billing & minutes', Icon: CreditCard },
   { id: 'pricing',      label: 'Plans & pricing',   Icon: Tag },
   { id: 'transactions', label: 'Transactions',      Icon: Receipt },
+  // Platform-wide ops tools — previously legacy-only (URL-reachable but not
+  // in the visible nav); promoted back per explicit request since they were
+  // the two things missing that this tier actually needs day to day.
+  { id: 'numbers',      label: 'Numbers Inventory', Icon: List },
+  { id: 'mcp',          label: 'MCP Browser',       Icon: Terminal },
   // "Profile" and "Account" used to be two tabs whose labels were swapped
   // relative to what they rendered (Profile -> <Account />, Account ->
   // <Settings />). Now Account is the single place for your own profile,
   // password, and danger zone; the credentials page keeps its own honest
   // "Settings" label.
   { id: 'account',      label: 'Account',           Icon: User },
-  // Platform-wide ops tools — previously legacy-only (URL-reachable but not
-  // in the visible nav); promoted back per explicit request since they were
-  // the two things missing that this tier actually needs day to day.
-  { id: 'numbers',      label: 'Numbers Inventory', Icon: List },
-  { id: 'mcp',          label: 'MCP Browser',       Icon: Terminal },
   { id: 'settings',     label: 'Settings',          Icon: UserCircle },
 ];
 const NAV_TABS = [...NAV_TABS_BEFORE_CALLS, ...NAV_TABS_AFTER_CALLS];
@@ -215,7 +215,7 @@ export default function Admin() {
 
         <Side list={NAV_TABS_AFTER_CALLS} />
 
-        <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+        <div className="mt-2 pt-2 border-t border-black">
           <button type="button" onClick={signoutUser} className="nav-group-toggle nav-logout">
             <DoorOpen size={16} strokeWidth={2} /> Log out
           </button>
@@ -289,14 +289,14 @@ export default function Admin() {
         <Suspense fallback={<div className="text-sm text-mute py-10 text-center">Loading…</div>}>
         {tab === 'overview'                             && <Signups />}
         {tab === 'signups'                              && <Signups />}
-        {tab === 'agents'                                && <AgentsList />}
+        {tab === 'agents'                                && <Customers />}
         {tab === 'customers'                             && <Customers />}
         {tab === 'tools'                                 && <Tools />}
         {tab === 'playground'                            && <Playground />}
         {tab === 'mcp'                                    && <McpBrowser />}
         {tab === 'kb'                                    && <KnowledgeBase />}
         {tab === 'bulk'                                  && <Bulk />}
-        {tab === 'analytics'                             && <Analytics />}
+        {tab === 'analytics'                             && <Payments />}
         {tab === 'usage'                                 && <Usage />}
         {(tab === 'calls' || tab === 'logs')            && <Logs />}
         {tab === 'reports'                               && <Reports />}

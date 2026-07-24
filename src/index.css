@@ -414,7 +414,10 @@ h1, h2, h3, h4, h5, h6 {
     padding: 18px 20px 8px; letter-spacing: 0.1em; font-weight: 700;
   }
   .nav-group-toggle { justify-content: space-between; }
-  .sidenav .nav-logout { color: #dc2626; }
+  .sidenav .nav-logout {
+    justify-content: flex-start;
+    color: #dc2626;
+  }
   .sidenav .nav-logout:hover:not(.active) { background: rgba(220,38,38,0.08); color: #b91c1c; }
   .nav-group-chevron {
     font-size: 12px; line-height: 1; color: var(--ink-3);
