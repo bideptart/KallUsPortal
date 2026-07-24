@@ -50,7 +50,7 @@ const KnowledgeBase = lazy(() => import('../customer/KnowledgeBase.jsx'));
 const NAV_TABS_BEFORE_CALLS = [
   { id: 'overview',    label: 'Signups',        Icon: LayoutDashboard },
   { id: 'agents',      label: 'Agents',         Icon: Bot },
-  { id: 'playground',  label: 'Playground',     Icon: FlaskConical },
+  { id: 'playground',  label: 'Customer at risk',     Icon: FlaskConical },
   { id: 'resellers',   label: 'Resellers',      Icon: UserCircle },
   { id: 'analytics',   label: 'Analytics',      Icon: TrendingUp },
 ];
