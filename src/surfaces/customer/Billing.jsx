@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Wallet, Star, Phone, Calendar, RefreshCw, Lightbulb, Tag, CreditCard } from 'lucide-react';
+import { Wallet, Star, Phone, Calendar, RefreshCw, Lightbulb, Tag, CreditCard, X } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import { api } from '../../api.js';
 import { readCache, writeCache, invalidateNumbersCaches } from '../../utils/swrCache.js';
@@ -206,7 +206,7 @@ export default function Billing() {
         <p className="text-base font-semibold tracking-wide animate-fade-up" style={{ color: 'var(--ink-2)' }}>
           <strong>KallUS</strong> Voice AI — plans per number, instant upgrades, shared wallet.
         </p>
-        <Link to="/dashboard/transactions" className={`text-sm !rounded-lg px-[22px] py-[11px] text-white font-semibold ${BRAND_GRADIENT} hover:brightness-110`}>
+        <Link to="/dashboard/transactions" className="btn-ghost btn-ghost-accent text-sm !rounded-lg px-[22px] py-[11px] font-semibold">
           Transaction history
         </Link>
       </div>
@@ -859,7 +859,7 @@ function WalletTab({ wallet, transactions, packs, currentUser, onSaved }) {
             <button
               onClick={saveThreshold}
               disabled={thresholdBusy}
-              className={`ml-auto px-4 py-2 rounded-lg text-white text-sm font-semibold ${BRAND_GRADIENT} disabled:opacity-60`}
+              className="ml-auto btn-ghost btn-ghost-accent px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-60"
             >
               {thresholdBusy ? 'Saving…' : 'Save'}
             </button>
@@ -1113,11 +1113,16 @@ function CardChooserModal({ number: n, cards, onClose, onConfirm, onCardSaved })
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm" onClick={onClose}>
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
-        <div className="px-5 py-4 border-b border-slate-100">
-          <div className="text-sm font-bold text-slate-900">Card for auto-recharge</div>
-          <div className="inline-flex items-center gap-1 text-xs text-mute mt-0.5">
-            <Star className="w-3 h-3" fill="currentColor" /> {n.plan?.label || 'Starter'} plan · <span className="font-mono">{n.value}</span>
+        <div className="px-5 py-4 border-b border-slate-100 flex items-start justify-between gap-3">
+          <div>
+            <div className="text-sm font-bold text-slate-900">Card for auto-recharge</div>
+            <div className="inline-flex items-center gap-1 text-xs text-mute mt-0.5">
+              <Star className="w-3 h-3" fill="currentColor" /> {n.plan?.label || 'Starter'} plan · <span className="font-mono">{n.value}</span>
+            </div>
           </div>
+          <button type="button" onClick={onClose} className="text-mute hover:text-slate-900">
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
         <div className="px-5 py-4 space-y-2 max-h-[50vh] overflow-y-auto">

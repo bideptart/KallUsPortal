@@ -136,7 +136,7 @@ export function AppProvider({ children }) {
   // localStorage so the timer survives reloads and is shared across tabs.
   // The server enforces the same window (sliding session expiry), so a token
   // can't be reused after idling even if this timer never runs.
-  const IDLE_MS = 30 * 60 * 1000;          // 30 minutes
+  const IDLE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days — long enough to never interrupt normal use
   const IDLE_KEY = '9278.lastActivity';
 
   const idleLogout = async () => {

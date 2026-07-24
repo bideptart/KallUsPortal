@@ -38,7 +38,7 @@ export default function Signin() {
 
           {timedOut && (
             <div className="mb-5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-sm text-amber-700">
-              ⏱ You were signed out after 30 minutes of inactivity. Please sign in again.
+              ⏱ You were signed out due to inactivity. Please sign in again.
             </div>
           )}
 
@@ -90,9 +90,6 @@ export default function Signin() {
             </button>
           </form>
 
-          <p className="text-center text-xs text-mute mt-8">
-            🔒 Sessions expire after 30 minutes of inactivity
-          </p>
         </div>
       </section>
     </div>

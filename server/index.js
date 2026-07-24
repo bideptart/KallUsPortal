@@ -115,7 +115,7 @@ app.use(express.urlencoded({ extended: false }));
 const SESSION_DAYS = 30;
 // Idle timeout — a session with no authenticated activity for this many
 // minutes expires (sliding window, enforced in the `auth` middleware).
-const SESSION_IDLE_MIN = Math.max(1, Number(process.env.SESSION_IDLE_MINUTES) || 30);
+const SESSION_IDLE_MIN = Math.max(1, Number(process.env.SESSION_IDLE_MINUTES) || 7 * 24 * 60);
 
 // Reseller portal this deployment runs as. Every DB lookup that resolves the
 // parent reseller, and every new signup's reseller_portal attribution, keys
@@ -5212,7 +5212,16 @@ app.post('/api/twilio/test-call', auth, (_req, res) => {
 // endpoint work across resellers that named their tool differently.
 const SCHEDULE_TOOL_HINT = /schedul|meeting|callback|appoint/i;
 
+// Which tool(s) look like a booking action almost never changes between
+// requests, so it gets its own long-lived cache separate from the bookings
+// list below — otherwise every bookings cache miss paid for two sequential
+// MCP round-trips (discover, then fetch logs) instead of one.
+let SCHEDULE_TOOLS_CACHE = null; // { ts, tools: [...] }
+const SCHEDULE_TOOLS_TTL_MS = 10 * 60_000;
 const discoverScheduleTools = async () => {
+  if (SCHEDULE_TOOLS_CACHE && Date.now() - SCHEDULE_TOOLS_CACHE.ts < SCHEDULE_TOOLS_TTL_MS) {
+    return SCHEDULE_TOOLS_CACHE.tools;
+  }
   try {
     const out = unwrapMcp(await callTool('list_webhook_tools', {}));
     const tools = Array.isArray(out?.tools) ? out.tools : [];
@@ -5220,9 +5229,11 @@ const discoverScheduleTools = async () => {
       .filter((t) => SCHEDULE_TOOL_HINT.test(t.name || '') || SCHEDULE_TOOL_HINT.test(t.description || ''))
       .map((t) => t.name)
       .filter(Boolean);
-    return matched.length ? matched : ['schedule_meeting'];
+    const result = matched.length ? matched : ['schedule_meeting'];
+    SCHEDULE_TOOLS_CACHE = { ts: Date.now(), tools: result };
+    return result;
   } catch {
-    return ['schedule_meeting'];
+    return SCHEDULE_TOOLS_CACHE?.tools || ['schedule_meeting'];
   }
 };
 
