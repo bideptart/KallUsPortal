@@ -48,7 +48,7 @@ const KnowledgeBase = lazy(() => import('../customer/KnowledgeBase.jsx'));
 // right where the flat "Call Activity" entry used to sit (between Analytics
 // and Reports) instead of at the end of the list.
 const NAV_TABS_BEFORE_CALLS = [
-  { id: 'overview',    label: 'Overview',       Icon: LayoutDashboard },
+  { id: 'overview',    label: 'Signups',        Icon: LayoutDashboard },
   { id: 'agents',      label: 'Agents',         Icon: Bot },
   { id: 'playground',  label: 'Playground',     Icon: FlaskConical },
   { id: 'kb',          label: 'Knowledge Base', Icon: BookOpen },
@@ -302,7 +302,7 @@ export default function Admin() {
             carry their own number/plan/agent. 'signups' keeps the original
             admin landing page reachable at its legacy URL. */}
         <Suspense fallback={<div className="text-sm text-mute py-10 text-center">Loading…</div>}>
-        {tab === 'overview'                             && <Overview />}
+        {tab === 'overview'                             && <Signups />}
         {tab === 'signups'                              && <Signups />}
         {tab === 'agents'                                && <AgentsList />}
         {tab === 'customers'                             && <Customers />}
