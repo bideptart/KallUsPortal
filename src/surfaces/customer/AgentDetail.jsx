@@ -643,7 +643,7 @@ export default function AgentDetail() {
                 </div>
                 <button
                   type="button"
-                  className="btn-teal text-sm whitespace-nowrap inline-flex items-center gap-1.5"
+                  className="btn-ghost btn-ghost-accent text-sm whitespace-nowrap inline-flex items-center gap-1.5"
                   onClick={() => { setImporting(true); setImportErr(''); setImportPreview(null); setImportUrl(''); }}
                 >
                   <Globe size={14} /> Import from website
@@ -695,7 +695,7 @@ export default function AgentDetail() {
                       ? 'Pick another to replace it, or manage your saved templates.'
                       : 'Create one on the Knowledge Base page, then reuse it on any agent.'}
                   </div>
-                  <button type="button" className="btn-teal text-sm mt-4" onClick={() => { setSourcePicker(true); setBrowsingKb(true); }}>
+                  <button type="button" className="btn-ghost btn-ghost-accent text-sm mt-4" onClick={() => { setSourcePicker(true); setBrowsingKb(true); }}>
                     {hasKb ? '+ Add more' : 'Import a knowledge base'}
                   </button>
                 </div>
@@ -712,7 +712,7 @@ export default function AgentDetail() {
                 </div>
                 <button
                   type="button"
-                  className="btn-teal text-sm whitespace-nowrap inline-flex items-center gap-1.5"
+                  className="btn-ghost btn-ghost-accent text-sm whitespace-nowrap inline-flex items-center gap-1.5"
                   onClick={() => setNotice('Generating a prompt from Company info is coming soon.')}
                 >
                   <Sparkles size={14} /> Generate from Company info
@@ -777,7 +777,7 @@ export default function AgentDetail() {
         </span>
         <div className="flex items-center gap-2">
           <button type="button" className="btn-ghost text-sm" disabled={!dirty} onClick={discard}>Discard</button>
-          <button type="button" className="btn-teal text-sm" disabled={!dirty || saving} onClick={save}>
+          <button type="button" className="btn-ghost btn-ghost-accent text-sm" disabled={!dirty || saving} onClick={save}>
             {saving ? 'Saving…' : 'Save'}
           </button>
         </div>
@@ -851,7 +851,7 @@ export default function AgentDetail() {
               {!importPreview ? (
                 <>
                   <button type="button" className="btn-ghost text-sm" onClick={() => setImporting(false)} disabled={importBusy}>Cancel</button>
-                  <button type="button" onClick={runImport} disabled={importBusy || !importUrl.trim()} className="btn-teal text-sm disabled:opacity-50">
+                  <button type="button" onClick={runImport} disabled={importBusy || !importUrl.trim()} className="btn-ghost btn-ghost-accent text-sm disabled:opacity-50">
                     {importBusy ? 'Reading site…' : 'Extract knowledge base'}
                   </button>
                 </>
@@ -874,7 +874,7 @@ export default function AgentDetail() {
                   <button
                     type="button"
                     onClick={() => { set({ kbCompany: importPreview.kbCompany, kbFaqs: importPreview.kbFaqs }); setImporting(false); }}
-                    className="btn-teal text-sm"
+                    className="btn-ghost btn-ghost-accent text-sm"
                   >
                     Replace draft &amp; close
                   </button>

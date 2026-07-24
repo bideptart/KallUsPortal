@@ -231,7 +231,7 @@ export default function ChatAgentDetail() {
 
             <button
               type="button"
-              className="btn-teal"
+              className="btn-ghost btn-ghost-accent"
               onClick={() => setNotice("Chat agents are a preview — saving isn't wired up yet.")}
             >
               Save changes

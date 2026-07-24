@@ -145,7 +145,7 @@ function NewAgentMenu({ onCreateVoice, onOpenChat, onOpenTemplates }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="btn-teal text-sm whitespace-nowrap"
+        className="btn-ghost btn-ghost-accent text-sm whitespace-nowrap"
         title="Create a new agent"
       >
         + New Agent

@@ -70,7 +70,6 @@ export default function Resellers() {
     <div>
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold">🏷 Resellers</h1>
           <p className="text-mute text-sm mt-1">
             Whitelabel partners with their own customer portal. Each reseller
             starts with the platform's default plans and can edit them upward.
@@ -78,7 +77,7 @@ export default function Resellers() {
         </div>
         <button
           onClick={() => { setShowForm((v) => !v); setFormErr(''); }}
-          className="btn-teal text-sm whitespace-nowrap"
+          className="btn-ghost btn-ghost-accent text-sm whitespace-nowrap"
         >
           {showForm ? '× Cancel' : '+ Register new reseller'}
         </button>

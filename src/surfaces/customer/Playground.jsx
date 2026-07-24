@@ -263,7 +263,7 @@ export default function Playground() {
           <div className="mt-8 form-card text-center py-12 text-mute">
             No voice agent yet.
             <div className="mt-3">
-              <button type="button" className="btn-teal" onClick={() => navigate(`${basePath}/numbers`)}>Add a number</button>
+              <button type="button" className="btn-ghost btn-ghost-accent" onClick={() => navigate(`${basePath}/numbers`)}>Add a number</button>
             </div>
           </div>
         )}
@@ -534,7 +534,7 @@ export default function Playground() {
 
               <button
                 type="button"
-                className="btn-teal mt-3 inline-flex items-center gap-2"
+                className="btn-ghost btn-ghost-accent mt-3 inline-flex items-center gap-2"
                 onClick={isListening ? stopSpeechRecognition : startVoiceTest}
                 disabled={!draft.voice}
               >
@@ -674,7 +674,7 @@ export default function Playground() {
               </span>
               <div className="flex items-center gap-2">
                 <button type="button" className="btn-ghost text-sm" disabled={!dirty} onClick={() => setDraft(savedDraft)}>Reset</button>
-                <button type="button" className="btn-teal text-sm" disabled={!dirty || saving || isChatAgent} onClick={save}>
+                <button type="button" className="btn-ghost btn-ghost-accent text-sm" disabled={!dirty || saving || isChatAgent} onClick={save}>
                   {saving ? 'Saving…' : 'Save'}
                 </button>
               </div>

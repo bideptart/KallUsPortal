@@ -189,7 +189,7 @@ export default function Account() {
           <div className="mt-6 pt-5 border-t flex flex-wrap items-center justify-end gap-2" style={{ borderColor: 'var(--line-2)' }}>
             {profileMsg && <div className="mr-auto text-xs font-semibold text-lime-700">{profileMsg}</div>}
             <button type="button" className="btn-ghost btn-hover-green" onClick={resetProfile} disabled={profileBusy}>Cancel</button>
-            <button className="btn-teal btn-hover-green inline-flex items-center gap-1.5" onClick={saveProfile} disabled={profileBusy}>
+            <button className="btn-ghost btn-hover-green inline-flex items-center gap-1.5" onClick={saveProfile} disabled={profileBusy}>
               <Save size={14} /> {profileBusy ? 'Saving…' : 'Save changes'}
             </button>
           </div>
@@ -220,7 +220,7 @@ export default function Account() {
                 <input className="input" type="password" value={pw.confirm} onChange={(e) => setPw({ ...pw, confirm: e.target.value })} autoComplete="new-password" />
               </div>
             </div>
-            <button type="submit" className="btn-teal btn-hover-green mt-4 inline-flex items-center gap-1.5" disabled={pwBusy}>
+            <button type="submit" className="btn-ghost btn-hover-green mt-4 inline-flex items-center gap-1.5" disabled={pwBusy}>
               <KeyRound size={14} /> {pwBusy ? 'Updating…' : 'Change password'}
             </button>
             {pwMsg && <div className="mt-2 text-xs font-semibold text-lime-700">{pwMsg}</div>}

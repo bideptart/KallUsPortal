@@ -115,13 +115,13 @@ export default function Tickets() {
       </p>
 
       <div className="mt-4 flex items-center gap-2 flex-wrap animate-fade-up">
-        <button onClick={() => { setSlaDraft(nearestSlaValue(slaHours)); setSlaModalOpen(true); }} className="btn-teal text-sm inline-flex items-center gap-1.5 transition duration-200 ease-out hover:scale-105 active:scale-95">
+        <button onClick={() => { setSlaDraft(nearestSlaValue(slaHours)); setSlaModalOpen(true); }} className="btn-ghost btn-ghost-accent text-sm inline-flex items-center gap-1.5 transition duration-200 ease-out hover:scale-105 active:scale-95">
           <Clock className="w-4 h-4" /> SLA
         </button>
-        <button onClick={refresh} disabled={refreshing} className="btn-teal text-sm inline-flex items-center gap-1.5 transition duration-200 ease-out hover:scale-105 active:scale-95 disabled:opacity-90">
+        <button onClick={refresh} disabled={refreshing} className="btn-ghost btn-ghost-accent text-sm inline-flex items-center gap-1.5 transition duration-200 ease-out hover:scale-105 active:scale-95 disabled:opacity-90">
           <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} /> Refresh
         </button>
-        <button onClick={() => setNewTicketOpen(true)} className="btn-teal text-sm inline-flex items-center gap-1.5 transition duration-200 ease-out hover:scale-105 active:scale-95">
+        <button onClick={() => setNewTicketOpen(true)} className="btn-ghost btn-ghost-accent text-sm inline-flex items-center gap-1.5 transition duration-200 ease-out hover:scale-105 active:scale-95">
           <Plus className="w-4 h-4" /> New ticket
         </button>
       </div>
@@ -405,7 +405,7 @@ export default function Tickets() {
               </button>
               <button
                 onClick={() => { setSlaHours(slaDraft); setSlaModalOpen(false); }}
-                className="btn-teal text-sm py-2.5 px-5 transition duration-200 ease-out hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400"
+                className="btn-ghost btn-ghost-accent text-sm py-2.5 px-5 transition duration-200 ease-out hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400"
               >
                 Save SLA
               </button>
@@ -443,7 +443,7 @@ export default function Tickets() {
 
             <div className="mt-5 flex items-center justify-end gap-2">
               <button type="button" onClick={() => setNewTicketOpen(false)} className="btn-ghost text-sm py-2 px-4 transition duration-200 ease-out hover:scale-105 active:scale-95">Cancel</button>
-              <button type="submit" className="btn-teal text-sm py-2 px-4 transition duration-200 ease-out hover:scale-105 active:scale-95">Create ticket</button>
+              <button type="submit" className="btn-ghost btn-ghost-accent text-sm py-2 px-4 transition duration-200 ease-out hover:scale-105 active:scale-95">Create ticket</button>
             </div>
           </form>
         </div>

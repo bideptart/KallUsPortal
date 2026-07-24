@@ -137,7 +137,7 @@ export default function Templates() {
             <p className="mt-1 text-xs text-mute flex-1">{t.desc}</p>
             <button
               type="button"
-              className="btn-teal text-xs mt-4 self-start"
+              className="btn-ghost btn-ghost-accent text-xs mt-4 self-start"
               onClick={() => navigate(`${basePath}/agent-detail?template=${t.id}`)}
             >
               Use template

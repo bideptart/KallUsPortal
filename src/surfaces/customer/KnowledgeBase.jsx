@@ -169,7 +169,7 @@ export default function KnowledgeBase() {
   const NewButton = ({ className = '' }) => (
     <button
       onClick={() => setCreating(true)}
-      className={`btn-teal inline-flex items-center gap-2 ${className}`}
+      className={`btn-ghost btn-ghost-accent inline-flex items-center gap-2 ${className}`}
     >
       <Plus className="w-4 h-4" /> New knowledge base
     </button>
@@ -326,7 +326,7 @@ export default function KnowledgeBase() {
                   type="button"
                   onClick={runUrlImport}
                   disabled={importBusy || !importUrl.trim()}
-                  className="btn-teal text-sm px-3 whitespace-nowrap inline-flex items-center gap-1.5 transition duration-200 ease-out hover:scale-[1.03] active:scale-95 disabled:hover:scale-100 disabled:opacity-90"
+                  className="btn-ghost btn-ghost-accent text-sm px-3 whitespace-nowrap inline-flex items-center gap-1.5 transition duration-200 ease-out hover:scale-[1.03] active:scale-95 disabled:hover:scale-100 disabled:opacity-90"
                 >
                   {importBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />} URL
                 </button>
@@ -347,7 +347,7 @@ export default function KnowledgeBase() {
                   type="button"
                   onClick={runFileImport}
                   disabled={importBusy || !importFile}
-                  className="btn-teal text-sm px-3 whitespace-nowrap inline-flex items-center gap-1.5 transition duration-200 ease-out hover:scale-[1.03] active:scale-95 disabled:hover:scale-100 disabled:opacity-90"
+                  className="btn-ghost btn-ghost-accent text-sm px-3 whitespace-nowrap inline-flex items-center gap-1.5 transition duration-200 ease-out hover:scale-[1.03] active:scale-95 disabled:hover:scale-100 disabled:opacity-90"
                 >
                   {importBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />} File
                 </button>
@@ -370,7 +370,7 @@ export default function KnowledgeBase() {
 
             <div className="mt-5 flex items-center justify-end gap-2">
               <button type="button" onClick={closeCreate} className="btn-ghost text-sm py-2 px-4 transition duration-200 ease-out hover:scale-[1.03] active:scale-95">Cancel</button>
-              <button type="submit" className="btn-teal text-sm py-2 px-4 transition duration-200 ease-out hover:scale-[1.03] active:scale-95">Create</button>
+              <button type="submit" className="btn-ghost btn-ghost-accent text-sm py-2 px-4 transition duration-200 ease-out hover:scale-[1.03] active:scale-95">Create</button>
             </div>
           </form>
         </div>
@@ -421,7 +421,7 @@ export default function KnowledgeBase() {
 
             <div className="mt-5 flex items-center justify-end gap-2">
               <button type="button" onClick={() => setEditingId(null)} className="btn-ghost text-sm py-2 px-4">Close</button>
-              <button type="submit" disabled={editBusy} className="btn-teal text-sm py-2 px-4">
+              <button type="submit" disabled={editBusy} className="btn-ghost btn-ghost-accent text-sm py-2 px-4">
                 {editBusy ? 'Saving…' : 'Save changes'}
               </button>
             </div>

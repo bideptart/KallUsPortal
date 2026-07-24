@@ -403,7 +403,7 @@ function MyPlansTab({
         {numbers.length === 0 ? (
           <div className="form-card text-center py-10">
             <p className="text-mute">No active plan yet.</p>
-            <button className="btn-teal mt-3" onClick={onAddPlan}>Add a plan</button>
+            <button className="btn-ghost btn-ghost-accent mt-3" onClick={onAddPlan}>Add a plan</button>
           </div>
         ) : (
           <div className="space-y-4">
@@ -674,7 +674,7 @@ function PlansTab({ plans, numbers, onPickPlan }) {
                   {!owned && (
                     <button
                       onClick={() => { setSelectedPlan(p.id); onPickPlan(p.id); }}
-                      className={`w-full p-3 rounded-xl text-sm font-semibold text-white transition ${BRAND_GRADIENT} hover:brightness-110 shadow-lg shadow-lime-600/30`}
+                      className={`btn-ghost btn-ghost-accent w-full text-sm font-semibold ${isMostPopular ? 'animate-modal-border-shadow' : ''}`}
                     >
                       {numbers.length > 0 ? 'Upgrade to this plan' : 'Pick this plan'}
                     </button>

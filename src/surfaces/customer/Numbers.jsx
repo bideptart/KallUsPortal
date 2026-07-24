@@ -454,7 +454,7 @@ export function ChangePlanModal({ number, currentUser, onClose, onApplied, defau
           <button
             onClick={purchase}
             disabled={!quote || busy || number?.plan?.id === selectedId}
-            className="btn-teal text-sm px-6"
+            className="btn-ghost btn-ghost-accent text-sm px-6"
           >
             {busy ? 'Opening Stripe…' : (quote ? `Pay ${fmtInr(quote.amountInr)} →` : 'Pick a plan')}
           </button>
@@ -608,7 +608,7 @@ export function AddNumberModal({ currentUser, onClose, onAdded }) {
           <button
             onClick={purchase}
             disabled={!selectedPlan || busy}
-            className="btn-teal text-sm px-6"
+            className="btn-ghost btn-ghost-accent text-sm px-6"
           >
             {busy
               ? 'Opening Stripe…'

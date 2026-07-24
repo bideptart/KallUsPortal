@@ -284,7 +284,7 @@ export default function Tools() {
                     <span className="font-mono font-normal text-mute text-sm">{selected.value}</span>
                   </div>
                 </div>
-                <button onClick={() => setSelectedId('')} className="btn-teal text-sm transition duration-200 ease-out hover:scale-105 active:scale-95">✕ Close</button>
+                <button onClick={() => setSelectedId('')} className="btn-ghost btn-ghost-accent text-sm transition duration-200 ease-out hover:scale-105 active:scale-95">✕ Close</button>
               </div>
 
               {/* Blind transfer ------------------------------------------------ */}
@@ -350,7 +350,7 @@ export default function Tools() {
                         <span className="text-xs text-mute">No forwarding number set yet.</span>
                       )}
                       <button
-                        className="btn-teal ml-auto transition duration-200 ease-out hover:scale-105 active:scale-95 disabled:opacity-90"
+                        className="btn-ghost btn-ghost-accent ml-auto transition duration-200 ease-out hover:scale-105 active:scale-95 disabled:opacity-90"
                         onClick={requestSave}
                         disabled={busy || curLoading || propagationLocked || !input.trim()}
                       >
@@ -399,7 +399,7 @@ export default function Tools() {
                     </p>
                     <div className="mt-3">
                       <button
-                        className="btn-teal transition duration-200 ease-out hover:scale-105 active:scale-95 disabled:opacity-90"
+                        className="btn-ghost btn-ghost-accent transition duration-200 ease-out hover:scale-105 active:scale-95 disabled:opacity-90"
                         onClick={saveNotification}
                         disabled={!notifEmail.trim()}
                       >
@@ -441,7 +441,7 @@ export default function Tools() {
             </div>
             <div className="mt-6 flex items-center justify-end gap-2">
               <button onClick={() => setPendingSave(null)} className="btn-ghost text-sm py-2 px-4 transition duration-200 ease-out hover:scale-105 active:scale-95">Cancel</button>
-              <button onClick={confirmSave} className="btn-teal text-sm py-2 px-4 transition duration-200 ease-out hover:scale-105 active:scale-95" autoFocus>
+              <button onClick={confirmSave} className="btn-ghost btn-ghost-accent text-sm py-2 px-4 transition duration-200 ease-out hover:scale-105 active:scale-95" autoFocus>
                 Proceed → start 2-minute window
               </button>
             </div>

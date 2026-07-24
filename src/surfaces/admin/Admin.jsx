@@ -552,8 +552,7 @@ function Health() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">System health</h1>
+      <div className="flex items-center justify-end">
         <button className="btn-ghost btn-ghost-accent text-sm" onClick={load}>↻ Refresh</button>
       </div>
       {err && <div className="mt-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">{err}</div>}
@@ -843,7 +842,7 @@ function McpBrowser() {
           <div className="text-xs uppercase tracking-wider text-mute font-semibold">MCP server</div>
           <button
             onClick={() => setEditing({ resellerPortal: '', url: '', token: '' })}
-            className="btn-teal text-xs whitespace-nowrap transition duration-200 ease-out hover:scale-105 active:scale-95"
+            className="btn-ghost btn-ghost-accent text-xs whitespace-nowrap transition duration-200 ease-out hover:scale-105 active:scale-95"
           >
             + Add / update MCP
           </button>

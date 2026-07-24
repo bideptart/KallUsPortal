@@ -121,7 +121,7 @@ function MonthCalendar({ month, onPrev, onNext, onToday, meetingsByDay, selected
         <div className="flex items-center gap-1">
           <button
             onClick={onToday}
-            className="btn-teal text-xs px-3 py-1 transition duration-200 ease-out hover:scale-105 active:scale-95"
+            className="btn-ghost btn-ghost-accent text-xs px-3 py-1 transition duration-200 ease-out hover:scale-105 active:scale-95"
           >Today</button>
           <button
             onClick={onNext}
@@ -354,7 +354,7 @@ export default function Meetings({
             />
             Upcoming only
           </label>
-          <button onClick={() => load()} disabled={refreshing} className="btn-teal text-sm transition duration-200 ease-out hover:scale-105 active:scale-95">
+          <button onClick={() => load()} disabled={refreshing} className="btn-ghost btn-ghost-accent text-sm transition duration-200 ease-out hover:scale-105 active:scale-95">
             {refreshing ? 'Loading…' : '↻ Refresh'}
           </button>
         </div>

@@ -435,7 +435,7 @@ export default function Transactions() {
                       </p>
 
                       <div className="mt-6 flex items-center gap-3 flex-wrap justify-center">
-                        <button type="button" onClick={() => setShowAddFunds(true)} className="btn-teal text-sm">+ Add Funds</button>
+                        <button type="button" onClick={() => setShowAddFunds(true)} className="btn-ghost btn-ghost-accent text-sm">+ Add Funds</button>
                         <Link to={`${basePath}/billing?tab=plans`} className="btn-ghost text-sm">Browse Plans</Link>
                       </div>
 

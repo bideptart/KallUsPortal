@@ -203,7 +203,7 @@ export default function Overview({ rechargeOn }) {
             </p>
             <div className="mt-3 flex gap-2 items-center">
               {!autoTopupOn && (
-                <button className="btn-teal text-sm inline-flex items-center gap-1.5" onClick={quickTopUp} disabled={topupBusy}>
+                <button className="btn-ghost btn-ghost-accent text-sm inline-flex items-center gap-1.5" onClick={quickTopUp} disabled={topupBusy}>
                   {topupBusy ? 'Charging…' : <><Zap size={14} /> Top up 83 min ($1,000)</>}
                 </button>
               )}
@@ -225,7 +225,7 @@ export default function Overview({ rechargeOn }) {
               Your {displayNumbers[0]?.plan?.label || 'current'} plan renews on {fmtDate(nextRenewal)}. Upgrade now to lock in more minutes before it resets.
             </p>
             <div className="mt-3 flex gap-2 items-center">
-              <Link to={`${basePath}/billing?tab=plans`} className="btn-teal text-sm inline-flex items-center gap-1.5">
+              <Link to={`${basePath}/billing?tab=plans`} className="btn-ghost btn-ghost-accent text-sm inline-flex items-center gap-1.5">
                 <TrendingUp size={14} /> Upgrade plan
               </Link>
               <Link to={`${basePath}/billing`} className="btn-ghost text-sm">Manage plan →</Link>
@@ -420,7 +420,7 @@ export default function Overview({ rechargeOn }) {
         <div className="font-display font-semibold text-lg">Quick actions</div>
         <div className="mt-4 grid sm:grid-cols-2 gap-3 text-sm">
           <Link to={`${basePath}/agents`} className="btn-ghost text-center">Edit agent</Link>
-          <Link to={`${basePath}/billing`} className="btn-teal text-center">Buy more minutes</Link>
+          <Link to={`${basePath}/billing`} className="btn-ghost btn-ghost-accent text-center">Buy more minutes</Link>
           <Link to={`${basePath}/analytics`} className="btn-ghost text-center sm:col-span-2">View analytics</Link>
         </div>
         {testNumber && (
@@ -486,7 +486,7 @@ function ProvisioningBanner() {
           }
         </p>
         <div className="mt-3 flex items-center gap-2">
-          <button className="btn-teal text-sm" onClick={provision} disabled={busy}>
+          <button className="btn-ghost btn-ghost-accent text-sm" onClick={provision} disabled={busy}>
             {busy ? 'Provisioning…' : 'Provision inbound now'}
           </button>
           {msg && <span className="text-xs text-mute">{msg}</span>}

@@ -165,7 +165,6 @@ export default function Numbers() {
     <div>
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold">☎ Numbers inventory</h1>
           <p className="text-mute text-sm mt-1">
             Every DID available to the platform — assigned (busy) or unassigned (free).
             Add new DIDs as you receive them from the carrier.
@@ -176,7 +175,7 @@ export default function Numbers() {
             <button
               onClick={() => setExportOpen((v) => !v)}
               disabled={exporting || !filtered.length}
-              className="btn-teal text-sm whitespace-nowrap inline-flex items-center gap-1.5 transition duration-200 ease-out hover:scale-105 active:scale-95 disabled:opacity-60 disabled:hover:scale-100"
+              className="btn-ghost btn-ghost-accent text-sm whitespace-nowrap inline-flex items-center gap-1.5 transition duration-200 ease-out hover:scale-105 active:scale-95 disabled:opacity-60 disabled:hover:scale-100"
             >
               {exporting
                 ? <>Exporting…</>
@@ -207,7 +206,7 @@ export default function Numbers() {
           </div>
           <button
             onClick={() => { setShowForm((v) => !v); setFormErr(''); }}
-            className="btn-teal text-sm whitespace-nowrap"
+            className="btn-ghost btn-ghost-accent text-sm whitespace-nowrap"
           >
             {showForm ? '× Cancel' : '+ Add DID'}
           </button>

@@ -75,7 +75,7 @@ export default function Payments() {
       {/* Icon + "Billing & minutes" title now live in the sticky top bar instead of here. */}
       <div className="flex items-center justify-between">
         <p className="text-base font-semibold tracking-wide animate-fade-up" style={{ color: 'var(--ink-2)' }}>Recurring revenue across every plan a customer is on — one row per DID.</p>
-        <button className="btn-teal text-sm transition duration-200 ease-out hover:scale-105 active:scale-95" onClick={load}>↻ Refresh</button>
+        <button className="btn-ghost btn-ghost-accent text-sm transition duration-200 ease-out hover:scale-105 active:scale-95" onClick={load}>↻ Refresh</button>
       </div>
 
       {err && <div className="mt-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">{err}</div>}

@@ -23,7 +23,6 @@ import { AddNumberModal } from './Numbers.jsx';
 // =============================================================================
 
 const usd = (n) => `$${Number(n || 0).toLocaleString('en-US')}`;
-const BRAND_GRADIENT = 'bg-[linear-gradient(135deg,#6fa524_0%,#5c8a1e_50%,#4d7c0f_100%)]';
 
 // Capacity rows for the comparison table. `get` reads only fields the API
 // actually returns — a plan missing one renders "—" rather than a guess.
@@ -155,6 +154,7 @@ export default function Pricing() {
         {plans.map((p, idx) => {
           const owned = ownedPlanIds.has(p.id);
           const popular = !!p.tag;
+          const isGrowth = p.id === 'growth';
           const price = isYearly ? p.yearlyAmount : p.amount;
           return (
             <div
@@ -228,7 +228,7 @@ export default function Pricing() {
                   {!owned && (
                     <button
                       onClick={pickPlan}
-                      className={`w-full p-3 rounded-xl text-sm font-semibold text-white transition ${BRAND_GRADIENT} hover:brightness-110 shadow-lg shadow-lime-600/30`}
+                      className={`btn-ghost btn-ghost-accent w-full text-sm font-semibold ${isGrowth ? 'animate-modal-border-shadow' : ''}`}
                     >
                       {numbers.length > 0 ? 'Change plan in Billing' : 'Pick this plan'}
                     </button>
@@ -453,7 +453,7 @@ function EditPlanModal({ plan, onClose, onSaved }) {
 
           <div className="flex items-center justify-end gap-2 pt-2">
             <button type="button" className="btn-ghost" onClick={onClose} disabled={busy}>Cancel</button>
-            <button type="submit" className="btn-teal" disabled={busy}>{busy ? 'Saving…' : 'Save changes'}</button>
+            <button type="submit" className="btn-ghost btn-ghost-accent" disabled={busy}>{busy ? 'Saving…' : 'Save changes'}</button>
           </div>
         </form>
       </div>

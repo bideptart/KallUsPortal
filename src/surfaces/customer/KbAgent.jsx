@@ -461,7 +461,7 @@ export default function KbAgent() {
                       type="button"
                       disabled={propagationLocked}
                       onClick={() => { set({ voice: voicePrompt.value }); setVoicePrompt(null); }}
-                      className="px-3 py-2.5 rounded-lg btn-teal text-sm font-semibold disabled:opacity-60"
+                      className="px-3 py-2.5 rounded-lg btn-ghost btn-ghost-accent text-sm font-semibold disabled:opacity-60"
                     >
                       ✓ Apply to agent
                     </button>
@@ -521,7 +521,7 @@ export default function KbAgent() {
       {/* === One common Save — persists agent settings + company info + FAQs together === */}
       <div className="mt-6 sticky bottom-0 bg-white/80 dark:bg-slate-950/80 backdrop-blur border-t border-slate-100 dark:border-slate-800 py-3 flex items-center gap-3 flex-wrap">
         <button
-          className="btn-teal"
+          className="btn-ghost btn-ghost-accent"
           disabled={busy || propagationLocked}
           onClick={() => requestSave('all', {
             label: draft.label,
@@ -575,7 +575,7 @@ export default function KbAgent() {
               </button>
               <button
                 onClick={confirmSave}
-                className="btn-teal text-sm py-2 px-4"
+                className="btn-ghost btn-ghost-accent text-sm py-2 px-4"
                 autoFocus
               >
                 Proceed → start 2-minute window
