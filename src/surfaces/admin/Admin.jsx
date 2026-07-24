@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
-  LayoutDashboard, FlaskConical, BookOpen, TrendingUp, Zap,
-  CreditCard, Receipt, User, UserCircle, Menu, Wrench, Ticket, DoorOpen, Tag,
+  LayoutDashboard, FlaskConical, BookOpen, CreditCard, Zap,
+  Receipt, User, UserCircle, Menu, Wrench, Ticket, DoorOpen, Tag,
   List, Terminal, Server, Check, Copy, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
@@ -32,7 +32,6 @@ const AgentDetail = lazy(() => import('../customer/AgentDetail.jsx'));
 const ChatAgentDetail = lazy(() => import('../customer/ChatAgentDetail.jsx'));
 const Templates = lazy(() => import('../customer/Templates.jsx'));
 const Playground = lazy(() => import('../customer/Playground.jsx'));
-const Analytics = lazy(() => import('../customer/Analytics.jsx'));
 const Transactions = lazy(() => import('../customer/Transactions.jsx'));
 const Pricing = lazy(() => import('../customer/Pricing.jsx'));
 const BookingHistory = lazy(() => import('../customer/BookingHistory.jsx'));
@@ -53,7 +52,7 @@ const NAV_TABS_BEFORE_CALLS = [
   { id: 'playground',  label: 'Customer at risk', Icon: FlaskConical },
   { id: 'kb',          label: 'Knowledge Base', Icon: BookOpen },
   { id: 'resellers',   label: 'Resellers',      Icon: UserCircle },
-  { id: 'analytics',   label: 'Analytics',      Icon: TrendingUp },
+  { id: 'analytics',   label: 'Payments & revenue', Icon: CreditCard },
 ];
 const NAV_TABS_AFTER_CALLS = [
   { id: 'health',       label: 'System health',     Icon: Server },
@@ -297,7 +296,7 @@ export default function Admin() {
         {tab === 'mcp'                                    && <McpBrowser />}
         {tab === 'kb'                                    && <KnowledgeBase />}
         {tab === 'bulk'                                  && <Bulk />}
-        {tab === 'analytics'                             && <Analytics />}
+        {tab === 'analytics'                             && <Payments />}
         {tab === 'usage'                                 && <Usage />}
         {(tab === 'calls' || tab === 'logs')            && <Logs />}
         {tab === 'reports'                               && <Reports />}
