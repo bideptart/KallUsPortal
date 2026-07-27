@@ -25,3 +25,6 @@ server/tts-cache/
 
 # Local SQLite demo-auth database
 server/data/
+
+# Embedded Postgres (PGlite) local dev database — see server/db.js
+.data/

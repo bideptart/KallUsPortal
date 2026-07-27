@@ -333,6 +333,12 @@ const runMigrations = async () => {
   // NULL → fall back to the user's default card. Each plan can pick its own.
   await q(`ALTER TABLE user_numbers ADD COLUMN IF NOT EXISTS auto_recharge_pm_id INTEGER`);
 
+  // Rent status for this DID's current cycle ('active' | 'lapsed' | ...).
+  // Read all over (publicNumber(), the signups list, etc. via `|| 'active'`
+  // fallbacks) but was never actually added by a migration — only ever
+  // existed on whichever live DB this schema was reconstructed from.
+  await q(`ALTER TABLE user_numbers ADD COLUMN IF NOT EXISTS rent_status TEXT NOT NULL DEFAULT 'active'`);
+
   // === Saved Razorpay card ================================================
   // razorpay_customer_id: created lazily the first time the customer wants
   // to save a card. payment_method_token + last4 + network + brand capture
