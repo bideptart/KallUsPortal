@@ -1,16 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Star, ShieldCheck, Users, TrendingUp, Pencil, Check, RefreshCw } from 'lucide-react';
+import { Star, ShieldCheck, Pencil, Check, RefreshCw } from 'lucide-react';
 import { api } from '../../api.js';
 import { useApp } from '../../AppContext.jsx';
 
 const money = (n) => `$${Number(n || 0).toLocaleString('en-US')}`;
-
-const INFO_CARDS = [
-  { Icon: ShieldCheck, iconWrap: 'bg-lime-100 text-lime-700',   title: 'Set your own prices',  sub: 'Raise retail price or per-min rate' },
-  { Icon: Users,       iconWrap: 'bg-purple-100 text-purple-600', title: 'Keep your margin',    sub: 'Both values must be at or above platform base' },
-  { Icon: TrendingUp,  iconWrap: 'bg-blue-100 text-blue-600',   title: 'Real-time updates',    sub: 'Changes reflect for new signups instantly' },
-  { Icon: Pencil,      iconWrap: 'bg-amber-100 text-amber-600', title: 'Easy to manage',       sub: 'Edit plans anytime with one click' },
-];
 
 // =============================================================================
 // Reseller Plans — the three tiers a reseller can white-label. Pricing/edit
@@ -130,23 +123,6 @@ export default function Plans() {
       {msg && (
         <div className="mt-4 text-sm text-green-700 bg-green-50 border border-green-200 rounded px-3 py-2">{msg}</div>
       )}
-
-      {/* Capability strip */}
-      <div className="mt-6 form-card">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {INFO_CARDS.map(({ Icon, iconWrap, title, sub }) => (
-            <div key={title} className="flex items-start gap-3">
-              <div className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${iconWrap}`}>
-                <Icon size={17} strokeWidth={2} />
-              </div>
-              <div>
-                <div className="text-sm font-semibold text-slate-900">{title}</div>
-                <div className="text-xs text-mute mt-0.5">{sub}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* Plan cards */}
       <div className="mt-5 grid md:grid-cols-3 gap-4 items-start">

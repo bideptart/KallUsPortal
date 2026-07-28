@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Users, UsersRound, CalendarDays, Search, Plus, X,
-  ShieldCheck, Activity, HeartHandshake, Lock, Mail, Link2, MoreVertical,
-  ArrowUpDown,
+  Users, UsersRound, CalendarDays, Search, Plus,
+  Mail, Link2, MoreVertical, ArrowUpDown,
 } from 'lucide-react';
 import { api } from '../../api.js';
 
@@ -31,16 +30,6 @@ const SORTS = [
   { id: 'oldest', label: 'Oldest first' },
   { id: 'name',   label: 'Name (A–Z)' },
   { id: 'customers', label: 'Most customers' },
-];
-
-// Capabilities are described honestly against what the platform actually
-// does today — no promise of revenue tracking, since there's no per-
-// sub-reseller revenue rollup in the API yet.
-const CAPABILITY_CARDS = [
-  { Icon: ShieldCheck,     iconWrap: 'bg-lime-100 text-lime-700',    title: 'Unified control',  sub: 'Manage all your sub-resellers from one place.' },
-  { Icon: Activity,        iconWrap: 'bg-purple-100 text-purple-600', title: 'Track everything', sub: 'See customers and activity in real-time.' },
-  { Icon: HeartHandshake,  iconWrap: 'bg-blue-100 text-blue-600',    title: 'Grow together',    sub: 'Empower your partners and earn more.' },
-  { Icon: Lock,            iconWrap: 'bg-amber-100 text-amber-600',  title: 'Secure & compliant', sub: 'We handle security so you can focus on growth.' },
 ];
 
 // =============================================================================
@@ -125,18 +114,10 @@ export default function SubResellers() {
 
   return (
     <div onClick={() => setMenuOpenFor(null)}>
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <p className="font-bold text-black text-[15px] max-w-xl">
-          On-board partners under your brand. Each sub-reseller gets their own
-          portal slug and customer list — all rolled up to your downstream.
-        </p>
-        <button
-          onClick={() => { setShowForm((v) => !v); setFormErr(''); }}
-          className={`px-4 py-2 rounded-lg text-white text-sm font-semibold flex items-center gap-1.5 ${BRAND_GRADIENT}`}
-        >
-          {showForm ? <><X size={15} strokeWidth={2.2} /> Cancel</> : <><Plus size={15} strokeWidth={2.2} /> Add sub-reseller</>}
-        </button>
-      </div>
+      <p className="font-bold text-black text-[15px] max-w-xl">
+        On-board partners under your brand. Each sub-reseller gets their own
+        portal slug and customer list — all rolled up to your downstream.
+      </p>
 
       {err && (
         <div className="mt-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
@@ -380,22 +361,6 @@ export default function SubResellers() {
         </table>
       </div>
 
-      {/* Capability strip */}
-      <div className="mt-5 form-card">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {CAPABILITY_CARDS.map(({ Icon, iconWrap, title, sub }) => (
-            <div key={title} className="flex items-start gap-3">
-              <div className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${iconWrap}`}>
-                <Icon size={17} strokeWidth={2} />
-              </div>
-              <div>
-                <div className="text-sm font-semibold text-slate-900">{title}</div>
-                <div className="text-xs text-mute mt-0.5">{sub}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

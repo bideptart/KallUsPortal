@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   ArrowLeftRight, ShoppingBag, Wallet, Undo2, RefreshCcw, CreditCard,
   Search, Download, RefreshCw, Info, ChevronLeft, ChevronRight, MoreHorizontal,
-  Users, Link2, Settings2, Check, TrendingUp, ArrowRight,
+  Users, Link2, Settings2, Check, TrendingUp, ArrowRight, CalendarRange, ChevronDown,
 } from 'lucide-react';
 import { api } from '../../api.js';
 import { useApp } from '../../AppContext.jsx';
@@ -79,6 +79,44 @@ const CHIPS = [
 ];
 
 const PAGE_SIZES = [5, 10, 25, 50];
+
+// Last 7 calendar days (oldest → newest) as an array of real per-day totals
+// for a KPI tile's mini sparkline. Sums `valueFn(p)` for every item whose
+// createdAt falls on that day — genuine daily activity, not decoration.
+const last7Days = (items, valueFn) => {
+  const byDay = new Map();
+  for (const p of items) {
+    const day = ymd(p.createdAt);
+    byDay.set(day, (byDay.get(day) || 0) + valueFn(p));
+  }
+  const out = [];
+  const today = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    out.push(byDay.get(ymd(d)) || 0);
+  }
+  return out;
+};
+
+// Tiny bar sparkline under each KPI tile — real last-7-day values, tinted to
+// match the tile's accent color. Renders a flat baseline (not fake bars)
+// when every day is zero, same "don't invent data" rule as the main chart.
+function Sparkline({ values, barClass }) {
+  const max = Math.max(1, ...values);
+  const allZero = values.every((v) => v === 0);
+  return (
+    <div className="mt-3 flex items-end gap-1 h-8">
+      {values.map((v, i) => (
+        <div
+          key={i}
+          className={`flex-1 rounded-sm ${allZero ? 'bg-slate-100' : barClass}`}
+          style={{ height: allZero ? 3 : `${Math.max(8, (v / max) * 100)}%` }}
+        />
+      ))}
+    </div>
+  );
+}
 
 // Round a max value up to a "nice" axis ceiling (1/2/5 × a power of ten),
 // same trick most charting libraries use for gridline labels.
@@ -230,18 +268,24 @@ export default function Purchases() {
     });
   }, [list, dateFrom, dateTo]);
 
+  // Fixed rule, always applied: newest transaction first. This is enforced
+  // here rather than just trusted from the API response, so the table's
+  // order can never drift regardless of filters, search, or how the backend
+  // happens to merge its two source tables (DID purchases + wallet ledger).
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return inRange.filter((p) => {
-      if (chip !== 'all' && bucketOf(p) !== chip) return false;
-      if (!q) return true;
-      return (
-        (p.customer.email   || '').toLowerCase().includes(q) ||
-        (p.customer.company || '').toLowerCase().includes(q) ||
-        (p.customer.name    || '').toLowerCase().includes(q) ||
-        (p.description      || '').toLowerCase().includes(q)
-      );
-    });
+    return inRange
+      .filter((p) => {
+        if (chip !== 'all' && bucketOf(p) !== chip) return false;
+        if (!q) return true;
+        return (
+          (p.customer.email   || '').toLowerCase().includes(q) ||
+          (p.customer.company || '').toLowerCase().includes(q) ||
+          (p.customer.name    || '').toLowerCase().includes(q) ||
+          (p.description      || '').toLowerCase().includes(q)
+        );
+      })
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }, [inRange, search, chip]);
 
   useEffect(() => { setPage(1); }, [search, chip, dateFrom, dateTo, pageSize]);
@@ -256,6 +300,12 @@ export default function Purchases() {
   const newPlansThisMonth = inRange.filter((p) => bucketOf(p) === 'purchases' && ymd(p.createdAt) >= thisMonthStart);
 
   const revenueTotal = inRange.reduce((a, p) => a + Number(p.amount || 0), 0);
+
+  // ---- KPI sparklines — real last-7-day series per tile ----
+  const sparkTransactions = useMemo(() => last7Days(inRange, () => 1), [inRange]);
+  const sparkNewPlans     = useMemo(() => last7Days(inRange.filter((p) => bucketOf(p) === 'purchases'), () => 1), [inRange]);
+  const sparkTopups       = useMemo(() => last7Days(walletTopups, (p) => Number(p.amount || 0)), [walletTopups]);
+  const sparkRefunds      = useMemo(() => last7Days(refunds, () => 1), [refunds]);
 
   // ---- Revenue trend: First Half vs Second Half of the date range, both
   //      derived from real timestamps — no synthetic data when history is
@@ -277,7 +327,10 @@ export default function Purchases() {
   }, [inRange]);
 
   // ---- Recent activity rail — the 5 newest events, in plain language. -----
-  const recent = useMemo(() => (list || []).slice(0, 5), [list]);
+  const recent = useMemo(
+    () => [...(list || [])].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5),
+    [list],
+  );
   const activityLine = (p) => {
     const who = p.customer.company || p.customer.name;
     if (p.kind === 'plan-change')     return <>Upgraded to <strong>{p.planLabel || 'a new plan'}</strong></>;
@@ -354,21 +407,42 @@ export default function Purchases() {
         </div>
       )}
 
-      <div className="mt-6 grid lg:grid-cols-[minmax(0,1fr)_340px] gap-4">
-        {/* ---- Main column ---- */}
-        <div>
-          <div className="grid sm:grid-cols-2 gap-4">
+      {/* Top row: Revenue overview + KPI tiles on the left, Recent activity +
+          Quick actions on the right — all four sit in one grid row so their
+          tops (and, via items-stretch, their bottoms) line up. The filters
+          and transaction table live below as full-width siblings, not
+          nested inside this row, so the right rail never has to stretch to
+          match the table's height. */}
+      <div className="mt-6 grid lg:grid-cols-[minmax(0,1fr)_340px] gap-4 items-start">
+        <div className="grid sm:grid-cols-2 gap-4">
             {/* Revenue overview */}
             <div className="form-card">
-              <div className="flex items-center gap-2.5">
-                <div className="shrink-0 w-10 h-10 rounded-xl bg-lime-100 text-lime-700 flex items-center justify-center">
-                  <TrendingUp size={18} strokeWidth={2.2} />
+              <div className="flex items-center justify-between gap-2.5 flex-wrap">
+                <div className="flex items-center gap-2.5">
+                  <div className="shrink-0 w-10 h-10 rounded-xl bg-lime-100 text-lime-700 flex items-center justify-center">
+                    <TrendingUp size={18} strokeWidth={2.2} />
+                  </div>
+                  <div className="flex items-center gap-1.5 text-base font-bold text-slate-900">
+                    Revenue overview
+                    <Info size={14} strokeWidth={2} className="text-slate-300" />
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5 text-base font-bold text-slate-900">
-                  Revenue overview
-                  <Info size={14} strokeWidth={2} className="text-slate-300" />
-                </div>
+                <button
+                  type="button"
+                  className="btn-ghost text-xs !py-1.5 !px-3 flex items-center gap-1.5"
+                  onClick={() => setShowDateFilter((v) => !v)}
+                >
+                  <CalendarRange size={13} strokeWidth={2} />
+                  {dateFrom || dateTo ? `${dateFrom || '…'} – ${dateTo || '…'}` : 'All time'}
+                  <ChevronDown size={13} strokeWidth={2} />
+                </button>
               </div>
+
+              {showDateFilter && (
+                <div className="mt-3 rounded-lg border border-slate-200 p-3">
+                  <DateRangePicker from={dateFrom} to={dateTo} onChange={({ from, to }) => { setDateFrom(from); setDateTo(to); }} />
+                </div>
+              )}
 
               <div className="mt-4 flex items-baseline gap-2">
                 <div className="text-4xl font-extrabold text-slate-900">{list === null ? '—' : fmtMoney(revenueTotal, currency)}</div>
@@ -412,28 +486,90 @@ export default function Purchases() {
                 <div className="mt-2 text-sm font-medium text-slate-700">Transactions</div>
                 <div className="text-2xl font-bold text-slate-900">{list === null ? '—' : totalTransactions}</div>
                 <div className="text-xs text-mute mt-0.5">Total transactions</div>
+                {list !== null && <Sparkline values={sparkTransactions} barClass="bg-purple-300" />}
               </div>
               <div className="form-card">
                 <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center"><ShoppingBag size={15} strokeWidth={2} /></div>
                 <div className="mt-2 text-sm font-medium text-slate-700">New plans bought</div>
                 <div className="text-2xl font-bold text-slate-900">{list === null ? '—' : newPlansThisMonth.length}</div>
                 <div className="text-xs text-mute mt-0.5">New this month</div>
+                {list !== null && <Sparkline values={sparkNewPlans} barClass="bg-blue-300" />}
               </div>
               <div className="form-card">
                 <div className="w-9 h-9 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center"><Wallet size={15} strokeWidth={2} /></div>
                 <div className="mt-2 text-sm font-medium text-slate-700">Wallet top-ups</div>
                 <div className="text-2xl font-bold text-slate-900">{list === null ? '—' : fmtMoney(walletTopupSum, currency)}</div>
                 <div className="text-xs text-mute mt-0.5">Total added</div>
+                {list !== null && <Sparkline values={sparkTopups} barClass="bg-amber-300" />}
               </div>
               <div className="form-card">
                 <div className="w-9 h-9 rounded-full bg-red-100 text-red-600 flex items-center justify-center"><Undo2 size={15} strokeWidth={2} /></div>
                 <div className="mt-2 text-sm font-medium text-slate-700">Refunds</div>
                 <div className="text-2xl font-bold text-slate-900">{list === null ? '—' : refunds.length}</div>
                 <div className="text-xs text-mute mt-0.5">Total refunds</div>
+                {list !== null && <Sparkline values={sparkRefunds} barClass="bg-red-300" />}
               </div>
+            </div>
+        </div>
+
+        {/* ---- Right rail ---- */}
+        <div className="space-y-4">
+          <div className="form-card">
+            <div className="flex items-center justify-between">
+              <div className="font-semibold text-sm">Recent activity</div>
+            </div>
+            {/* Capped + scrollable so this card's height stays predictable
+                regardless of how many events there are — sized so Recent
+                activity + Quick actions together land close to the same
+                total height as the Revenue overview + KPI column, keeping
+                Quick actions level with the cards on the left. */}
+            <div className="mt-3 space-y-3 max-h-[190px] overflow-y-auto pr-1">
+              {list === null && <div className="text-xs text-mute">Loading…</div>}
+              {list && recent.length === 0 && <div className="text-xs text-mute">No activity yet.</div>}
+              {recent.map((p) => {
+                const bucket = BUCKET_META[bucketOf(p)];
+                const Icon = bucket.icon;
+                return (
+                  <div key={p.id} className="flex items-start gap-2.5">
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${bucket.iconWrap}`}>
+                      <Icon size={13} strokeWidth={2} />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium text-slate-900 truncate">{p.customer.company || p.customer.name}</div>
+                      <div className="text-xs text-mute">{activityLine(p)}</div>
+                      <div className="text-[11px] text-slate-400 mt-0.5">{timeAgo(p.createdAt)}</div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
+          <div className="form-card">
+            <div className="font-semibold text-sm mb-3">Quick actions</div>
+            <div className="space-y-2">
+              <Link to="/reseller/customers" className="btn-ghost w-full text-sm flex items-center justify-between !py-2.5">
+                <span className="flex items-center gap-2"><Users size={15} strokeWidth={2} /> View customers</span>
+                <ChevronRight size={14} strokeWidth={2} />
+              </Link>
+              <button type="button" onClick={copyPortalSlug} className="btn-ghost w-full text-sm flex items-center justify-between !py-2.5">
+                <span className="flex items-center gap-2">
+                  {copied ? <Check size={15} strokeWidth={2} className="text-lime-600" /> : <Link2 size={15} strokeWidth={2} />}
+                  {copied ? 'Copied!' : 'Copy portal slug'}
+                </span>
+                {!copied && <ChevronRight size={14} strokeWidth={2} />}
+              </button>
+              <Link to="/reseller/plans" className="btn-ghost w-full text-sm flex items-center justify-between !py-2.5">
+                <span className="flex items-center gap-2"><Settings2 size={15} strokeWidth={2} /> Manage plans</span>
+                <ChevronRight size={14} strokeWidth={2} />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ---- Filters + table — full width, below the stats row ---- */}
+      <div>
           {/* Filters */}
           <div className="mt-5 flex items-center gap-2 flex-wrap">
             <div className="relative flex-1 min-w-[220px] max-w-sm">
@@ -463,25 +599,12 @@ export default function Purchases() {
             <button
               type="button"
               className="btn-ghost text-xs !py-2 !px-3.5 flex items-center gap-1.5 ml-auto"
-              onClick={() => setShowDateFilter((v) => !v)}
-            >
-              {dateFrom || dateTo ? `${dateFrom || '…'} – ${dateTo || '…'}` : 'Date range'}
-            </button>
-            <button
-              type="button"
-              className="btn-ghost text-xs !py-2 !px-3.5 flex items-center gap-1.5"
               onClick={exportCsv}
               disabled={!filtered.length}
             >
               <Download size={13} strokeWidth={2} /> Export
             </button>
           </div>
-
-          {showDateFilter && (
-            <div className="mt-3 form-card">
-              <DateRangePicker from={dateFrom} to={dateTo} onChange={({ from, to }) => { setDateFrom(from); setDateTo(to); }} />
-            </div>
-          )}
 
           {/* Transaction table */}
           <div className="mt-4 form-card p-0 overflow-x-auto">
@@ -589,57 +712,6 @@ export default function Purchases() {
             </div>
           )}
         </div>
-
-        {/* ---- Right rail ---- */}
-        <div className="space-y-4">
-          <div className="form-card">
-            <div className="flex items-center justify-between">
-              <div className="font-semibold text-sm">Recent activity</div>
-            </div>
-            <div className="mt-3 space-y-3">
-              {list === null && <div className="text-xs text-mute">Loading…</div>}
-              {list && recent.length === 0 && <div className="text-xs text-mute">No activity yet.</div>}
-              {recent.map((p) => {
-                const bucket = BUCKET_META[bucketOf(p)];
-                const Icon = bucket.icon;
-                return (
-                  <div key={p.id} className="flex items-start gap-2.5">
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${bucket.iconWrap}`}>
-                      <Icon size={13} strokeWidth={2} />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium text-slate-900 truncate">{p.customer.company || p.customer.name}</div>
-                      <div className="text-xs text-mute">{activityLine(p)}</div>
-                      <div className="text-[11px] text-slate-400 mt-0.5">{timeAgo(p.createdAt)}</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="form-card">
-            <div className="font-semibold text-sm mb-3">Quick actions</div>
-            <div className="space-y-2">
-              <Link to="/reseller/customers" className="btn-ghost w-full text-sm flex items-center justify-between !py-2.5">
-                <span className="flex items-center gap-2"><Users size={15} strokeWidth={2} /> View customers</span>
-                <ChevronRight size={14} strokeWidth={2} />
-              </Link>
-              <button type="button" onClick={copyPortalSlug} className="btn-ghost w-full text-sm flex items-center justify-between !py-2.5">
-                <span className="flex items-center gap-2">
-                  {copied ? <Check size={15} strokeWidth={2} className="text-lime-600" /> : <Link2 size={15} strokeWidth={2} />}
-                  {copied ? 'Copied!' : 'Copy portal slug'}
-                </span>
-                {!copied && <ChevronRight size={14} strokeWidth={2} />}
-              </button>
-              <Link to="/reseller/plans" className="btn-ghost w-full text-sm flex items-center justify-between !py-2.5">
-                <span className="flex items-center gap-2"><Settings2 size={15} strokeWidth={2} /> Manage plans</span>
-                <ChevronRight size={14} strokeWidth={2} />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
