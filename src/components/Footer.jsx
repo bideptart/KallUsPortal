@@ -31,7 +31,7 @@ export default function Footer() {
           </Link>
           <span className="text-slate-300 dark:text-slate-700">•</span>
           <a
-            href="mailto:support@9278.ai"
+            href="mailto:support@kallus.io"
             className="text-slate-600 dark:text-slate-300 hover:text-lime-700 dark:hover:text-lime-500 underline-offset-4 hover:underline decoration-lime-400 transition-all hover:-translate-y-px"
           >
             Support

@@ -1,6 +1,6 @@
 import { useEffect, useState, lazy, Suspense } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
-import { Users, CreditCard, Star, Handshake, Menu, LogOut } from 'lucide-react';
+import { Users, CreditCard, Star, Handshake, Menu, LogOut, UserPlus, ChevronRight } from 'lucide-react';
 import { useApp } from '../../AppContext.jsx';
 import Logo from '../../components/Logo.jsx';
 import Footer from '../../components/Footer.jsx';
@@ -40,7 +40,7 @@ export default function Reseller() {
   // A sub-reseller hitting /reseller/sub-resellers directly is bounced home.
   if (!VALID.has(tab)) return <Navigate to="/reseller/customers" replace />;
 
-  const activeLabel = TABS.find((t) => t.id === tab)?.label;
+  const activeTab = TABS.find((t) => t.id === tab);
 
   return (
     <div className="dashboard-shell">
@@ -81,6 +81,26 @@ export default function Reseller() {
           </Link>
         ))}
 
+        {isReseller && (
+          <div className="mt-auto px-3 pb-3 pt-4">
+            <div className="rounded-xl bg-lime-50 border border-lime-200 p-3.5">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-lime-100 text-lime-700 flex items-center justify-center shrink-0">
+                  <UserPlus size={15} strokeWidth={2} />
+                </div>
+                <div className="text-sm font-semibold text-slate-900">Grow your business</div>
+              </div>
+              <p className="text-xs text-mute mt-1.5">Invite sub-resellers and earn more.</p>
+              <Link
+                to="/reseller/sub-resellers"
+                className="mt-2.5 btn-teal !py-2 !px-3 text-xs w-full flex items-center justify-center gap-1"
+              >
+                Invite now <ChevronRight size={13} strokeWidth={2.4} />
+              </Link>
+            </div>
+          </div>
+        )}
+
         <div className="mt-2 pt-2 border-t border-slate-100">
           <button type="button" onClick={signoutUser} className="nav-group-toggle">
             <LogOut size={16} strokeWidth={2} /> Log out
@@ -97,9 +117,14 @@ export default function Reseller() {
           >
             <Menu size={16} /> Menu
           </button>
-          <div className="lg:hidden text-xs text-mute font-semibold uppercase tracking-wider truncate">
-            {activeLabel}
-          </div>
+          {activeTab && (
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="shrink-0 w-9 h-9 rounded-full bg-lime-100 text-lime-700 flex items-center justify-center">
+                <activeTab.Icon size={16} strokeWidth={2} />
+              </div>
+              <h1 className="text-base sm:text-lg font-bold text-slate-900 truncate">{activeTab.label}</h1>
+            </div>
+          )}
         </div>
 
         <Suspense fallback={<div className="text-sm text-mute py-10 text-center">Loading…</div>}>
